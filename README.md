@@ -1,6 +1,6 @@
 ﻿# Basewise
 
-A simple, live number-base converter for learning how the same whole number is written in decimal, binary, octal, and hexadecimal.
+A simple, live number-base converter for learning how the same whole number is written in different bases.
 
 ## Run locally
 
@@ -9,7 +9,11 @@ npm install
 npm run dev
 ```
 
-Choose decimal, binary, octal, or hexadecimal as the starting base, then enter a non-negative whole number to see its representations update as you type. Use the checkboxes to choose which result bases are shown. Switching the starting base preserves the number's value when the current input is valid.
+Decimal, binary, octal, and hexadecimal rows are shown on load. Entering a number and reading it back happen in the same place: type directly into the digit boxes of any row, and that row becomes the base you are writing in (marked **source**) while every other row rewrites itself live. Each box holds one position, and the position's index is printed underneath it, so the rightmost box is always the units digit.
+
+Use **Add another base** to add a row for any base from 2 to 36 (digits `0-9`, then `A-Z`). Added rows can be removed again; the four rows shown on load stay put.
+
+Digits that are not valid for a row's base are rejected with an inline message, and whole numbers above `Number.MAX_SAFE_INTEGER` show a "too large to convert accurately" notice instead of a wrong answer.
 
 ## Checks
 
