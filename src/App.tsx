@@ -115,6 +115,83 @@ function pickTypedChar(raw: string, previous: string) {
   return Array.from(text).find((char) => char !== previous.toUpperCase()) ?? text.slice(-1)
 }
 
+// One octal digit holds three bits and a hex digit four, which is the whole point
+// of the underboxes. Those two pairings are the ones the page ships with; any
+// other added base is left without grouping.
+function bitsPerDigit(radix: number) {
+  if (radix === 8) return 3
+  if (radix === 16) return 4
+  return null
+}
+
+type BitGroup = {
+  bits: string[]
+  placeholders: number
+  label: string
+}
+
+type BitGrouping = {
+  base: Base
+  size: number
+  groups: BitGroup[]
+}
+
+// Grouping counts from the right, so the leading group can be short. The bits
+// themselves are never rewritten: the positions that group is missing become
+// decorative placeholders on its left instead of zeros in the value.
+function groupBits(bits: string[], size: number, radix: number): BitGroup[] {
+  const groups: BitGroup[] = []
+
+  for (let end = bits.length; end > 0; end -= size) {
+    const chunk = bits.slice(Math.max(0, end - size), end)
+    const parsed = parseDigits(chunk.join(''), 2)
+    groups.unshift({
+      bits: chunk,
+      placeholders: size - chunk.length,
+      label: (parsed.status === 'ok' ? parsed.value : 0n).toString(radix).toUpperCase(),
+    })
+  }
+
+  return groups
+}
+
+// Decorative underboxes: one row per paired base still on the page, each drawing
+// the binary digits as that base reads them, with the paired digit beneath each
+// group. The row is hidden from assistive tech — the binary digits above are the
+// accessible value, and nothing here is focusable or editable.
+function BinaryGroupings({ groupings }: { groupings: BitGrouping[] }) {
+  if (groupings.length === 0) return null
+
+  return (
+    <div className="flex flex-col items-end gap-2" aria-hidden="true">
+      {groupings.map(({ base, size, groups }) => (
+        <div className="flex items-center gap-2" key={base.key}>
+          <span className="whitespace-nowrap font-mono text-[9px] font-semibold uppercase tracking-[0.5px]" style={{ color: base.accent }}>
+            {`${base.name.toLowerCase()} · ${size} bits`}
+          </span>
+          <ol className="m-0 flex list-none gap-px p-0">
+            {groups.map((group, index) => (
+              <li className="flex shrink-0 flex-col items-center gap-px rounded-[5px]" key={index} style={{ backgroundColor: `${base.accent}1f` }}>
+                <span className="flex gap-px">
+                  {Array.from({ length: group.placeholders }, (_, slot) => (
+                    <span className="h-[clamp(13px,3.1vw,21px)] w-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[3px] border border-dashed border-[#c9d4e3]" key={`missing-${slot}`} />
+                  ))}
+                  {group.bits.map((_, slot) => (
+                    <span className="h-[clamp(13px,3.1vw,21px)] w-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[3px] border" key={slot} style={{ borderColor: base.accent }} />
+                  ))}
+                </span>
+                <span className="w-full text-center font-mono text-[9px] font-bold leading-none" style={{ color: base.accent }}>
+                  {group.label}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function App() {
   const [rows, setRows] = useState<Base[]>(fixedBases)
   const [sourceKey, setSourceKey] = useState('decimal')
@@ -142,6 +219,21 @@ function App() {
       : value === null ? null : digitsForValue(value, base.radix)
     const padded = width === 'auto' || digits === null ? digits : padDigits(digits, positionsForWidth(width, base.radix))
     return { base, isSource, boxes: padded === null ? null : padded.length > 0 ? padded : [''] }
+  })
+
+  // Underboxes: one row per paired base still on the page, drawn from the binary
+  // row's own places — so a 32-bit view groups its padded digits, and removing a
+  // paired row removes its grouping. An empty or rejected entry groups nothing.
+  const binaryBits = (displayed.find((row) => row.base.radix === 2)?.boxes ?? []).filter((digit) => digit.length > 0)
+  const withGroupings = displayed.map((row) => {
+    const pairings = row.base.radix !== 2 || value === null || binaryBits.length === 0
+      ? []
+      : displayed.flatMap((paired) => {
+        const size = bitsPerDigit(paired.base.radix)
+        if (size === null || paired.base.radix === 2) return []
+        return [{ base: paired.base, size, groups: groupBits(binaryBits, size, paired.base.radix) }]
+      })
+    return { ...row, groupings: pairings }
   })
   const digitCounts = displayed.map(({ boxes }) => boxes?.length ?? 0).join('-')
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -383,7 +475,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {displayed.map(({ base, isSource, boxes }) => (
+              {withGroupings.map(({ base, isSource, boxes, groupings }) => (
                 <tr className={isSource ? 'bg-[#f7f9fc]' : 'bg-white'} key={base.key}>
                   <th className="sticky left-0 z-10 border-b border-[#eef2f8] bg-inherit py-3 pr-3 align-middle font-normal" scope="row">
                     <span className="flex items-center gap-2 whitespace-nowrap">
@@ -407,6 +499,7 @@ function App() {
                   </th>
                   <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
                     {boxes ? (
+                      <div className="flex flex-col items-end gap-2">
                       <div className="flex items-end justify-end gap-2">
                       {isSource && (
                         <span className="mb-6 flex shrink-0 items-center gap-1" role="group" aria-label={`Step the ${base.name} value`}>
@@ -463,6 +556,8 @@ function App() {
                           )
                         })}
                       </ol>
+                      </div>
+                      <BinaryGroupings groupings={groupings} />
                       </div>
                     ) : (
                       <span className="block text-right font-mono text-xl text-[#a3b0c2]">—</span>
