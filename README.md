@@ -18,3 +18,13 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+## Deployment
+
+Pushing to `main` triggers the [Deploy to GitHub Pages](.github/workflows/deploy-pages.yml)
+workflow, which builds the app and publishes `dist` to
+<https://lfarci.github.io/base-converter/>. The workflow can also be run manually from the
+Actions tab.
+
+Because Pages serves the site from the `/base-converter/` subpath, `base` is set to
+`/base-converter/` in `vite.config.ts`.
