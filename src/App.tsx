@@ -5,6 +5,15 @@ const MAX_RADIX = 36
 const DIGIT_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const SAFE_LIMIT = BigInt(Number.MAX_SAFE_INTEGER)
 
+// Digit geometry is one fixed pixel size, never a viewport-relative clamp: a row's
+// boxes must be the same size on a phone as on a wide desktop, because the width
+// that matters is the card's, not the window's. These are the maxima the previous
+// clamps resolved to at >=1280px, so wide-viewport appearance is unchanged.
+const BOX_SIZE = '30px'
+const BOX_TEXT = '17px'
+const GROUP_SLOT_W = '30px'
+const GROUP_SLOT_H = '21px'
+
 type Base = {
   key: string
   name: string
@@ -40,43 +49,13 @@ function digitValue(char: string) {
   return DIGIT_ALPHABET.indexOf(char.toUpperCase())
 }
 
-// Register widths the rows can pad to. 'auto' keeps the natural, unpadded length.
-const WIDTH_OPTIONS = ['auto', 32, 64] as const
-type WidthChoice = (typeof WIDTH_OPTIONS)[number]
-type DigitWidth = Exclude<WidthChoice, 'auto'>
-
-function widthLabel(width: WidthChoice) {
-  return width === 'auto' ? 'Auto' : `${width}-bit`
-}
-
-// Largest value a register of this width can hold: 2^width - 1.
-function widthLimit(width: DigitWidth) {
-  return 2n ** BigInt(width) - 1n
-}
-
-// One wording per width choice, so the range guard and the render path agree.
-function limitMessage(width: WidthChoice) {
-  return width === 'auto'
-    ? 'That number is too large to convert accurately. Try a smaller whole number.'
-    : `That number is too large for a ${width}-bit width. A ${width}-bit word holds at most ${widthLimit(width).toString(10)}.`
-}
+// The one accuracy ceiling the page reports. Rows always show exactly the
+// positions the value needs, so there is no width-specific wording to choose.
+const LIMIT_MESSAGE = 'That number is too large to convert accurately. Try a smaller whole number.'
 
 // PageUp/PageDown step by one place: ten in bases up to 10, sixteen above.
 function pageStep(radix: number) {
   return radix <= 10 ? 10n : 16n
-}
-
-// Positions a width occupies in a radix, derived from the radix itself (count
-// the digits of the largest value it can hold) so the two can never drift apart.
-function positionsForWidth(width: DigitWidth, radix: number) {
-  return widthLimit(width).toString(radix).length
-}
-
-// Leading-zero padding: boxes past the most significant digit render as 0.
-// An over-long value is left alone; the range check reports it instead.
-function padDigits(digits: string[], positions: number) {
-  if (digits.length === 0 || digits.length >= positions) return digits
-  return [...Array<string>(positions - digits.length).fill('0'), ...digits]
 }
 
 // Numeric-model seam: the view reads and writes numbers only through
@@ -88,8 +67,8 @@ type ParsedDigits =
   | { status: 'too-large'; value: bigint }
   | { status: 'ok'; value: bigint }
 
-// `limit` is the largest value the caller accepts: the safe-integer ceiling in
-// Auto mode, or 2^width - 1 when a fixed register width is selected.
+// `limit` is the largest value the caller accepts; the component uses the
+// safe-integer ceiling, and the parameter is the seam a wider model would use.
 function parseDigits(text: string, radix: number, limit: bigint = SAFE_LIMIT): ParsedDigits {
   if (text.length === 0) return { status: 'empty' }
 
@@ -155,39 +134,38 @@ function groupBits(bits: string[], size: number, radix: number): BitGroup[] {
   return groups
 }
 
-// Decorative underboxes: one row per paired base still on the page, each drawing
-// the binary digits as that base reads them, with the paired digit beneath each
-// group. The row is hidden from assistive tech — the binary digits above are the
+// Decorative underbox for one paired row: it draws the binary digits the way that
+// base reads them, with the paired digit beneath each group. It renders inside the
+// paired row itself (octal under octal, hex under hex) and is derived from the
+// binary row's places. Hidden from assistive tech — the digit rows are the
 // accessible value, and nothing here is focusable or editable.
-function BinaryGroupings({ groupings }: { groupings: BitGrouping[] }) {
-  if (groupings.length === 0) return null
+function GroupingUnderbox({ grouping }: { grouping: BitGrouping | null }) {
+  if (grouping === null) return null
+
+  const { base, size, groups } = grouping
 
   return (
-    <div className="flex flex-col items-end gap-2" aria-hidden="true">
-      {groupings.map(({ base, size, groups }) => (
-        <div className="flex items-center gap-2" key={base.key}>
-          <span className="whitespace-nowrap font-mono text-[9px] font-semibold uppercase tracking-[0.5px]" style={{ color: base.accent }}>
-            {`${base.name.toLowerCase()} · ${size} bits`}
-          </span>
-          <ol className="m-0 flex list-none gap-px p-0">
-            {groups.map((group, index) => (
-              <li className="flex shrink-0 flex-col items-center gap-px rounded-[5px]" key={index} style={{ backgroundColor: `${base.accent}1f` }}>
-                <span className="flex gap-px">
-                  {Array.from({ length: group.placeholders }, (_, slot) => (
-                    <span className="h-[clamp(13px,3.1vw,21px)] w-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[3px] border border-dashed border-[#c9d4e3]" key={`missing-${slot}`} />
-                  ))}
-                  {group.bits.map((_, slot) => (
-                    <span className="h-[clamp(13px,3.1vw,21px)] w-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[3px] border" key={slot} style={{ borderColor: base.accent }} />
-                  ))}
-                </span>
-                <span className="w-full text-center font-mono text-[9px] font-bold leading-none" style={{ color: base.accent }}>
-                  {group.label}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))}
+    <div className="flex items-center gap-2" aria-hidden="true">
+      <span className="whitespace-nowrap font-mono text-[9px] font-semibold uppercase tracking-[0.5px]" style={{ color: base.accent }}>
+        {`${base.name.toLowerCase()} · ${size} bits`}
+      </span>
+      <ol className="m-0 flex list-none gap-px p-0">
+        {groups.map((group, index) => (
+          <li className="flex shrink-0 flex-col items-center gap-px rounded-[5px]" key={index} style={{ backgroundColor: `${base.accent}1f` }}>
+            <span className="flex gap-px">
+              {Array.from({ length: group.placeholders }, (_, slot) => (
+                <span className="shrink-0 rounded-[3px] border border-dashed border-[#c9d4e3]" style={{ width: GROUP_SLOT_W, height: GROUP_SLOT_H }} key={`missing-${slot}`} />
+              ))}
+              {group.bits.map((_, slot) => (
+                <span className="shrink-0 rounded-[3px] border" style={{ width: GROUP_SLOT_W, height: GROUP_SLOT_H, borderColor: base.accent }} key={slot} />
+              ))}
+            </span>
+            <span className="w-full text-center font-mono text-[9px] font-bold leading-none" style={{ color: base.accent }}>
+              {group.label}
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
@@ -196,17 +174,15 @@ function App() {
   const [rows, setRows] = useState<Base[]>(fixedBases)
   const [sourceKey, setSourceKey] = useState('decimal')
   const [sourceDigits, setSourceDigits] = useState('42')
-  const [width, setWidth] = useState<WidthChoice>('auto')
   const [rejection, setRejection] = useState('')
   const [pendingRadix, setPendingRadix] = useState('')
   const [baseError, setBaseError] = useState('')
 
   const sourceBase = rows.find((base) => base.key === sourceKey) ?? fixedBases[0]
-  const limit = width === 'auto' ? SAFE_LIMIT : widthLimit(width)
-  const parsed = parseDigits(sourceDigits, sourceBase.radix, limit)
+  const parsed = parseDigits(sourceDigits, sourceBase.radix)
   const value = parsed.status === 'ok' ? parsed.value : null
   const error = rejection
-    || (parsed.status === 'too-large' ? limitMessage(width) : '')
+    || (parsed.status === 'too-large' ? LIMIT_MESSAGE : '')
     || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
   const help = parsed.status === 'empty'
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
@@ -217,23 +193,20 @@ function App() {
     const digits = isSource
       ? Array.from(sourceDigits)
       : value === null ? null : digitsForValue(value, base.radix)
-    const padded = width === 'auto' || digits === null ? digits : padDigits(digits, positionsForWidth(width, base.radix))
-    return { base, isSource, boxes: padded === null ? null : padded.length > 0 ? padded : [''] }
+    return { base, isSource, boxes: digits === null ? null : digits.length > 0 ? digits : [''] }
   })
 
-  // Underboxes: one row per paired base still on the page, drawn from the binary
-  // row's own places — so a 32-bit view groups its padded digits, and removing a
-  // paired row removes its grouping. An empty or rejected entry groups nothing.
+  // Underboxes: each paired base draws its own grouping, derived from the binary
+  // row's own places, so 3-bit groups sit in the octal row and 4-bit groups in the
+  // hex row. Removing a paired row removes its grouping, and an empty or rejected
+  // entry groups nothing.
   const binaryBits = (displayed.find((row) => row.base.radix === 2)?.boxes ?? []).filter((digit) => digit.length > 0)
   const withGroupings = displayed.map((row) => {
-    const pairings = row.base.radix !== 2 || value === null || binaryBits.length === 0
-      ? []
-      : displayed.flatMap((paired) => {
-        const size = bitsPerDigit(paired.base.radix)
-        if (size === null || paired.base.radix === 2) return []
-        return [{ base: paired.base, size, groups: groupBits(binaryBits, size, paired.base.radix) }]
-      })
-    return { ...row, groupings: pairings }
+    const size = bitsPerDigit(row.base.radix)
+    const grouping = size === null || value === null || binaryBits.length === 0
+      ? null
+      : { base: row.base, size, groups: groupBits(binaryBits, size, row.base.radix) }
+    return { ...row, grouping }
   })
   const digitCounts = displayed.map(({ boxes }) => boxes?.length ?? 0).join('-')
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -267,9 +240,9 @@ function App() {
       focusEditableRef.current(where)
       return
     }
-    // A commit can take a place away (a step down, or typing into a padded row that
-    // then becomes the unpadded source) and drop the caret onto the page. Only that
-    // lost case is recovered: a control the reader aimed at keeps the focus.
+    // A commit can take a place away (a step down, or typing into a derived row that
+    // then becomes the source) and drop the caret onto the page. Only that lost case
+    // is recovered: a control the reader aimed at keeps the focus.
     if (document.activeElement === null || document.activeElement === document.body) {
       focusEditableRef.current('last')
     }
@@ -280,8 +253,8 @@ function App() {
     if (scroller) scroller.scrollLeft = scroller.scrollWidth
   }, [digitCounts, sourceKey])
 
-  // Focus policy: aiming at a control is a deliberate choice and wins, so the width
-  // radios, the base-add field and the remove buttons stay usable. Anything else — a
+  // Focus policy: aiming at a control is a deliberate choice and wins, so the
+  // base-add field, the remove buttons and the links stay usable. Anything else — a
   // release on plain content, a stray keypress, coming back to the tab — hands the
   // caret back so the next digit lands in the number. The page's own actions
   // (stepping, adding a base) ask for the caret themselves once they have finished.
@@ -329,8 +302,8 @@ function App() {
       setSourceDigits('0')
       return
     }
-    if (target > limit) {
-      setRejection(limitMessage(width))
+    if (target > SAFE_LIMIT) {
+      setRejection(LIMIT_MESSAGE)
       return
     }
     setRejection('')
@@ -372,8 +345,8 @@ function App() {
 
     setRejection('')
     setSourceKey(base.key)
-    // The source row stays its natural length so its boxes do not move under the
-    // caret while typing; padding is a property of the derived rows only.
+    // Editing the most significant position grows the row by one; digits typed
+    // elsewhere shift the interior of the value instead of changing its length.
     setSourceDigits(next.join(''))
   }
 
@@ -412,7 +385,7 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[760px] px-4 pb-16 text-[#172b4d] sm:px-6" id="top">
+    <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6" id="top">
       <header className="flex items-baseline justify-between py-6 sm:py-8">
         <a className="text-[15px] font-bold tracking-tight text-[#172b4d] no-underline" href="#top">basewise</a>
         <span className="text-[11px] text-[#63728a]">positional notation, plainly</span>
@@ -433,39 +406,6 @@ function App() {
             Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="text-[11px] font-semibold text-[#63728a]" id="digit-width-title">Digit width</span>
-            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="digit-width-title" aria-describedby="digit-width-help">
-              {WIDTH_OPTIONS.map((option) => {
-                const isSelected = option === width
-                return (
-                  <label className={`flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 font-mono text-xs font-medium transition ${isSelected ? 'border-[#2458d3] bg-[#f0f4ff] text-[#172b4d]' : 'border-[#e3e9f1] text-[#344761] hover:border-[#a9bad2]'} has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#2458d3]`} key={option}>
-                    <input
-                      className="sr-only"
-                      type="radio"
-                      name="digit-width"
-                      value={option}
-                      checked={isSelected}
-                      onChange={() => setWidth(option)}
-                      // A pointer pick is finished business, so the caret comes back to the
-                      // number. A keyboard pick (detail === 0) is left alone, which keeps
-                      // arrow-key travel across the radios working.
-                      onClick={(event) => {
-                        if (event.detail > 0) pendingFocusRef.current = 'last'
-                      }}
-                    />
-                    {widthLabel(option)}
-                  </label>
-                )
-              })}
-            </div>
-            <p className="m-0 text-xs text-[#8190a5]" id="digit-width-help">
-              {width === 'auto'
-                ? 'Rows show only the positions the value needs.'
-                : `Every row pads to the positions a ${width}-bit word needs.`}
-            </p>
-          </div>
-
           <div className="mt-4 overflow-x-auto" ref={scrollerRef}>
             <table className="w-full border-separate border-spacing-0 text-left" aria-labelledby="result-title">
             <thead>
@@ -475,7 +415,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {withGroupings.map(({ base, isSource, boxes, groupings }) => (
+              {withGroupings.map(({ base, isSource, boxes, grouping }) => (
                 <tr className={isSource ? 'bg-[#f7f9fc]' : 'bg-white'} key={base.key}>
                   <th className="sticky left-0 z-10 border-b border-[#eef2f8] bg-inherit py-3 pr-3 align-middle font-normal" scope="row">
                     <span className="flex items-center gap-2 whitespace-nowrap">
@@ -532,8 +472,8 @@ function App() {
                           return (
                             <li className="m-0 flex flex-col items-center" key={cellKey}>
                               <input
-                                className={`size-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[4px] border bg-white p-0 text-center font-mono text-[clamp(12px,2.9vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25 ${isSource ? '' : 'border-[#dbe3ee] hover:border-[#a9bad2]'}`}
-                                style={isSource ? { borderColor: base.accent } : undefined}
+                                className={`shrink-0 rounded-[4px] border bg-white p-0 text-center font-mono font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25 ${isSource ? '' : 'border-[#dbe3ee] hover:border-[#a9bad2]'}`}
+                                style={{ width: BOX_SIZE, height: BOX_SIZE, fontSize: BOX_TEXT, ...(isSource ? { borderColor: base.accent } : {}) }}
                                 type="text"
                                 data-digit="true"
                                 ref={(node) => {
@@ -549,7 +489,7 @@ function App() {
                                 onChange={(event) => editDigit(base, boxes, index, event.target.value)}
                                 aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${isSource ? ', source base' : ''}`}
                               />
-                              <span className="size-[clamp(18px,4.4vw,30px)] shrink-0 pt-1 text-center font-mono text-[9px] leading-none text-[#a3b0c2]" aria-hidden="true">
+                              <span className="shrink-0 pt-1 text-center font-mono text-[9px] leading-none text-[#a3b0c2]" style={{ width: BOX_SIZE }} aria-hidden="true">
                                 {position}
                               </span>
                             </li>
@@ -557,7 +497,7 @@ function App() {
                         })}
                       </ol>
                       </div>
-                      <BinaryGroupings groupings={groupings} />
+                      <GroupingUnderbox grouping={grouping} />
                       </div>
                     ) : (
                       <span className="block text-right font-mono text-xl text-[#a3b0c2]">—</span>
