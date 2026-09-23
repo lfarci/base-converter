@@ -40,6 +40,33 @@ function digitValue(char: string) {
   return DIGIT_ALPHABET.indexOf(char.toUpperCase())
 }
 
+// Register widths the rows can pad to. 'auto' keeps the natural, unpadded length.
+const WIDTH_OPTIONS = ['auto', 32, 64] as const
+type WidthChoice = (typeof WIDTH_OPTIONS)[number]
+type DigitWidth = Exclude<WidthChoice, 'auto'>
+
+function widthLabel(width: WidthChoice) {
+  return width === 'auto' ? 'Auto' : `${width}-bit`
+}
+
+// Largest value a register of this width can hold: 2^width - 1.
+function widthLimit(width: DigitWidth) {
+  return 2n ** BigInt(width) - 1n
+}
+
+// Positions a width occupies in a radix, derived from the radix itself (count
+// the digits of the largest value it can hold) so the two can never drift apart.
+function positionsForWidth(width: DigitWidth, radix: number) {
+  return widthLimit(width).toString(radix).length
+}
+
+// Leading-zero padding: boxes past the most significant digit render as 0.
+// An over-long value is left alone; the range check reports it instead.
+function padDigits(digits: string[], positions: number) {
+  if (digits.length === 0 || digits.length >= positions) return digits
+  return [...Array<string>(positions - digits.length).fill('0'), ...digits]
+}
+
 // Numeric-model seam: the view reads and writes numbers only through
 // parseDigits and digitsForValue, so a later layer can swap BigInt for a
 // fixed-width or padded model without rewriting the component.
@@ -49,7 +76,9 @@ type ParsedDigits =
   | { status: 'too-large'; value: bigint }
   | { status: 'ok'; value: bigint }
 
-function parseDigits(text: string, radix: number): ParsedDigits {
+// `limit` is the largest value the caller accepts: the safe-integer ceiling in
+// Auto mode, or 2^width - 1 when a fixed register width is selected.
+function parseDigits(text: string, radix: number, limit: bigint = SAFE_LIMIT): ParsedDigits {
   if (text.length === 0) return { status: 'empty' }
 
   let value = 0n
@@ -61,7 +90,7 @@ function parseDigits(text: string, radix: number): ParsedDigits {
     value = value * scale + BigInt(digit)
   }
 
-  return value > SAFE_LIMIT ? { status: 'too-large', value } : { status: 'ok', value }
+  return value > limit ? { status: 'too-large', value } : { status: 'ok', value }
 }
 
 function digitsForValue(value: bigint, radix: number) {
@@ -78,15 +107,21 @@ function App() {
   const [rows, setRows] = useState<Base[]>(fixedBases)
   const [sourceKey, setSourceKey] = useState('decimal')
   const [sourceDigits, setSourceDigits] = useState('42')
+  const [width, setWidth] = useState<WidthChoice>('auto')
   const [rejection, setRejection] = useState('')
   const [pendingRadix, setPendingRadix] = useState('')
   const [baseError, setBaseError] = useState('')
 
   const sourceBase = rows.find((base) => base.key === sourceKey) ?? fixedBases[0]
-  const parsed = parseDigits(sourceDigits, sourceBase.radix)
+  const limit = width === 'auto' ? SAFE_LIMIT : widthLimit(width)
+  const parsed = parseDigits(sourceDigits, sourceBase.radix, limit)
   const value = parsed.status === 'ok' ? parsed.value : null
   const error = rejection
-    || (parsed.status === 'too-large' ? 'That number is too large to convert accurately. Try a smaller whole number.' : '')
+    || (parsed.status === 'too-large'
+      ? width === 'auto'
+        ? 'That number is too large to convert accurately. Try a smaller whole number.'
+        : `That number is too large for a ${width}-bit width. A ${width}-bit word holds at most ${widthLimit(width).toString(10)}.`
+      : '')
     || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
   const help = parsed.status === 'empty'
     ? 'Type a digit in any row to start.'
@@ -97,7 +132,8 @@ function App() {
     const digits = isSource
       ? Array.from(sourceDigits)
       : value === null ? null : digitsForValue(value, base.radix)
-    return { base, isSource, boxes: digits === null ? null : digits.length > 0 ? digits : [''] }
+    const padded = width === 'auto' || digits === null ? digits : padDigits(digits, positionsForWidth(width, base.radix))
+    return { base, isSource, boxes: padded === null ? null : padded.length > 0 ? padded : [''] }
   })
   const digitCounts = displayed.map(({ boxes }) => boxes?.length ?? 0).join('-')
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -124,6 +160,8 @@ function App() {
 
     setRejection('')
     setSourceKey(base.key)
+    // The source row stays its natural length so its boxes do not move under the
+    // caret while typing; padding is a property of the derived rows only.
     setSourceDigits(next.join(''))
   }
 
@@ -176,6 +214,33 @@ function App() {
         <div className="mt-8">
           <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
           <p className="mt-1.5 text-xs text-[#8190a5]">Each box holds one position; the digit under a box is that position's index, so the rightmost box is always the units digit.</p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[11px] font-semibold text-[#63728a]" id="digit-width-title">Digit width</span>
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="digit-width-title" aria-describedby="digit-width-help">
+              {WIDTH_OPTIONS.map((option) => {
+                const isSelected = option === width
+                return (
+                  <label className={`flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 font-mono text-xs font-medium transition ${isSelected ? 'border-[#2458d3] bg-[#f0f4ff] text-[#172b4d]' : 'border-[#e3e9f1] text-[#344761] hover:border-[#a9bad2]'} has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#2458d3]`} key={option}>
+                    <input
+                      className="sr-only"
+                      type="radio"
+                      name="digit-width"
+                      value={option}
+                      checked={isSelected}
+                      onChange={() => setWidth(option)}
+                    />
+                    {widthLabel(option)}
+                  </label>
+                )
+              })}
+            </div>
+            <p className="m-0 text-xs text-[#8190a5]" id="digit-width-help">
+              {width === 'auto'
+                ? 'Rows show only the positions the value needs.'
+                : `Every row pads to the positions a ${width}-bit word needs.`}
+            </p>
+          </div>
 
           <div className="mt-4 overflow-x-auto" ref={scrollerRef}>
             <table className="w-full border-separate border-spacing-0 text-left" aria-labelledby="result-title">
