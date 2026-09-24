@@ -30,7 +30,7 @@ function App() {
     || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
   const help = parsed.status === 'empty'
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
-      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use the −/+ buttons to step the value by one.`
+      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use Arrow Up/Down to step the value by one.`
 
   // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
   // the low places with leading zeros above them. A row with no value at all renders
@@ -159,11 +159,6 @@ function App() {
     setSourceDigits(target.toString(sourceBase.radix))
   }
 
-  const stepFromControl = (delta: bigint) => {
-    stepValue(delta)
-    pendingFocusRef.current = 'last'
-  }
-
   // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
   // read as tens and units, sixteen from base 11 up where a place is a nibble wider.
   const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -247,7 +242,6 @@ function App() {
                       if (node) cellsRef.current.set(cellKey, node)
                       else cellsRef.current.delete(cellKey)
                     }}
-                    onStep={stepFromControl}
                   />
                 ))}
               </tbody>

@@ -9,10 +9,7 @@ type DigitRowProps = {
   onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   onEditDigit: (base: Base, boxes: string[], index: number, raw: string) => void
   registerCell: (key: string) => RefCallback<HTMLInputElement>
-  onStep: (delta: bigint) => void
 }
-
-const buttonClass = 'grid size-7 shrink-0 place-items-center rounded-md border border-[#dbe3ee] bg-white font-mono text-sm font-bold leading-none text-[#344761] transition hover:border-[#2458d3] hover:text-[#2458d3]'
 
 function GroupingUnderbox({ grouping }: { grouping: BitGrouping | null }) {
   if (grouping === null) return null
@@ -45,7 +42,7 @@ function GroupingUnderbox({ grouping }: { grouping: BitGrouping | null }) {
   )
 }
 
-export function DigitRow({ base, boxes, isSource, grouping, onDigitKeyDown, onEditDigit, registerCell, onStep }: DigitRowProps) {
+export function DigitRow({ base, boxes, isSource, grouping, onDigitKeyDown, onEditDigit, registerCell }: DigitRowProps) {
   return (
     <tr className={isSource ? 'bg-[#f7f9fc]' : 'bg-white'}>
       <th className="sticky left-0 z-10 border-b border-[#eef2f8] bg-inherit py-3 pr-3 align-middle font-normal" scope="row">
@@ -57,30 +54,6 @@ export function DigitRow({ base, boxes, isSource, grouping, onDigitKeyDown, onEd
             <span className="rounded-full border border-[#2458d3]/30 bg-[#f0f4ff] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.6px] text-[#2458d3]">source</span>
           )}
         </span>
-        {isSource && (
-          <span className="mt-2 flex items-center gap-1" role="group" aria-label={`Step the ${base.name} value`}>
-            <button
-              className={buttonClass}
-              type="button"
-              aria-label={`Decrease the ${base.name} value by one`}
-              title="Step down by one (ArrowDown)"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => onStep(-1n)}
-            >
-              {'\u2212'}
-            </button>
-            <button
-              className={buttonClass}
-              type="button"
-              aria-label={`Increase the ${base.name} value by one`}
-              title="Step up by one (ArrowUp)"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => onStep(1n)}
-            >
-              +
-            </button>
-          </span>
-        )}
       </th>
       <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
         <div className="flex w-full min-w-0 flex-col items-stretch gap-2">
