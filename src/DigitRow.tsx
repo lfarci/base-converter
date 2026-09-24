@@ -106,7 +106,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
                       data-highlighted={isHighlighted || undefined}
                       style={isHighlighted ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: base.accent, color: '#172b4d', fontWeight: 600 } : undefined}
                     >
-                      <span>{base.radix}<sup>{position}</sup></span>
+                      <span>{position}</span>
                       {bitRange && <span className="text-[8px] text-[#8190a5]">{bitRange}</span>}
                     </span>
                   </li>
