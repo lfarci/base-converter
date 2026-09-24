@@ -18,19 +18,35 @@ test('arrow and page keys step the value in the active base', async ({ page }) =
   await expect(decimalUnits).toBeFocused()
 })
 
-test('Tab moves through the units digits in the documented row order', async ({ page }) => {
-  const rowOrder = [
-    digit(page, 'Hexadecimal', 16, 0),
-    digit(page, 'Decimal', 10, 0),
-    digit(page, 'Octal', 8, 0),
-    digit(page, 'Binary', 2, 0),
+test('Tab reaches each breakdown toggle between the units digits in row order', async ({ page }) => {
+  const rows = [
+    { name: 'Hexadecimal', radix: 16 },
+    { name: 'Decimal', radix: 10 },
+    { name: 'Octal', radix: 8 },
+    { name: 'Binary', radix: 2 },
   ]
 
-  await rowOrder[0].focus()
-  for (const nextRow of rowOrder.slice(1)) {
+  await digit(page, rows[0].name, rows[0].radix, 0).focus()
+  for (let index = 0; index < rows.length; index += 1) {
+    const { name } = rows[index]
     await page.keyboard.press('Tab')
-    await expect(nextRow).toBeFocused()
+    await expect(page.getByRole('button', { name: `Show ${name} place-value breakdown` })).toBeFocused()
+
+    const nextRow = rows[index + 1]
+    if (nextRow) {
+      await page.keyboard.press('Tab')
+      await expect(digit(page, nextRow.name, nextRow.radix, 0)).toBeFocused()
+    }
   }
+})
+
+test('Shift+Tab moves backward from units digits to the previous row toggle', async ({ page }) => {
+  await digit(page, 'Binary', 2, 0).focus()
+
+  await page.keyboard.press('Shift+Tab')
+  await expect(page.getByRole('button', { name: 'Show Octal place-value breakdown' })).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(digit(page, 'Octal', 8, 0)).toBeFocused()
 })
 
 test('backspace removes the newest typed digit', async ({ page }) => {
@@ -43,4 +59,55 @@ test('backspace removes the newest typed digit', async ({ page }) => {
 
   await expect(decimalUnits).toHaveValue('2')
   await expect(digit(page, 'Hexadecimal', 16, 0)).toHaveValue('2')
+})
+
+test('hover links a digit, its power, and its matching breakdown term by position', async ({ page }) => {
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  await decimalUnits.focus()
+  await page.keyboard.press('1')
+  await page.keyboard.press('2')
+  await page.keyboard.press('3')
+
+  await page.getByRole('button', { name: 'Show Decimal place-value breakdown' }).click()
+  const tensDigit = digit(page, 'Decimal', 10, 1)
+  const tensLabel = tensDigit.locator('xpath=..').locator('.place-value-label')
+  const tensTerm = page.locator('#decimal-place-value-breakdown [data-breakdown-term][data-position="1"]')
+
+  await tensDigit.hover()
+  await expect(tensDigit).toHaveAttribute('data-highlighted', 'true')
+  await expect(tensLabel).toHaveAttribute('data-highlighted', 'true')
+  await expect(tensTerm).toHaveAttribute('data-highlighted', 'true')
+
+  const onesDigit = digit(page, 'Decimal', 10, 0)
+  const onesLabel = onesDigit.locator('xpath=..').locator('.place-value-label')
+  const onesTerm = page.locator('#decimal-place-value-breakdown [data-breakdown-term][data-position="0"]')
+  await onesTerm.hover()
+  await expect(onesDigit).toHaveAttribute('data-highlighted', 'true')
+  await expect(onesLabel).toHaveAttribute('data-highlighted', 'true')
+  await expect(onesTerm).toHaveAttribute('data-highlighted', 'true')
+  await expect(tensDigit).not.toHaveAttribute('data-highlighted', 'true')
+
+  await page.mouse.move(0, 0)
+  await onesTerm.focus()
+  await expect(onesDigit).toHaveAttribute('data-highlighted', 'true')
+  await expect(onesLabel).toHaveAttribute('data-highlighted', 'true')
+})
+
+test('collapsed rows highlight powers without opening, and digit typing still works', async ({ page }) => {
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  const unitsLabel = decimalUnits.locator('xpath=..').locator('.place-value-label')
+  const toggle = page.getByRole('button', { name: 'Show Decimal place-value breakdown' })
+
+  await decimalUnits.hover()
+  await expect(decimalUnits).toHaveAttribute('data-highlighted', 'true')
+  await expect(unitsLabel).toHaveAttribute('data-highlighted', 'true')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('#decimal-place-value-breakdown')).toHaveCount(0)
+
+  await page.mouse.move(0, 0)
+  await decimalUnits.focus()
+  await expect(unitsLabel).toHaveAttribute('data-highlighted', 'true')
+  await page.keyboard.press('7')
+  await expect(digit(page, 'Decimal', 10, 0)).toHaveValue('7')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 })

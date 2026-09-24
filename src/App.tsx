@@ -48,6 +48,51 @@ function App() {
   // Every digit box registers itself here by base and place, so the editable
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
+  const breakdownTogglesRef = useRef(new Map<string, HTMLButtonElement>())
+  const focusRowControl = (event: KeyboardEvent, base: Base, direction: -1 | 1) => {
+    const rowIndex = rows.findIndex((row) => row.key === base.key)
+    const targetRow = rows[rowIndex + direction]
+    if (!targetRow) return
+
+    event.preventDefault()
+    if (direction === 1) cellsRef.current.get(`${targetRow.key}:${POSITIONS - 1}`)?.focus()
+    else breakdownTogglesRef.current.get(targetRow.key)?.focus()
+  }
+  const focusToggleFromUnits = (event: React.KeyboardEvent<HTMLInputElement>, base: Base) => {
+    if (event.shiftKey) {
+      focusRowControl(event, base, -1)
+      return
+    }
+
+    event.preventDefault()
+    breakdownTogglesRef.current.get(base.key)?.focus()
+  }
+  const focusUnitsFromToggle = (event: React.KeyboardEvent<HTMLButtonElement>, base: Base, breakdownOpen: boolean) => {
+    if (event.shiftKey) {
+      event.preventDefault()
+      cellsRef.current.get(`${base.key}:${POSITIONS - 1}`)?.focus()
+      return
+    }
+
+    if (breakdownOpen) {
+      const firstTerm = document.getElementById(`${base.key}-place-value-breakdown`)?.querySelector<HTMLElement>('[data-breakdown-term]')
+      if (firstTerm) {
+        event.preventDefault()
+        firstTerm.focus()
+        return
+      }
+    }
+
+    focusRowControl(event, base, 1)
+  }
+  const focusUnitsFromBreakdownTerm = (event: React.KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => {
+    if (event.shiftKey && isFirst) {
+      event.preventDefault()
+      breakdownTogglesRef.current.get(base.key)?.focus()
+    } else if (!event.shiftKey && isLast) {
+      focusRowControl(event, base, 1)
+    }
+  }
   // Restore focus after edits commit so the caret stays anchored through React rerenders.
   const pendingFocusRef = useRef<string | null>(null)
   const caretIsInSurface = (node: Element | null = document.activeElement) =>
@@ -224,21 +269,25 @@ function App() {
 
         <div className="mt-8">
           <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
-          <p className="mt-1.5 text-xs text-[#8190a5]">
-            Each box holds one position; the digit under a box is that position's index, so the rightmost box is always the units digit.
-            All sixteen positions remain visible, but places beyond the 16-bit value limit are disabled; binary is the only row with all boxes enabled. On narrow screens, scroll horizontally to keep each box readable.
-            Tab moves only through the rightmost boxes: hexadecimal, decimal, octal, then binary. Type digits there to shift the value left and keep focus in place; Backspace and Delete remove the newest digit. Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
+          <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-[#8190a5]">
+            Each position has a value: <strong>base<sup>position</sup></strong>. Open the breakdown below to see how each non-zero digit contributes to the same total.
           </p>
+          <details className="mt-1 text-xs text-[#63728a]">
+            <summary className="flex min-h-11 cursor-pointer items-center font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]">How to use</summary>
+            <p className="mb-2 max-w-[65ch] leading-relaxed text-[#8190a5]">
+              Type into any row; it becomes the source, and the others convert automatically. Tab moves from each row's units digit to its breakdown toggle beside the base name, then to the next row. Digits shift left as you type; Backspace and Delete remove the newest digit. With a box focused, ↑ and ↓ change the value by one, and Page Up / Page Down change it by a whole place. All sixteen positions stay visible; scroll horizontally on narrow screens. Positions beyond the 16-bit limit are disabled.
+            </p>
+          </details>
 
           <div className="mt-4 overflow-x-auto" role="region" aria-label="Scrollable base conversion table">
-            <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
+            <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 w-[144px] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
-                  <th className="pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
+                  <th className="sticky left-0 z-10 w-[176px] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
+                  <th className="pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Position</th>
                 </tr>
                 <tr>
-                  <th className="sticky left-0 z-10 w-[144px] border-b border-[#e3e9f1] bg-white" aria-hidden="true" />
+                  <th className="sticky left-0 z-10 w-[176px] border-b border-[#e3e9f1] bg-white" aria-hidden="true" />
                   <th className="border-b border-[#e3e9f1] pl-3 pr-3 align-bottom" scope="col">
                     <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${POSITIONS}, minmax(0, 1fr))` }} aria-label="Digit positions, most significant first">
                       {Array.from({ length: POSITIONS }, (_, index) => {
@@ -259,12 +308,20 @@ function App() {
                     key={base.key}
                     base={base}
                     boxes={boxes}
+                    value={value}
                     onDigitKeyDown={onCellKeyDown}
                     onEditDigit={editDigit}
                     registerCell={(cellKey) => (node) => {
                       if (node) cellsRef.current.set(cellKey, node)
                       else cellsRef.current.delete(cellKey)
                     }}
+                    registerBreakdownToggle={(key) => (node) => {
+                      if (node) breakdownTogglesRef.current.set(key, node)
+                      else breakdownTogglesRef.current.delete(key)
+                    }}
+                    onTabFromUnits={focusToggleFromUnits}
+                    onTabFromToggle={focusUnitsFromToggle}
+                    onTabFromBreakdownTerm={focusUnitsFromBreakdownTerm}
                   />
                 ))}
               </tbody>
