@@ -20,10 +20,10 @@ test('arrow and page keys step the value in the active base', async ({ page }) =
 
 test('Tab reaches each breakdown toggle between the units digits in row order', async ({ page }) => {
   const rows = [
-    { name: 'Hexadecimal', radix: 16 },
     { name: 'Decimal', radix: 10 },
-    { name: 'Octal', radix: 8 },
     { name: 'Binary', radix: 2 },
+    { name: 'Octal', radix: 8 },
+    { name: 'Hexadecimal', radix: 16 },
   ]
 
   await digit(page, rows[0].name, rows[0].radix, 0).focus()
@@ -44,9 +44,9 @@ test('Shift+Tab moves backward from units digits to the previous row toggle', as
   await digit(page, 'Binary', 2, 0).focus()
 
   await page.keyboard.press('Shift+Tab')
-  await expect(page.getByRole('button', { name: 'Show Octal place-value breakdown' })).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Show Decimal place-value breakdown' })).toBeFocused()
   await page.keyboard.press('Shift+Tab')
-  await expect(digit(page, 'Octal', 8, 0)).toBeFocused()
+  await expect(digit(page, 'Decimal', 10, 0)).toBeFocused()
 })
 
 test('backspace removes the newest typed digit', async ({ page }) => {
@@ -91,6 +91,52 @@ test('hover links a digit, its power, and its matching breakdown term by positio
   await onesTerm.focus()
   await expect(onesDigit).toHaveAttribute('data-highlighted', 'true')
   await expect(onesLabel).toHaveAttribute('data-highlighted', 'true')
+})
+
+test('octal and hexadecimal hover highlights only their corresponding binary bits', async ({ page }) => {
+  for (const { name, radix, position, bits } of [
+    { name: 'Octal', radix: 8, position: 0, bits: [0, 1, 2] },
+    { name: 'Octal', radix: 8, position: 5, bits: [15] },
+    { name: 'Hexadecimal', radix: 16, position: 2, bits: [8, 9, 10, 11] },
+  ]) {
+    const group = digit(page, name, radix, position)
+    await group.hover()
+    await expect(group).toHaveAttribute('data-highlighted', 'true')
+
+    for (let bit = 0; bit < 16; bit += 1) {
+      const binaryDigit = digit(page, 'Binary', 2, bit)
+      const binaryLabel = binaryDigit.locator('xpath=..').locator('.place-value-label')
+      if (bits.includes(bit)) {
+        await expect(binaryDigit).toHaveAttribute('data-highlighted', 'true')
+        await expect(binaryLabel).toHaveAttribute('data-highlighted', 'true')
+      } else {
+        await expect(binaryDigit).not.toHaveAttribute('data-highlighted', 'true')
+      }
+    }
+
+    await page.mouse.move(0, 0)
+    await expect(digit(page, 'Binary', 2, bits[0])).not.toHaveAttribute('data-highlighted', 'true')
+  }
+})
+
+test('focusing a hexadecimal digit or breakdown term links its binary bits', async ({ page }) => {
+  const hexadecimal = digit(page, 'Hexadecimal', 16, 1)
+  await hexadecimal.focus()
+  await expect(digit(page, 'Binary', 2, 4)).toHaveAttribute('data-highlighted', 'true')
+  await expect(digit(page, 'Binary', 2, 7)).toHaveAttribute('data-highlighted', 'true')
+  await expect(digit(page, 'Binary', 2, 8)).not.toHaveAttribute('data-highlighted', 'true')
+
+  await digit(page, 'Decimal', 10, 0).focus()
+  await expect(digit(page, 'Binary', 2, 4)).not.toHaveAttribute('data-highlighted', 'true')
+
+  await hexadecimal.focus()
+  await page.keyboard.press('A')
+  await page.getByRole('button', { name: 'Show Hexadecimal place-value breakdown' }).click()
+  const term = page.locator('#hexadecimal-place-value-breakdown [data-breakdown-term][data-position="0"]')
+  await term.focus()
+  await expect(digit(page, 'Binary', 2, 0)).toHaveAttribute('data-highlighted', 'true')
+  await expect(digit(page, 'Binary', 2, 3)).toHaveAttribute('data-highlighted', 'true')
+  await expect(digit(page, 'Binary', 2, 4)).not.toHaveAttribute('data-highlighted', 'true')
 })
 
 test('collapsed rows highlight powers without opening, and digit typing still works', async ({ page }) => {

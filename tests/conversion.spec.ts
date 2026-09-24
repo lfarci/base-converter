@@ -1,12 +1,20 @@
 import { expect, test } from '@playwright/test'
+import { bitSpanForDigit } from '../src/conversion'
 import { digit } from './helpers'
+
+test('bit spans clip the highest octal group to the 16-bit limit', () => {
+  expect(bitSpanForDigit(8, 0)).toEqual({ low: 0, high: 2 })
+  expect(bitSpanForDigit(8, 5)).toEqual({ low: 15, high: 15 })
+  expect(bitSpanForDigit(16, 2)).toEqual({ low: 8, high: 11 })
+  expect(bitSpanForDigit(10, 0)).toBeNull()
+})
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./')
 })
 
 test('place-value help stays concise and each row breakdown is collapsed by default', async ({ page }) => {
-  await expect(page.getByRole('columnheader', { name: 'Position', exact: true })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Digits and place values', exact: true })).toBeVisible()
   await expect(page.getByText('Each position has a value: baseposition.', { exact: false })).toBeVisible()
 
   const instructions = page.locator('details').filter({ has: page.getByText('How to use', { exact: true }) })
@@ -24,37 +32,90 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   await expect(page.getByText('Show place-value breakdown', { exact: true })).toHaveCount(0)
 })
 
-test('the converter stays uncluttered with only powers beneath the digit boxes', async ({ page }) => {
+test('each base shows only its available places and bit groups', async ({ page }) => {
   const rows = [
-    { name: 'Hexadecimal', radix: 16 },
-    { name: 'Decimal', radix: 10 },
-    { name: 'Octal', radix: 8 },
-    { name: 'Binary', radix: 2 },
+    { name: 'Decimal', radix: 10, positions: 5 },
+    { name: 'Binary', radix: 2, positions: 16 },
+    { name: 'Octal', radix: 8, positions: 6 },
+    { name: 'Hexadecimal', radix: 16, positions: 4 },
   ]
 
-  for (const { name, radix } of rows) {
+  for (const { name, radix, positions } of rows) {
     const digitRow = page.getByRole('row', { name: new RegExp(`^${name}`) })
     const powers = digitRow.locator('.place-value-label')
-    await expect(powers).toHaveCount(16)
+    await expect(powers).toHaveCount(positions)
+    await expect(digitRow.locator('[data-digit="true"]:disabled')).toHaveCount(0)
 
-    for (let index = 0; index < 16; index += 1) {
-      const position = 15 - index
-      const digit = digitRow.getByRole('textbox', { name: `${name} (base ${radix}) digit at position ${position}`, exact: true })
+    for (let index = 0; index < positions; index += 1) {
+      const position = positions - 1 - index
+      const input = digit(page, name, radix, position)
       const label = powers.nth(index)
-      await expect(label.locator(':scope > span')).toHaveCount(1)
-      await expect(label.locator(':scope > span')).toHaveText(`${radix}${position}`)
+      await expect(label.locator(':scope > span').first()).toHaveText(`${radix}${position}`)
       await expect(label.locator('sup')).toHaveText(String(position))
-      await expect(digit).toHaveValue('0')
+      await expect(input).toHaveValue('0')
+      if (radix === 8 || radix === 16) {
+        await expect(label.locator(':scope > span')).toHaveCount(2)
+        await expect(label.locator(':scope > span').nth(1)).toContainText('bit')
+      } else {
+        await expect(label.locator(':scope > span')).toHaveCount(1)
+      }
     }
   }
 
-  const hexadecimalRow = page.getByRole('row', { name: /^Hexadecimal/ })
-  await expect(hexadecimalRow.getByRole('textbox', { name: 'Hexadecimal (base 16) digit at position 15' })).toBeDisabled()
   await page.getByRole('button', { name: 'Show Hexadecimal place-value breakdown' }).click()
   const hexadecimalBreakdown = page.getByRole('region', { name: 'Hexadecimal place-value breakdown', exact: true })
   await expect(hexadecimalBreakdown).toContainText('0 = 0')
   await expect(page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Hide Hexadecimal place-value breakdown' })).toHaveAttribute('aria-expanded', 'true')
+})
+
+test('digit rows share aligned edges and bit groups without overflowing', async ({ page }) => {
+  for (const viewportWidth of [390, 1280]) {
+    await page.setViewportSize({ width: viewportWidth, height: 844 })
+    const rows = [
+      { name: 'Decimal', radix: 10, positions: 5 },
+      { name: 'Binary', radix: 2, positions: 16 },
+      { name: 'Octal', radix: 8, positions: 6 },
+      { name: 'Hexadecimal', radix: 16, positions: 4 },
+    ]
+    const measurements = []
+
+    for (const { name, radix, positions } of rows) {
+      const row = page.getByRole('row', { name: new RegExp(`^${name}`) })
+      const grid = await row.locator('ol').boundingBox()
+      const first = await digit(page, name, radix, positions - 1).boundingBox()
+      const last = await digit(page, name, radix, 0).boundingBox()
+      expect(grid).not.toBeNull()
+      expect(first).not.toBeNull()
+      expect(last).not.toBeNull()
+      measurements.push({ name, grid: grid!, first: first!, last: last! })
+      expect(Math.abs(first!.x - grid!.x)).toBeLessThan(1)
+      expect(Math.abs(last!.x + last!.width - grid!.x - grid!.width)).toBeLessThan(1)
+    }
+
+    const binary = measurements[1]
+    for (const row of measurements) {
+      expect(Math.abs(row.grid.x - binary.grid.x)).toBeLessThan(1)
+      expect(Math.abs(row.grid.width - binary.grid.width)).toBeLessThan(1)
+      expect(Math.abs(row.first.height - binary.first.height)).toBeLessThan(1)
+    }
+
+    for (const { name, radix, positions, bits } of [
+      { name: 'Octal', radix: 8, positions: 6, bits: 3 },
+      { name: 'Hexadecimal', radix: 16, positions: 4, bits: 4 },
+    ]) {
+      for (let position = 0; position < positions; position += 1) {
+        const group = await digit(page, name, radix, position).boundingBox()
+        const lowBit = await digit(page, 'Binary', 2, position * bits).boundingBox()
+        const highBit = await digit(page, 'Binary', 2, Math.min(15, position * bits + bits - 1)).boundingBox()
+        expect(group).not.toBeNull()
+        expect(lowBit).not.toBeNull()
+        expect(highBit).not.toBeNull()
+        expect(Math.abs(group!.x - highBit!.x)).toBeLessThan(1)
+        expect(Math.abs(group!.x + group!.width - lowBit!.x - lowBit!.width)).toBeLessThan(1)
+      }
+    }
+  }
 })
 
 test('place-value breakdown shows non-zero digit terms and the decimal total', async ({ page }) => {

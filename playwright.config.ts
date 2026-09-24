@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:5173/base-converter/',
+    baseURL: 'http://127.0.0.1:5198/base-converter/',
     trace: 'retain-on-failure',
   },
   projects: [
@@ -19,9 +19,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1',
-    url: 'http://127.0.0.1:5173/base-converter/',
-    reuseExistingServer: !process.env.CI,
+    command: 'npm run dev -- --host 127.0.0.1 --port 5198 --strictPort',
+    url: 'http://127.0.0.1:5198/base-converter/',
+    reuseExistingServer: false,
     timeout: 30_000,
   },
 })
