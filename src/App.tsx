@@ -185,7 +185,7 @@ function App() {
     || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
   const help = parsed.status === 'empty'
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
-      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use the −/+ buttons to step the value by one.`
+      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead. Use ↑ and ↓ on any digit to step the value by one.`
 
   // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
   // the low places with leading zeros above them. A row with no value at all renders
@@ -271,7 +271,7 @@ function App() {
   // page's own actions (stepping) ask for the caret themselves once they have finished.
   useEffect(() => {
     const aimedAtAControl = (target: EventTarget | null) =>
-      target instanceof Element && target.closest('input, button, select, textarea, label, a[href]') !== null
+      target instanceof Element && target.closest('input, select, textarea, label, a[href]') !== null
     const isOtherTextEntry = (node: Element | null) =>
       node instanceof HTMLTextAreaElement
       || (node instanceof HTMLInputElement
@@ -319,11 +319,6 @@ function App() {
     }
     setRejection('')
     setSourceDigits(target.toString(sourceBase.radix))
-  }
-
-  const stepFromControl = (delta: bigint) => {
-    stepValue(delta)
-    pendingFocusRef.current = 'last'
   }
 
   // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
@@ -415,31 +410,6 @@ function App() {
                   </th>
                   <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
                     <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-end justify-end gap-2">
-                      {isSource && (
-                        <span className="mb-6 flex shrink-0 items-center gap-1" role="group" aria-label={`Step the ${base.name} value`}>
-                          <button
-                            className="grid size-7 shrink-0 place-items-center rounded-md border border-[#dbe3ee] bg-white font-mono text-sm font-bold leading-none text-[#344761] transition hover:border-[#2458d3] hover:text-[#2458d3]"
-                            type="button"
-                            aria-label={`Decrease the ${base.name} value by one`}
-                            title="Step down by one (ArrowDown)"
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => stepFromControl(-1n)}
-                          >
-                            {'\u2212'}
-                          </button>
-                          <button
-                            className="grid size-7 shrink-0 place-items-center rounded-md border border-[#dbe3ee] bg-white font-mono text-sm font-bold leading-none text-[#344761] transition hover:border-[#2458d3] hover:text-[#2458d3]"
-                            type="button"
-                            aria-label={`Increase the ${base.name} value by one`}
-                            title="Step up by one (ArrowUp)"
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => stepFromControl(1n)}
-                          >
-                            +
-                          </button>
-                        </span>
-                      )}
                       <ol className="m-0 flex list-none justify-end gap-px p-0" aria-label={`${base.name} digits, most significant first`}>
                         {boxes.map((digit, index) => {
                           const position = boxes.length - 1 - index
@@ -471,7 +441,6 @@ function App() {
                           )
                         })}
                       </ol>
-                      </div>
                       <GroupingUnderbox grouping={grouping} />
                     </div>
                   </td>
