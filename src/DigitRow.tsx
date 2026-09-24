@@ -4,16 +4,12 @@ import { POSITIONS, VALUE_LIMIT, type Base } from './conversion'
 type DigitRowProps = {
   base: Base
   boxes: string[]
-  isSource: boolean
   onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => void
   onEditDigit: (base: Base, boxes: string[], index: number, raw: string) => void
   registerCell: (key: string) => RefCallback<HTMLInputElement>
-  onStep: (delta: bigint) => void
 }
 
-const buttonClass = 'grid size-7 shrink-0 place-items-center rounded-md border border-[#dbe3ee] bg-white font-mono text-sm font-bold leading-none text-[#344761] transition hover:border-[#2458d3] hover:text-[#2458d3]'
-
-export function DigitRow({ base, boxes, isSource, onDigitKeyDown, onEditDigit, registerCell, onStep }: DigitRowProps) {
+export function DigitRow({ base, boxes, onDigitKeyDown, onEditDigit, registerCell }: DigitRowProps) {
   const maxDigits = VALUE_LIMIT.toString(base.radix).length
 
   return (
@@ -24,32 +20,6 @@ export function DigitRow({ base, boxes, isSource, onDigitKeyDown, onEditDigit, r
           <span className="text-[13px] font-bold text-[#172b4d]">{base.name}</span>
           <span className="font-mono text-[11px] text-[#8190a5]">{base.radix}</span>
         </span>
-        {isSource && (
-          <span className="mt-2 flex items-center gap-1" role="group" aria-label={`Step the ${base.name} value`}>
-            <button
-              className={buttonClass}
-              type="button"
-              aria-label={`Decrease the ${base.name} value by one`}
-              title="Step down by one (ArrowDown)"
-              onMouseDown={(event) => event.preventDefault()}
-              tabIndex={-1}
-              onClick={() => onStep(-1n)}
-            >
-              {'\u2212'}
-            </button>
-            <button
-              className={buttonClass}
-              type="button"
-              aria-label={`Increase the ${base.name} value by one`}
-              title="Step up by one (ArrowUp)"
-              onMouseDown={(event) => event.preventDefault()}
-              tabIndex={-1}
-              onClick={() => onStep(1n)}
-            >
-              +
-            </button>
-          </span>
-        )}
       </th>
       <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
         <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>

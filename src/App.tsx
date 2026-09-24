@@ -29,7 +29,7 @@ function App() {
     || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
   const help = parsed.status === 'empty'
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
-      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use the −/+ buttons to step the value by one.`
+      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use Arrow Up/Down to step the value by one.`
 
   // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
   // the low places with leading zeros above them. An empty source renders blank;
@@ -114,11 +114,6 @@ function App() {
     setRejection('')
     setSourceDigits(target.toString(sourceBase.radix))
     setHasStartedDigitEntry(target !== 0n)
-  }
-
-  const stepFromControl = (delta: bigint) => {
-    stepValue(delta)
-    pendingFocusRef.current = 'rightmost'
   }
 
   // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
@@ -234,19 +229,17 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {displayed.map(({ base, isSource, boxes }) => (
+                {displayed.map(({ base, boxes }) => (
                   <DigitRow
                     key={base.key}
                     base={base}
                     boxes={boxes}
-                    isSource={isSource}
                     onDigitKeyDown={onCellKeyDown}
                     onEditDigit={editDigit}
                     registerCell={(cellKey) => (node) => {
                       if (node) cellsRef.current.set(cellKey, node)
                       else cellsRef.current.delete(cellKey)
                     }}
-                    onStep={stepFromControl}
                   />
                 ))}
               </tbody>
