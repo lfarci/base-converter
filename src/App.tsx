@@ -276,7 +276,7 @@ function App() {
         <div className="mt-8">
           <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
           <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-[#8190a5]">
-            Each position has a value: <strong>base<sup>position</sup></strong>. Open the breakdown below to see how each non-zero digit contributes to the same total.
+            Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
           </p>
           <details className="mt-1 text-xs text-[#63728a]">
             <summary className="flex min-h-11 cursor-pointer items-center font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]">How to use</summary>
