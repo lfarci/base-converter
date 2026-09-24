@@ -3,7 +3,12 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 const MIN_RADIX = 2
 const MAX_RADIX = 36
 const DIGIT_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-const SAFE_LIMIT = BigInt(Number.MAX_SAFE_INTEGER)
+
+// Every row is the same fixed grid of places. Sixteen binary positions hold up to
+// 65535, and binary is the row a value needs the most places in, so that is the cap:
+// anything that fits the grid fits every other row too.
+const POSITIONS = 16
+const VALUE_LIMIT = BigInt(2) ** BigInt(POSITIONS) - 1n
 
 // Digit geometry is one fixed pixel size, never a viewport-relative clamp: a row's
 // boxes must be the same size on a phone as on a wide desktop, because the width
@@ -49,9 +54,9 @@ function digitValue(char: string) {
   return DIGIT_ALPHABET.indexOf(char.toUpperCase())
 }
 
-// The one accuracy ceiling the page reports. Rows always show exactly the
-// positions the value needs, so there is no width-specific wording to choose.
-const LIMIT_MESSAGE = 'That number is too large to convert accurately. Try a smaller whole number.'
+// The one ceiling the page reports: a value that needs more places than the grid
+// has. Typing and stepping both raise this same message.
+const LIMIT_MESSAGE = `That number is too large. ${POSITIONS} positions hold at most ${VALUE_LIMIT}.`
 
 // PageUp/PageDown step by one place: ten in bases up to 10, sixteen above.
 function pageStep(radix: number) {
@@ -67,9 +72,10 @@ type ParsedDigits =
   | { status: 'too-large'; value: bigint }
   | { status: 'ok'; value: bigint }
 
-// `limit` is the largest value the caller accepts; the component uses the
-// safe-integer ceiling, and the parameter is the seam a wider model would use.
-function parseDigits(text: string, radix: number, limit: bigint = SAFE_LIMIT): ParsedDigits {
+// `limit` is the largest value the caller accepts; it defaults to the grid's cap so
+// the app has exactly one ceiling, and stays a parameter because that is the seam a
+// wider model would widen.
+function parseDigits(text: string, radix: number, limit: bigint = VALUE_LIMIT): ParsedDigits {
   if (text.length === 0) return { status: 'empty' }
 
   let value = 0n
@@ -86,6 +92,15 @@ function parseDigits(text: string, radix: number, limit: bigint = SAFE_LIMIT): P
 
 function digitsForValue(value: bigint, radix: number) {
   return Array.from(value.toString(radix).toUpperCase())
+}
+
+// Every row is a fixed grid of POSITIONS places: the value's own digits sit in the
+// low places and the unused high places are filled with leading zeros. Keeping the
+// array at a constant length is what lets the caret stay on the same place while
+// typing — the places never shift underneath it.
+function padToPositions(digits: string[]) {
+  const zeros = Array.from({ length: Math.max(POSITIONS - digits.length, 0) }, () => '0')
+  return [...zeros, ...digits].slice(-POSITIONS)
 }
 
 function pickTypedChar(raw: string, previous: string) {
@@ -188,18 +203,26 @@ function App() {
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
       : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use the −/+ buttons to step the value by one.`
 
+  // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
+  // the low places with leading zeros above them. A row with no value at all renders
+  // the grid empty rather than a dash or a field of zeros, so the columns keep their
+  // shape without claiming the value is zero.
   const displayed = rows.map((base) => {
     const isSource = base.key === sourceKey
-    const digits = isSource
-      ? Array.from(sourceDigits)
-      : value === null ? null : digitsForValue(value, base.radix)
-    return { base, isSource, boxes: digits === null ? null : digits.length > 0 ? digits : [''] }
+    const digits = isSource ? Array.from(sourceDigits) : value === null ? [] : digitsForValue(value, base.radix)
+    const hasValue = isSource ? sourceDigits.length > 0 : value !== null
+    return {
+      base,
+      isSource,
+      boxes: hasValue ? padToPositions(digits) : Array.from({ length: POSITIONS }, () => ''),
+    }
   })
 
   // Underboxes: each paired base draws its own grouping, derived from the binary
   // row's own places, so 3-bit groups sit in the octal row and 4-bit groups in the
-  // hex row. Removing a paired row removes its grouping, and an empty or rejected
-  // entry groups nothing.
+  // hex row. The binary row is a full POSITIONS places, so at rest that is six octal
+  // groups (the leading one short) and four hex groups. Removing a paired row removes
+  // its grouping, and an empty or rejected entry groups nothing.
   const binaryBits = (displayed.find((row) => row.base.radix === 2)?.boxes ?? []).filter((digit) => digit.length > 0)
   const withGroupings = displayed.map((row) => {
     const size = bitsPerDigit(row.base.radix)
@@ -208,7 +231,7 @@ function App() {
       : { base: row.base, size, groups: groupBits(binaryBits, size, row.base.radix) }
     return { ...row, grouping }
   })
-  const digitCounts = displayed.map(({ boxes }) => boxes?.length ?? 0).join('-')
+  const digitCounts = displayed.map(({ boxes }) => boxes.length).join('-')
   const scrollerRef = useRef<HTMLDivElement>(null)
 
   // Every digit box registers itself here by base and place, so the editable
@@ -221,11 +244,16 @@ function App() {
   const caretIsInSurface = (node: Element | null = document.activeElement) =>
     node instanceof HTMLInputElement && node.dataset.digit === 'true'
 
-  // The source row is the editable surface. Its boxes always render — even when the
-  // value is out of range — so there is always somewhere to put the caret.
+  // The source row is the editable surface, and now that every row is padded it is a
+  // fixed POSITIONS grid too — the places never move, so the caret can stay where it
+  // is put. 'first' aims at the leading digit rather than the top of the grid, so
+  // typing on load writes into the number instead of filling the empty high places.
   const focusEditable = (where: 'first' | 'last' = 'first') => {
-    const places = Math.max(Array.from(sourceDigits).length, 1)
-    cellsRef.current.get(`${sourceBase.key}:${where === 'last' ? places - 1 : 0}`)?.focus()
+    const places = Math.min(Array.from(sourceDigits).length, POSITIONS)
+    const index = where === 'last'
+      ? POSITIONS - 1
+      : Math.min(Math.max(POSITIONS - places, 0), POSITIONS - 1)
+    cellsRef.current.get(`${sourceBase.key}:${index}`)?.focus()
   }
 
   const focusEditableRef = useRef(focusEditable)
@@ -302,7 +330,7 @@ function App() {
       setSourceDigits('0')
       return
     }
-    if (target > SAFE_LIMIT) {
+    if (target > VALUE_LIMIT) {
       setRejection(LIMIT_MESSAGE)
       return
     }
@@ -329,25 +357,29 @@ function App() {
   const editDigit = (base: Base, boxes: string[], index: number, raw: string) => {
     // Layer 4: this array stays flat and most-significant-first; grouping is a
     // render-time concern.
+    // The row is a fixed grid of places, so editing writes into one place instead of
+    // adding or removing one: clearing a box blanks that place to zero rather than
+    // shortening the number, which is what keeps the places (and the caret) still.
     const next = boxes.slice()
+    const char = raw.length === 0 ? '0' : pickTypedChar(raw, boxes[index])
+    const digit = digitValue(char)
+    if (digit < 0 || digit >= base.radix) {
+      setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
+      return
+    }
+    next[index] = char
 
-    if (raw.length === 0) {
-      next.splice(index, 1)
-    } else {
-      const char = pickTypedChar(raw, boxes[index])
-      const digit = digitValue(char)
-      if (digit < 0 || digit >= base.radix) {
-        setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
-        return
-      }
-      next[index] = char
+    // Re-read the grid as a whole so the value keeps its one ceiling and the leading
+    // zeros the grid is showing never reach the number itself.
+    const typed = parseDigits(next.join(''), base.radix)
+    if (typed.status === 'too-large') {
+      setRejection(LIMIT_MESSAGE)
+      return
     }
 
     setRejection('')
     setSourceKey(base.key)
-    // Editing the most significant position grows the row by one; digits typed
-    // elsewhere shift the interior of the value instead of changing its length.
-    setSourceDigits(next.join(''))
+    setSourceDigits(typed.status === 'ok' ? digitsForValue(typed.value, base.radix).join('') : '')
   }
 
   const removeBase = (base: Base) => {
@@ -403,6 +435,7 @@ function App() {
           <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
           <p className="mt-1.5 text-xs text-[#8190a5]">
             Each box holds one position; the digit under a box is that position's index, so the rightmost box is always the units digit.
+            Every row shows the same sixteen positions, with leading zeros filling the ones the value does not use.
             Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
           </p>
 
@@ -438,8 +471,7 @@ function App() {
                     </span>
                   </th>
                   <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
-                    {boxes ? (
-                      <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2">
                       <div className="flex items-end justify-end gap-2">
                       {isSource && (
                         <span className="mb-6 flex shrink-0 items-center gap-1" role="group" aria-label={`Step the ${base.name} value`}>
@@ -498,10 +530,7 @@ function App() {
                       </ol>
                       </div>
                       <GroupingUnderbox grouping={grouping} />
-                      </div>
-                    ) : (
-                      <span className="block text-right font-mono text-xl text-[#a3b0c2]">—</span>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -544,7 +573,7 @@ function App() {
         </div>
 
         <p className="mt-10 border-t border-[#e7edf5] pt-5 text-xs leading-relaxed text-[#63728a]">
-          The number itself never changes — only the symbols that hold it, and how many places they need.
+          The number itself never changes — only the symbols that hold it. Every row shows the same sixteen positions, and the value sits in the low ones.
         </p>
       </section>
     </main>
