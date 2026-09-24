@@ -1,11 +1,9 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { DigitRow } from './DigitRow'
 import {
-  bitsPerDigit,
   digitRange,
   digitValue,
   digitsForValue,
-  groupBits,
   LIMIT_MESSAGE,
   pageStep,
   padToPositions,
@@ -19,7 +17,8 @@ import {
 
 function App() {
   const [sourceKey, setSourceKey] = useState('decimal')
-  const [sourceDigits, setSourceDigits] = useState('42')
+  const [sourceDigits, setSourceDigits] = useState('0')
+  const [hasStartedDigitEntry, setHasStartedDigitEntry] = useState(false)
   const [rejection, setRejection] = useState('')
 
   const sourceBase = rows.find((base) => base.key === sourceKey) ?? rows[0]
@@ -33,9 +32,8 @@ function App() {
       : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use the −/+ buttons to step the value by one.`
 
   // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
-  // the low places with leading zeros above them. A row with no value at all renders
-  // the grid empty rather than a dash or a field of zeros, so the columns keep their
-  // shape without claiming the value is zero.
+  // the low places with leading zeros above them. An empty source renders blank;
+  // entering or deleting down to zero keeps zero visible in every row.
   const displayed = rows.map((base) => {
     const isSource = base.key === sourceKey
     const digits = isSource ? Array.from(sourceDigits) : value === null ? [] : digitsForValue(value, base.radix)
@@ -47,39 +45,18 @@ function App() {
     }
   })
 
-  // Underboxes: each paired base draws its own grouping, derived from the binary
-  // row's own places, so 3-bit groups sit in the octal row and 4-bit groups in the
-  // hex row. The binary row is a full POSITIONS places, so at rest that is six octal
-  // groups (the leading one short) and four hex groups. Removing a paired row removes
-  // its grouping, and an empty or rejected entry groups nothing.
-  const binaryBits = (displayed.find((row) => row.base.radix === 2)?.boxes ?? []).filter((digit) => digit.length > 0)
-  const withGroupings = displayed.map((row) => {
-    const size = bitsPerDigit(row.base.radix)
-    const grouping = size === null || value === null || binaryBits.length === 0
-      ? null
-      : { base: row.base, size, groups: groupBits(binaryBits, size, row.base.radix) }
-    return { ...row, grouping }
-  })
-
   // Every digit box registers itself here by base and place, so the editable
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
-  // Restore focus after commits rather than inside the event that caused them. The
-  // initial 'first' target makes typing work with no click.
-  const pendingFocusRef = useRef<'first' | 'last' | null>('first')
+  // Restore focus after edits commit so the caret stays anchored through React rerenders.
+  const pendingFocusRef = useRef<string | null>(null)
   const caretIsInSurface = (node: Element | null = document.activeElement) =>
     node instanceof HTMLInputElement && node.dataset.digit === 'true'
 
-  // The source row is the editable surface, and now that every row is padded it is a
-  // fixed POSITIONS grid too — the places never move, so the caret can stay where it
-  // is put. 'first' aims at the leading digit rather than the top of the grid, so
-  // typing on load writes into the number instead of filling the empty high places.
-  const focusEditable = (where: 'first' | 'last' = 'first') => {
-    const places = Math.min(Array.from(sourceDigits).length, POSITIONS)
-    const index = where === 'last'
-      ? POSITIONS - 1
-      : Math.min(Math.max(POSITIONS - places, 0), POSITIONS - 1)
-    cellsRef.current.get(`${sourceBase.key}:${index}`)?.focus()
+  // Focus the units place on the active row. Other boxes remain reachable by mouse
+  // or by advancing through digits, but do not add fifteen extra Tab stops per row.
+  const focusEditable = () => {
+    cellsRef.current.get(`${sourceBase.key}:${POSITIONS - 1}`)?.focus()
   }
 
   const focusEditableRef = useRef(focusEditable)
@@ -90,16 +67,8 @@ function App() {
   useEffect(() => {
     const where = pendingFocusRef.current
     pendingFocusRef.current = null
-    if (where) {
-      focusEditableRef.current(where)
-      return
-    }
-    // A commit can take a place away (a step down, or typing into a derived row that
-    // then becomes the source) and drop the caret onto the page. Only that lost case
-    // is recovered: a control the reader aimed at keeps the focus.
-    if (document.activeElement === null || document.activeElement === document.body) {
-      focusEditableRef.current('last')
-    }
+    if (where === 'rightmost') focusEditableRef.current()
+    else if (where) cellsRef.current.get(where)?.focus()
   })
 
 
@@ -110,31 +79,17 @@ function App() {
   useEffect(() => {
     const aimedAtAControl = (target: EventTarget | null) =>
       target instanceof Element && target.closest('input, button, select, textarea, label, a[href]') !== null
-    const isOtherTextEntry = (node: Element | null) =>
-      node instanceof HTMLTextAreaElement
-      || (node instanceof HTMLInputElement
-        && ['text', 'number', 'search', 'tel', 'url', 'email', 'password'].includes(node.type))
-
     const returnToSurface = (event: Event) => {
+      if (event.type === 'keydown' && (event as globalThis.KeyboardEvent).key === 'Tab') return
       if (aimedAtAControl(event.target) || caretIsInSurface()) return
-      focusEditableRef.current('first')
-    }
-    // Coming back to the tab lands in the field again, unless the caret was left in
-    // another text field on purpose.
-    const onWindowFocus = () => {
-      if (isOtherTextEntry(document.activeElement)) return
-      focusEditableRef.current('first')
+      focusEditableRef.current()
     }
 
     document.addEventListener('pointerup', returnToSurface)
     document.addEventListener('keydown', returnToSurface)
-    document.addEventListener('visibilitychange', onWindowFocus)
-    window.addEventListener('focus', onWindowFocus)
     return () => {
       document.removeEventListener('pointerup', returnToSurface)
       document.removeEventListener('keydown', returnToSurface)
-      document.removeEventListener('visibilitychange', onWindowFocus)
-      window.removeEventListener('focus', onWindowFocus)
     }
   }, [])
 
@@ -149,6 +104,7 @@ function App() {
     if (target < 0n) {
       setRejection('')
       setSourceDigits('0')
+      setHasStartedDigitEntry(false)
       return
     }
     if (target > VALUE_LIMIT) {
@@ -157,16 +113,38 @@ function App() {
     }
     setRejection('')
     setSourceDigits(target.toString(sourceBase.radix))
+    setHasStartedDigitEntry(target !== 0n)
   }
 
   const stepFromControl = (delta: bigint) => {
     stepValue(delta)
-    pendingFocusRef.current = 'last'
+    pendingFocusRef.current = 'rightmost'
   }
 
   // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
   // read as tens and units, sixteen from base 11 up where a place is a nibble wider.
-  const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => {
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault()
+      const current = parseDigits(boxes.join(''), base.radix)
+      if (current.status === 'invalid' || current.status === 'too-large') return
+
+      const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
+      const nextDigits = hasStartedDigitEntry && base.key === sourceKey
+        ? sourceDigits.slice(1)
+        : digitsForValue(nextValue, base.radix).join('')
+      const nextDigitsValue = parseDigits(nextDigits, base.radix)
+      const resolvedDigits = nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n
+        ? nextDigits
+        : '0'
+      setRejection('')
+      setSourceKey(base.key)
+      setSourceDigits(resolvedDigits)
+      setHasStartedDigitEntry(nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n)
+      pendingFocusRef.current = 'rightmost'
+      return
+    }
+
     const up = event.key === 'ArrowUp' || event.key === 'PageUp'
     const down = event.key === 'ArrowDown' || event.key === 'PageDown'
     if (!up && !down) return
@@ -175,22 +153,40 @@ function App() {
     stepValue(up ? magnitude : -magnitude)
   }
 
-  const editDigit = (base: Base, boxes: string[], index: number, raw: string) => {
-    // Keep editing in the flat, most-significant-first digit array; grouping is a
-    // render-time concern. The grid has fixed places, so editing writes into one place instead of
-    // adding or removing one: clearing a box blanks that place to zero rather than
-    // shortening the number, which is what keeps the places (and the caret) still.
-    const next = boxes.slice()
-    const char = raw.length === 0 ? '0' : pickTypedChar(raw, boxes[index])
-    const digit = digitValue(char)
-    if (digit < 0 || digit >= base.radix) {
-      setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
+  const editDigit = (base: Base, boxes: string[], index: number, raw: string, focusKey?: string) => {
+    if (raw.length > 0) {
+      const char = pickTypedChar(raw, boxes[index])
+      const digit = digitValue(char)
+      if (digit < 0 || digit >= base.radix) {
+        setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
+        return
+      }
+
+      const current = parseDigits(boxes.join(''), base.radix)
+      const currentDigits = !hasStartedDigitEntry
+        ? ''
+        : base.key === sourceKey
+          ? sourceDigits
+          : current.status === 'ok'
+            ? digitsForValue(current.value, base.radix).join('')
+            : ''
+      const nextDigits = `${char}${currentDigits}`
+      const nextValue = parseDigits(nextDigits, base.radix)
+      if (nextDigits.length > POSITIONS || nextValue.status === 'too-large') {
+        setRejection(LIMIT_MESSAGE)
+        return
+      }
+
+      setRejection('')
+      setSourceKey(base.key)
+      setSourceDigits(nextDigits)
+      setHasStartedDigitEntry(true)
+      pendingFocusRef.current = 'rightmost'
       return
     }
-    next[index] = char
 
-    // Re-read the grid as a whole so the value keeps its one ceiling and the leading
-    // zeros the grid is showing never reach the number itself.
+    const next = boxes.slice()
+    next[index] = '0'
     const typed = parseDigits(next.join(''), base.radix)
     if (typed.status === 'too-large') {
       setRejection(LIMIT_MESSAGE)
@@ -200,12 +196,16 @@ function App() {
     setRejection('')
     setSourceKey(base.key)
     setSourceDigits(typed.status === 'ok' ? digitsForValue(typed.value, base.radix).join('') : '')
+    setHasStartedDigitEntry(typed.status === 'ok' && typed.value !== 0n)
+    const nextFocusKey = focusKey ?? `${base.key}:${Math.max(index - 1, 0)}`
+    cellsRef.current.get(nextFocusKey)?.focus()
+    pendingFocusRef.current = nextFocusKey
   }
 
   return (
     <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6 lg:max-w-[920px]" id="top">
       <header className="flex items-baseline justify-between py-6 sm:py-8">
-        <a className="text-[15px] font-bold tracking-tight text-[#172b4d] no-underline" href="#top">basewise</a>
+        <a className="text-[15px] font-bold tracking-tight text-[#172b4d] no-underline" href="#top" tabIndex={-1}>basewise</a>
         <span className="text-[11px] text-[#63728a]">positional notation, plainly</span>
       </header>
 
@@ -221,11 +221,11 @@ function App() {
           <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
           <p className="mt-1.5 text-xs text-[#8190a5]">
             Each box holds one position; the digit under a box is that position's index, so the rightmost box is always the units digit.
-            The sixteen digit boxes stretch across the available row width; leading zeros fill positions the value does not use. On narrow screens, scroll horizontally to keep each box readable.
-            Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
+            All sixteen positions remain visible, but places beyond the 16-bit value limit are disabled; binary is the only row with all boxes enabled. On narrow screens, scroll horizontally to keep each box readable.
+            Tab moves only through the rightmost boxes: hexadecimal, decimal, octal, then binary. Type digits there to shift the value left and keep focus in place; Backspace and Delete remove the newest digit. Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
           </p>
 
-          <div className="mt-4 overflow-x-auto" role="region" aria-label="Scrollable base conversion table" tabIndex={0}>
+          <div className="mt-4 overflow-x-auto" role="region" aria-label="Scrollable base conversion table">
             <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
               <thead>
                 <tr>
@@ -234,13 +234,12 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {withGroupings.map(({ base, isSource, boxes, grouping }) => (
+                {displayed.map(({ base, isSource, boxes }) => (
                   <DigitRow
                     key={base.key}
                     base={base}
                     boxes={boxes}
                     isSource={isSource}
-                    grouping={grouping}
                     onDigitKeyDown={onCellKeyDown}
                     onEditDigit={editDigit}
                     registerCell={(cellKey) => (node) => {
