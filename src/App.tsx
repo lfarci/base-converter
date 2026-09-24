@@ -234,8 +234,23 @@ function App() {
             <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 w-[104px] border-b border-[#e3e9f1] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
-                  <th className="border-b border-[#e3e9f1] pb-2 pl-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
+                  <th className="sticky left-0 z-10 w-[144px] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
+                  <th className="pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
+                </tr>
+                <tr>
+                  <th className="sticky left-0 z-10 w-[144px] border-b border-[#e3e9f1] bg-white" aria-hidden="true" />
+                  <th className="border-b border-[#e3e9f1] pl-3 pr-3 align-bottom" scope="col">
+                    <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${POSITIONS}, minmax(0, 1fr))` }} aria-label="Digit positions, most significant first">
+                      {Array.from({ length: POSITIONS }, (_, index) => {
+                        const position = POSITIONS - 1 - index
+                        return (
+                          <li className="m-0 pb-1 text-center font-mono text-[9px] font-normal leading-none text-[#a3b0c2]" key={position}>
+                            {position}
+                          </li>
+                        )
+                      })}
+                    </ol>
+                  </th>
                 </tr>
               </thead>
               <tbody>

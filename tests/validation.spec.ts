@@ -26,3 +26,7 @@ test('does not step beyond the 16-bit limit', async ({ page }) => {
   await expect(decimalUnits).toHaveValue('5')
   await expect(digit(page, 'Decimal', 10, 4)).toHaveValue('6')
 })
+
+test('shows one shared position header for all rows', async ({ page }) => {
+  await expect(page.getByRole('list', { name: 'Digit positions, most significant first' })).toHaveCount(1)
+})

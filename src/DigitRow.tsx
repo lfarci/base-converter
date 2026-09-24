@@ -21,14 +21,14 @@ export function DigitRow({ base, boxes, onDigitKeyDown, onEditDigit, registerCel
           <span className="font-mono text-[11px] text-[#8190a5]">{base.radix}</span>
         </span>
       </th>
-      <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
+      <td className="border-b border-[#eef2f8] py-3 pl-3 pr-3 align-middle">
         <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
             {boxes.map((digit, index) => {
               const position = boxes.length - 1 - index
               const disabled = position >= maxDigits
               const cellKey = `${base.key}:${index}`
               return (
-                <li className="m-0 flex min-w-0 flex-col items-center" key={cellKey}>
+                <li className="m-0 flex min-w-0 items-center" key={cellKey}>
                   <input
                     className="aspect-square w-full min-w-0 rounded-[4px] border border-[#dbe3ee] bg-white p-0 text-center font-mono text-[clamp(9px,2.5vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition hover:border-[#a9bad2] focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25 disabled:cursor-not-allowed disabled:border-[#e3e9f1] disabled:bg-[#f1f4f8] disabled:text-[#a3b0c2]"
                     type="text"
@@ -46,9 +46,6 @@ export function DigitRow({ base, boxes, onDigitKeyDown, onEditDigit, registerCel
                     onChange={(event) => onEditDigit(base, boxes, index, event.target.value)}
                     aria-label={`${base.name} (base ${base.radix}) digit at position ${position}`}
                   />
-                  <span className="w-full pt-1 text-center font-mono text-[9px] leading-none text-[#a3b0c2]" aria-hidden="true">
-                    {position}
-                  </span>
                 </li>
               )
             })}
