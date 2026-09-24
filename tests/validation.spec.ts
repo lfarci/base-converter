@@ -27,6 +27,30 @@ test('does not step beyond the 16-bit limit', async ({ page }) => {
   await expect(digit(page, 'Decimal', 10, 4)).toHaveValue('6')
 })
 
-test('shows one shared position header for all rows', async ({ page }) => {
-  await expect(page.getByRole('list', { name: 'Digit positions, most significant first' })).toHaveCount(1)
+test('shows only valid digit places and labels octal and hexadecimal bit groups', async ({ page }) => {
+  const digitCounts = [
+    { base: 'Decimal', radix: 10, count: 5 },
+    { base: 'Binary', radix: 2, count: 16 },
+    { base: 'Octal', radix: 8, count: 6 },
+    { base: 'Hexadecimal', radix: 16, count: 4 },
+  ]
+
+  for (const { base, radix, count } of digitCounts) {
+    const row = page.getByRole('row').filter({ has: digit(page, base, radix, 0) })
+    await expect(row.locator('[data-digit="true"]')).toHaveCount(count)
+    await expect(row.locator('[data-digit="true"]:disabled')).toHaveCount(0)
+  }
+
+  await expect(digit(page, 'Octal', 8, 0)).toHaveAttribute('aria-label', /bits 2–0/)
+  await expect(digit(page, 'Octal', 8, 5)).toHaveAttribute('aria-label', /bit 15/)
+  await expect(digit(page, 'Hexadecimal', 16, 0)).toHaveAttribute('aria-label', /bits 3–0/)
+  await expect(digit(page, 'Hexadecimal', 16, 3)).toHaveAttribute('aria-label', /bits 15–12/)
+})
+
+test('orders rows decimal, binary, octal, hexadecimal', async ({ page }) => {
+  const names = await page.locator('tbody > tr').evaluateAll((rows) =>
+    rows.map((row) => row.querySelector('th[scope="row"] > span > span:nth-child(2)')?.textContent?.trim() ?? ''),
+  )
+
+  expect(names).toEqual(['Decimal', 'Binary', 'Octal', 'Hexadecimal'])
 })

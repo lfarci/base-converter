@@ -11,10 +11,10 @@ export type Base = {
 }
 
 export const rows: Base[] = [
-  { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#9170d7' },
   { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e8aa42' },
-  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d' },
   { key: 'binary', name: 'Binary', radix: 2, accent: '#4381e6' },
+  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d' },
+  { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#9170d7' },
 ]
 
 export type ParsedDigits =
@@ -22,6 +22,8 @@ export type ParsedDigits =
   | { status: 'invalid'; char: string }
   | { status: 'too-large'; value: bigint }
   | { status: 'ok'; value: bigint }
+
+export type BitSpan = { low: number; high: number }
 
 export function digitRange(radix: number) {
   return radix <= 10 ? `0–${radix - 1}` : `0–9 and A–${DIGIT_ALPHABET[radix - 1]}`
@@ -50,9 +52,30 @@ export function digitsForValue(value: bigint, radix: number) {
   return Array.from(value.toString(radix).toUpperCase())
 }
 
-export function padToPositions(digits: string[]) {
-  const zeros = Array.from({ length: Math.max(POSITIONS - digits.length, 0) }, () => '0')
-  return [...zeros, ...digits].slice(-POSITIONS)
+export function positionsForBase(radix: number) {
+  return VALUE_LIMIT.toString(radix).length
+}
+
+export function bitSpanForDigit(radix: number, position: number): BitSpan | null {
+  const bitsPerDigit = Math.log2(radix)
+  if (radix <= 2 || !Number.isInteger(bitsPerDigit)) return null
+
+  const low = position * bitsPerDigit
+  const high = Math.min(low + bitsPerDigit - 1, POSITIONS - 1)
+  return { low, high }
+}
+
+export function bitRangeForDigit(radix: number, position: number) {
+  const span = bitSpanForDigit(radix, position)
+  if (!span) return null
+
+  const { low, high } = span
+  return high === low ? `bit ${low}` : `bits ${high}–${low}`
+}
+
+export function padToPositions(digits: string[], positions = POSITIONS) {
+  const zeros = Array.from({ length: Math.max(positions - digits.length, 0) }, () => '0')
+  return [...zeros, ...digits].slice(-positions)
 }
 
 export function pickTypedChar(raw: string, previous: string) {

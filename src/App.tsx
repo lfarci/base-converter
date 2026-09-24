@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { DigitRow } from './DigitRow'
 import {
+  bitSpanForDigit,
   digitRange,
   digitValue,
   digitsForValue,
@@ -9,10 +10,12 @@ import {
   padToPositions,
   parseDigits,
   pickTypedChar,
+  positionsForBase,
   POSITIONS,
   rows,
   VALUE_LIMIT,
   type Base,
+  type BitSpan,
 } from './conversion'
 
 function App() {
@@ -20,6 +23,8 @@ function App() {
   const [sourceDigits, setSourceDigits] = useState('0')
   const [hasStartedDigitEntry, setHasStartedDigitEntry] = useState(false)
   const [rejection, setRejection] = useState('')
+  const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
+  const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
 
   const sourceBase = rows.find((base) => base.key === sourceKey) ?? rows[0]
   const parsed = parseDigits(sourceDigits, sourceBase.radix)
@@ -31,9 +36,8 @@ function App() {
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
       : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use Arrow Up/Down to step the value by one.`
 
-  // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
-  // the low places with leading zeros above them. An empty source renders blank;
-  // entering or deleting down to zero keeps zero visible in every row.
+  // Each row uses only the places that fit within the 16-bit limit, with leading
+  // zeros in those places. An empty source renders blank; zero stays visible.
   const displayed = rows.map((base) => {
     const isSource = base.key === sourceKey
     const digits = isSource ? Array.from(sourceDigits) : value === null ? [] : digitsForValue(value, base.radix)
@@ -41,7 +45,9 @@ function App() {
     return {
       base,
       isSource,
-      boxes: hasValue ? padToPositions(digits) : Array.from({ length: POSITIONS }, () => ''),
+      boxes: hasValue
+        ? padToPositions(digits, positionsForBase(base.radix))
+        : Array.from({ length: positionsForBase(base.radix) }, () => ''),
     }
   })
 
@@ -55,7 +61,7 @@ function App() {
     if (!targetRow) return
 
     event.preventDefault()
-    if (direction === 1) cellsRef.current.get(`${targetRow.key}:${POSITIONS - 1}`)?.focus()
+    if (direction === 1) cellsRef.current.get(`${targetRow.key}:${positionsForBase(targetRow.radix) - 1}`)?.focus()
     else breakdownTogglesRef.current.get(targetRow.key)?.focus()
   }
   const focusToggleFromUnits = (event: React.KeyboardEvent<HTMLInputElement>, base: Base) => {
@@ -70,7 +76,7 @@ function App() {
   const focusUnitsFromToggle = (event: React.KeyboardEvent<HTMLButtonElement>, base: Base, breakdownOpen: boolean) => {
     if (event.shiftKey) {
       event.preventDefault()
-      cellsRef.current.get(`${base.key}:${POSITIONS - 1}`)?.focus()
+      cellsRef.current.get(`${base.key}:${positionsForBase(base.radix) - 1}`)?.focus()
       return
     }
 
@@ -101,7 +107,7 @@ function App() {
   // Focus the units place on the active row. Other boxes remain reachable by mouse
   // or by advancing through digits, but do not add fifteen extra Tab stops per row.
   const focusEditable = () => {
-    cellsRef.current.get(`${sourceBase.key}:${POSITIONS - 1}`)?.focus()
+    cellsRef.current.get(`${sourceBase.key}:${positionsForBase(sourceBase.radix) - 1}`)?.focus()
   }
 
   const focusEditableRef = useRef(focusEditable)
@@ -275,7 +281,7 @@ function App() {
           <details className="mt-1 text-xs text-[#63728a]">
             <summary className="flex min-h-11 cursor-pointer items-center font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]">How to use</summary>
             <p className="mb-2 max-w-[65ch] leading-relaxed text-[#8190a5]">
-              Type into any row; it becomes the source, and the others convert automatically. Tab moves from each row's units digit to its breakdown toggle beside the base name, then to the next row. Digits shift left as you type; Backspace and Delete remove the newest digit. With a box focused, ↑ and ↓ change the value by one, and Page Up / Page Down change it by a whole place. All sixteen positions stay visible; scroll horizontally on narrow screens. Positions beyond the 16-bit limit are disabled.
+              Type into any row; it becomes the source, and the others convert automatically. Tab moves from each row's units digit to its breakdown toggle beside the base name, then to the next row. Digits shift left as you type; Backspace and Delete remove the newest digit. With a box focused, ↑ and ↓ change the value by one, and Page Up / Page Down change it by a whole place. Each row shows only the digit places that fit within the 16-bit limit; octal and hexadecimal digits are labeled with the bits they represent.
             </p>
           </details>
 
@@ -283,23 +289,8 @@ function App() {
             <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 w-[176px] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
-                  <th className="pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Position</th>
-                </tr>
-                <tr>
-                  <th className="sticky left-0 z-10 w-[176px] border-b border-[#e3e9f1] bg-white" aria-hidden="true" />
-                  <th className="border-b border-[#e3e9f1] pl-3 pr-3 align-bottom" scope="col">
-                    <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${POSITIONS}, minmax(0, 1fr))` }} aria-label="Digit positions, most significant first">
-                      {Array.from({ length: POSITIONS }, (_, index) => {
-                        const position = POSITIONS - 1 - index
-                        return (
-                          <li className="m-0 pb-1 text-center font-mono text-[9px] font-normal leading-none text-[#a3b0c2]" key={position}>
-                            {position}
-                          </li>
-                        )
-                      })}
-                    </ol>
-                  </th>
+                  <th className="sticky left-0 z-10 w-[176px] border-b border-[#e3e9f1] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
+                  <th className="border-b border-[#e3e9f1] pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Digits and place values</th>
                 </tr>
               </thead>
               <tbody>
@@ -309,6 +300,9 @@ function App() {
                     base={base}
                     boxes={boxes}
                     value={value}
+                    highlightedBits={hoveredBits ?? focusedBits}
+                    onHoverPosition={(position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position))}
+                    onFocusPosition={(position) => setFocusedBits(position === null ? null : bitSpanForDigit(base.radix, position))}
                     onDigitKeyDown={onCellKeyDown}
                     onEditDigit={editDigit}
                     registerCell={(cellKey) => (node) => {
@@ -334,7 +328,7 @@ function App() {
         </div>
 
         <p className="mt-10 border-t border-[#e7edf5] pt-5 text-xs leading-relaxed text-[#63728a]">
-          The number itself never changes — only the symbols that hold it. Every row shows the same sixteen positions, and the value sits in the low ones.
+          The number itself never changes — only the symbols that hold it. Each row shows all of its available places, and octal and hexadecimal show which bits combine to make each digit.
         </p>
       </section>
     </main>
