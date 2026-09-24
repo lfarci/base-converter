@@ -61,7 +61,7 @@ test('backspace removes the newest typed digit', async ({ page }) => {
   await expect(digit(page, 'Hexadecimal', 16, 0)).toHaveValue('2')
 })
 
-test('hover links a digit, its power, and its matching breakdown term by position', async ({ page }) => {
+test('hover links a digit, its position label, and its matching breakdown term', async ({ page }) => {
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   await decimalUnits.focus()
   await page.keyboard.press('1')
@@ -91,6 +91,12 @@ test('hover links a digit, its power, and its matching breakdown term by positio
   await onesTerm.focus()
   await expect(onesDigit).toHaveAttribute('data-highlighted', 'true')
   await expect(onesLabel).toHaveAttribute('data-highlighted', 'true')
+
+  const binaryBit = digit(page, 'Binary', 2, 3)
+  const binaryLabel = binaryBit.locator('xpath=..').locator('.place-value-label')
+  await binaryBit.hover()
+  await expect(binaryBit).toHaveAttribute('data-highlighted', 'true')
+  await expect(binaryLabel).toHaveAttribute('data-highlighted', 'true')
 })
 
 test('octal and hexadecimal hover highlights only their corresponding binary bits', async ({ page }) => {
@@ -176,7 +182,7 @@ test('only the units box of each row is writable and focusable', async ({ page }
   }
 })
 
-test('collapsed rows highlight powers without opening, and digit typing still works', async ({ page }) => {
+test('collapsed rows highlight position labels without opening, and digit typing still works', async ({ page }) => {
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   const unitsLabel = decimalUnits.locator('xpath=..').locator('.place-value-label')
   const toggle = page.getByRole('button', { name: 'Show Decimal place-value breakdown' })
