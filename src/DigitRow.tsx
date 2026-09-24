@@ -21,7 +21,7 @@ export function DigitRow({ base, boxes, onDigitKeyDown, onEditDigit, registerCel
           <span className="font-mono text-[11px] text-[#8190a5]">{base.radix}</span>
         </span>
       </th>
-      <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
+      <td className="border-b border-[#eef2f8] py-3 pl-3 pr-3 align-middle">
         <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
             {boxes.map((digit, index) => {
               const position = boxes.length - 1 - index

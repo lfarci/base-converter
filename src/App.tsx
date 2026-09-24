@@ -235,11 +235,11 @@ function App() {
               <thead>
                 <tr>
                   <th className="sticky left-0 z-10 w-[144px] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
-                  <th className="pb-2 pl-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
+                  <th className="pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
                 </tr>
                 <tr>
                   <th className="sticky left-0 z-10 w-[144px] border-b border-[#e3e9f1] bg-white" aria-hidden="true" />
-                  <th className="border-b border-[#e3e9f1] pl-3 align-bottom" scope="col">
+                  <th className="border-b border-[#e3e9f1] pl-3 pr-3 align-bottom" scope="col">
                     <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${POSITIONS}, minmax(0, 1fr))` }} aria-label="Digit positions, most significant first">
                       {Array.from({ length: POSITIONS }, (_, index) => {
                         const position = POSITIONS - 1 - index
