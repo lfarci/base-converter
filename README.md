@@ -1,6 +1,6 @@
 ﻿# Basewise
 
-A simple, live number-base converter for learning how the same whole number is written in decimal, binary, octal, and hexadecimal.
+A simple, live number-base converter for learning how the same whole number is written in different bases.
 
 ## Run locally
 
@@ -9,19 +9,11 @@ npm install
 npm run dev
 ```
 
-Choose decimal, binary, octal, or hexadecimal as the starting base, then enter a non-negative whole number to see its representations update as you type. Use the checkboxes to choose which result bases are shown. Switching the starting base preserves the number's value when the current input is valid.
+Decimal, binary, octal, and hexadecimal rows are shown on load. Entering a number and reading it back happen in the same place: type directly into the digit boxes of any row, and that row becomes the base you are writing in (marked **source**) while every other row rewrites itself live. Each box holds one position, and the position's index is printed underneath it, so the rightmost box is always the units digit. The keyboard steps the value too: with the caret in a box, ↑ and ↓ move the number by one, and Page Up / Page Down move it by a whole place.
 
-Input is capped at the largest value JavaScript converts exactly (`Number.MAX_SAFE_INTEGER`), so each base accepts at most as many digits as that value needs: 16 in decimal, 53 in binary, 18 in octal, and 14 in hexadecimal. Typing or pasting beyond that limit is blocked.
+Every row always shows the same sixteen positions, with digit boxes expanding evenly across the available row width. The table keeps a 720px minimum width so boxes remain readable on narrow screens, where the table scrolls horizontally: the value sits in the low places and the unused high places are filled with leading zeros. Sixteen binary positions hold at most `65535`, and binary is the row a value needs the most places in, so that is the cap for the page — go above it and the row keeps its grid and shows a "too large" notice instead of a clipped or half-filled answer. Digits that are not valid for a row's base are rejected with an inline message, and an empty field is allowed — the first ↑ starts at 1 and the first ↓ stays at 0. Because the places never move, writing in one box changes only that position's digit, and the leading zeros the grid shows are never part of the number itself.
 
-## Project structure
-
-| Path | Purpose |
-| --- | --- |
-| `src/bases.ts` | Base definitions (radix, digits, prefix, pattern, accent) and formatting/cap helpers. |
-| `src/validation.ts` | Pure input handling: parse + validate a string for a base, and clamp oversized typing. |
-| `src/useConverter.ts` | `useConverter` hook owning input state and wiring the pure helpers to the UI. |
-| `src/components/` | Presentational components: `BaseNumberInput`, `BaseToggleList`, `ConversionResults`, `Chrome`. |
-| `src/App.tsx` | Composes the hook and components; no business logic lives here. |
+Octal and hexadecimal are shown with a decorative grouping underneath their own digit boxes: the bits of the number split into threes under the octal row and fours under the hexadecimal row, so you can see why three bits make one octal digit and four bits make one hex digit. The grouping is derived from the sixteen positions of the binary row, so at rest it shows six octal groups and four hex groups, and it counts from the right — the leading group may be short, and it is drawn as dimmed dashed placeholders rather than padding the value with zeros. They are decoration only: nothing in them is focusable, and the digits themselves stay the value you read and type.
 
 ## Checks
 
@@ -29,6 +21,13 @@ Input is capped at the largest value JavaScript converts exactly (`Number.MAX_SA
 npm run typecheck
 npm run lint
 npm run build
+```
+
+Run the browser interaction suite in Chromium and Firefox with:
+
+```sh
+npx playwright install chromium firefox
+npm run test:e2e
 ```
 
 ## Deployment

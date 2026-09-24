@@ -2,9 +2,11 @@
 
 ## What this is
 
-"Basewise" is a small React + Vite + Tailwind single-page study tool that shows one whole
-number written in decimal, binary, octal, and hexadecimal. It is a static site with no
-backend, no API calls, and no persistence.
+"Basewise" is a small React + Vite + Tailwind single-page study tool for positional
+notation. It shows one whole number as a fixed sixteen-position grid, with a row per base
+(hexadecimal, decimal, octal, binary). You type straight into a row's digit boxes; that row
+becomes the source base and every other row rewrites live. It is a static site — no backend,
+no API calls, no persistence.
 
 ## Stack
 
@@ -12,73 +14,92 @@ backend, no API calls, and no persistence.
 - TypeScript, compiled with `tsc -b` using `tsconfig.app.json`.
 - Vite 8 for dev/build, Tailwind CSS 4 via `@tailwindcss/vite` (no `tailwind.config.js`).
 - oxlint for linting (`.oxlintrc.json`).
+- Playwright for browser interaction tests (`playwright.config.ts`, `tests/`).
 
 ## Commands
 
 ```sh
-npm ci                # install exactly what package-lock.json pins
-npm run dev           # dev server, served under /base-converter/
-npm run typecheck     # tsc -b
-npm run lint          # oxlint
-npm run build         # tsc -b && vite build
+npm ci                  # install exactly what package-lock.json pins
+npm run dev             # dev server, served under /base-converter/
+npm run typecheck       # tsc -b
+npm run lint            # oxlint
+npm run build           # tsc -b && vite build
+npm run test:e2e        # Playwright, Chromium + Firefox
 ```
 
-There is no test framework. Validate a change with `npm run typecheck`, `npm run lint`,
-and `npm run build`, plus a manual check in the browser for anything that affects
-rendering.
+`npm run test:e2e` needs browsers installed once with
+`npx playwright install chromium firefox`. It starts its own dev server on
+`http://127.0.0.1:5173/base-converter/` and reuses one that is already running locally.
 
 ## Architecture
 
-Keep the app split by responsibility — do not let business logic creep back into JSX.
+Keep the app split by responsibility — do not let digit parsing or value math creep back
+into JSX.
 
 | Path | Responsibility |
 | --- | --- |
-| `src/bases.ts` | Base definitions (radix, digits, prefix, pattern, accent) and pure formatting/cap helpers. This is the single source of truth for the supported bases. |
-| `src/validation.ts` | Pure, side-effect-free input handling: `validateNumber` (parse + validate) and `clampToMaxDigits` (bound oversized typing/pasting). |
-| `src/useConverter.ts` | `useConverter` hook: owns `useState` state and translates component events into calls on the pure helpers. |
-| `src/components/` | Presentational components. They receive data via props, render JSX, and hold no domain logic. |
-| `src/App.tsx` | Composition only: call `useConverter`, derive `visibleBases`, arrange the components. |
+| `src/conversion.ts` | The single source of truth: digit alphabet, `POSITIONS`, `VALUE_LIMIT`, the `rows` base definitions, and pure helpers (`parseDigits`, `digitsForValue`, `padToPositions`, `digitRange`, `digitValue`, `pickTypedChar`, `pageStep`). |
+| `src/DigitRow.tsx` | Presentational row: renders one base's boxes, wires `onKeyDown`/`onChange`, disables boxes beyond `VALUE_LIMIT.toString(radix).length`, and registers cells for focus management. |
+| `src/App.tsx` | Owns state (`sourceKey`, `sourceDigits`, `hasStartedDigitEntry`, `rejection`), the focus/caret policy, keyboard stepping, and the table layout. |
+| `tests/` | Playwright specs. `tests/helpers.ts` exposes the `digit(page, base, radix, position)` locator — use it instead of writing raw selectors. |
 
 Rules that follow from this:
 
-- Pure logic (parsing, validation, formatting, clamping) belongs in `bases.ts` or
-  `validation.ts` and must not import React.
-- State and event handlers belong in `useConverter.ts`.
-- Components are props-in / JSX-out. Do not compute conversions inside them.
-- Add a new base by editing the `bases` array in `src/bases.ts` only. Nothing else
-  should hard-code a radix, digit set, or prefix.
+- All value math, parsing, and formatting lives in `src/conversion.ts` and must not import
+  React.
+- `DigitRow` receives data and callbacks via props and holds no domain logic.
+- Add or change a base by editing the `rows` array in `src/conversion.ts` only. Nothing
+  else should hard-code a radix, digit set, or accent colour.
+- New pure helpers go in `conversion.ts` and get a spec in `tests/`. New presentational
+  pieces go beside `DigitRow.tsx`.
+
+## Domain rules that must not regress
+
+- The page is capped at a fixed **16 positions** (`POSITIONS`), so the largest value is
+  `VALUE_LIMIT` = `65535`. Binary is the row that needs the most places, so 16 binary
+  positions is the cap for every row.
+- Going over the cap must show `LIMIT_MESSAGE` and leave the grid intact — never a clipped
+  or half-filled answer, and never a wrong number.
+- Digits invalid for a row's base are rejected with the inline
+  `Enter digits <range> for base <radix>.` message and the prior value is kept.
+- Empty input is valid and is distinct from zero. Values render with leading zeros to fill
+  all 16 positions; an empty source row renders blank.
+- `parseDigits` returns a discriminated result (`empty` / `invalid` / `too-large` / `ok`).
+  Branch on `status` rather than re-deriving validity.
+- Stepping is on the *value*, not the text: in binary `1011` steps up to `1100`. Page
+  Up/Down step by `pageStep(radix)` (10 for radix ≤ 10, otherwise 16).
 
 ## Conventions
 
-- **KISS**: prefer the direct solution. No abstractions with a single call site, no
-  configuration layers, no state that can be derived during render.
-- **DRY**: define each base's metadata, digit rules, and styling accent once in
-  `src/bases.ts`. Never duplicate a radix or a digit pattern into a component.
+- **KISS**: prefer the direct solution. No abstraction with a single call site, no config
+  layer, no state that can be derived during render.
+- **DRY**: each base's metadata and each rule is declared once in `src/conversion.ts`.
 - Strict TypeScript is on: `noUnusedLocals`, `noUnusedParameters`, and
-  `verbatimModuleSyntax`. Import types with `import type { ... }` / inline `type`
+  `verbatimModuleSyntax`. Import types with `import type { ... }` or inline `type`
   specifiers, and delete anything you stop using.
-- `react/only-export-components` warns by default, so a module that exports a component
-  should not also export unrelated values. Put shared values in a non-component module.
+- `react/only-export-components` warns by default, so a module exporting a component should
+  not also export unrelated values. Put shared values in `conversion.ts`.
 - Formatting: two-space indent, no semicolons, single quotes.
-- `maxLength` must not be used on the number input. The cap is enforced in
-  `clampToMaxDigits` because intermediate typing states (for example `1000…` in binary)
-  legitimately exceed the digit count of the final value while still being valid.
-- Conversions are capped at `Number.MAX_SAFE_INTEGER`; anything above it must show the
-  "too large" message rather than a wrong result.
 
 ## UI, accessibility, and design
 
-- Keep the existing visual language: light surface, `#2458d3` accent, `#172b4d` text,
-  monospace for numeric output, and the per-base left border accent stored on each base.
-- Every interactive control needs a label; the input's helper/error text is wired through
-  `aria-describedby`, and errors also set `aria-invalid` and `role="alert"`.
-- Do not rely on colour alone to convey state — error text is always present as words.
-- Results are announced through `aria-live="polite"`.
-- Long values must wrap instead of causing horizontal overflow (see `wrap-anywhere`).
-- Any change to layout must still work at a 390 px viewport.
+- Keep the visual language: white surface, `#172b4d` text, `#2458d3` focus accent,
+  per-base accent colour from `rows`, monospace `tabular-nums` for digits.
+- Each row exposes exactly one Tab stop: `tabIndex` is `0` only for the rightmost
+  (units) box and `-1` for every other box — do not add 16 Tab stops per row.
+- Digit boxes carry `aria-label` including base, radix, and position; disabled boxes carry
+  a `title` explaining the limit. Keep these when editing `DigitRow`.
+- The status line is a single live region: `role="alert"` when there is an error,
+  otherwise `role="status"`.
+- The table keeps a 720px minimum width and scrolls horizontally on narrow screens, with
+  the base column `sticky left-0`. Verify layout at a 390px viewport.
+- Do not rely on colour alone to convey state — the error is always present as words.
 
 ## Workflow
 
-- Keep changes surgical and behaviour-preserving when refactoring; run the three
-  validation commands above before considering the work done.
-- Update `README.md` when user-visible behaviour, file layout, or commands change.
+- Keep changes surgical; this repository's `Developer` agent
+  (`.github/agents/developer.agent.md`) expects plan → execute → review → PR, and treats
+  `npm run typecheck`, `npm run lint`, and `npm run build` as the required checks.
+- Add or update a Playwright spec in `tests/` whenever you change digit entry, keyboard
+  handling, or the value cap, and run `npm run test:e2e`.
+- Update `README.md` when user-visible behaviour, commands, or the file layout change.
