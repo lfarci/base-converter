@@ -113,7 +113,7 @@ function App() {
     }
     setRejection('')
     setSourceDigits(target.toString(sourceBase.radix))
-    setHasStartedDigitEntry(target !== 0n)
+    setHasStartedDigitEntry(false)
   }
 
   // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
@@ -181,7 +181,8 @@ function App() {
       if (current.status === 'invalid' || current.status === 'too-large') return
 
       const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
-      const nextDigits = hasStartedDigitEntry && base.key === sourceKey
+      const isTypedEntryBuffer = hasStartedDigitEntry && base.key === sourceKey
+      const nextDigits = isTypedEntryBuffer
         ? sourceDigits.slice(1)
         : digitsForValue(nextValue, base.radix).join('')
       const nextDigitsValue = parseDigits(nextDigits, base.radix)
@@ -191,7 +192,9 @@ function App() {
       setRejection('')
       setSourceKey(base.key)
       setSourceDigits(resolvedDigits)
-      setHasStartedDigitEntry(nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n)
+      setHasStartedDigitEntry(
+        isTypedEntryBuffer && nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n,
+      )
       pendingFocusRef.current = 'rightmost'
       return
     }
