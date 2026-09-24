@@ -11,10 +11,10 @@ export type Base = {
 }
 
 export const rows: Base[] = [
-  { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e8aa42' },
-  { key: 'binary', name: 'Binary', radix: 2, accent: '#4381e6' },
-  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d' },
   { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#9170d7' },
+  { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e8aa42' },
+  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d' },
+  { key: 'binary', name: 'Binary', radix: 2, accent: '#4381e6' },
 ]
 
 export type ParsedDigits =
@@ -22,18 +22,6 @@ export type ParsedDigits =
   | { status: 'invalid'; char: string }
   | { status: 'too-large'; value: bigint }
   | { status: 'ok'; value: bigint }
-
-export type BitGroup = {
-  bits: string[]
-  placeholders: number
-  label: string
-}
-
-export type BitGrouping = {
-  base: Base
-  size: number
-  groups: BitGroup[]
-}
 
 export function digitRange(radix: number) {
   return radix <= 10 ? `0–${radix - 1}` : `0–9 and A–${DIGIT_ALPHABET[radix - 1]}`
@@ -71,28 +59,6 @@ export function pickTypedChar(raw: string, previous: string) {
   const text = raw.toUpperCase()
   if (text.length <= 1) return text
   return Array.from(text).find((char) => char !== previous.toUpperCase()) ?? text.slice(-1)
-}
-
-export function bitsPerDigit(radix: number) {
-  if (radix === 8) return 3
-  if (radix === 16) return 4
-  return null
-}
-
-export function groupBits(bits: string[], size: number, radix: number): BitGroup[] {
-  const groups: BitGroup[] = []
-
-  for (let end = bits.length; end > 0; end -= size) {
-    const chunk = bits.slice(Math.max(0, end - size), end)
-    const parsed = parseDigits(chunk.join(''), 2)
-    groups.unshift({
-      bits: chunk,
-      placeholders: size - chunk.length,
-      label: (parsed.status === 'ok' ? parsed.value : 0n).toString(radix).toUpperCase(),
-    })
-  }
-
-  return groups
 }
 
 export function pageStep(radix: number) {
