@@ -234,8 +234,8 @@ function App() {
             <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 w-[104px] border-b border-[#e3e9f1] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
-                  <th className="border-b border-[#e3e9f1] pb-2 pl-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
+                  <th className="sticky left-0 z-10 w-[104px] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
+                  <th className="pb-2 pl-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Written out</th>
                 </tr>
                 <tr>
                   <th className="sticky left-0 z-10 w-[104px] border-b border-[#e3e9f1] bg-white" aria-hidden="true" />
