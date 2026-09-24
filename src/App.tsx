@@ -385,6 +385,7 @@ function App() {
           <p className="mt-1.5 text-xs text-[#8190a5]">
             Each box holds one position; the digit under a box is that position's index, so the rightmost box is always the units digit.
             Every row shows the same sixteen positions, with leading zeros filling the ones the value does not use.
+            Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
           </p>
 
           <div className="mt-4 overflow-x-auto" ref={scrollerRef}>
