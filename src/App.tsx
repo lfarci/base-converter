@@ -135,7 +135,7 @@ function App() {
           : current.status === 'ok'
             ? digitsForValue(current.value, base.radix).join('')
             : ''
-      const nextDigits = `${char}${currentDigits}`
+      const nextDigits = `${currentDigits}${char}`
       const nextValue = parseDigits(nextDigits, base.radix)
       if (nextDigits.length > POSITIONS || nextValue.status === 'too-large') {
         setRejection(LIMIT_MESSAGE)
@@ -183,7 +183,7 @@ function App() {
       const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
       const isTypedEntryBuffer = hasStartedDigitEntry && base.key === sourceKey
       const nextDigits = isTypedEntryBuffer
-        ? sourceDigits.slice(1)
+        ? sourceDigits.slice(0, -1)
         : digitsForValue(nextValue, base.radix).join('')
       const nextDigitsValue = parseDigits(nextDigits, base.radix)
       const resolvedDigits = nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n
