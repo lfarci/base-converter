@@ -118,36 +118,6 @@ function App() {
 
   // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
   // read as tens and units, sixteen from base 11 up where a place is a nibble wider.
-  const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => {
-    if (event.key === 'Delete' || event.key === 'Backspace') {
-      event.preventDefault()
-      const current = parseDigits(boxes.join(''), base.radix)
-      if (current.status === 'invalid' || current.status === 'too-large') return
-
-      const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
-      const nextDigits = hasStartedDigitEntry && base.key === sourceKey
-        ? sourceDigits.slice(1)
-        : digitsForValue(nextValue, base.radix).join('')
-      const nextDigitsValue = parseDigits(nextDigits, base.radix)
-      const resolvedDigits = nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n
-        ? nextDigits
-        : '0'
-      setRejection('')
-      setSourceKey(base.key)
-      setSourceDigits(resolvedDigits)
-      setHasStartedDigitEntry(nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n)
-      pendingFocusRef.current = 'rightmost'
-      return
-    }
-
-    const up = event.key === 'ArrowUp' || event.key === 'PageUp'
-    const down = event.key === 'ArrowDown' || event.key === 'PageDown'
-    if (!up && !down) return
-    event.preventDefault()
-    const magnitude = event.key === 'PageUp' || event.key === 'PageDown' ? pageStep(sourceBase.radix) : 1n
-    stepValue(up ? magnitude : -magnitude)
-  }
-
   const editDigit = (base: Base, boxes: string[], index: number, raw: string, focusKey?: string) => {
     if (raw.length > 0) {
       const char = pickTypedChar(raw, boxes[index])
@@ -195,6 +165,43 @@ function App() {
     const nextFocusKey = focusKey ?? `${base.key}:${Math.max(index - 1, 0)}`
     cellsRef.current.get(nextFocusKey)?.focus()
     pendingFocusRef.current = nextFocusKey
+  }
+
+  const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[], index: number) => {
+    const digit = digitValue(event.key)
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && digit >= 0 && digit < base.radix) {
+      event.preventDefault()
+      editDigit(base, boxes, index, event.key)
+      return
+    }
+
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault()
+      const current = parseDigits(boxes.join(''), base.radix)
+      if (current.status === 'invalid' || current.status === 'too-large') return
+
+      const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
+      const nextDigits = hasStartedDigitEntry && base.key === sourceKey
+        ? sourceDigits.slice(1)
+        : digitsForValue(nextValue, base.radix).join('')
+      const nextDigitsValue = parseDigits(nextDigits, base.radix)
+      const resolvedDigits = nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n
+        ? nextDigits
+        : '0'
+      setRejection('')
+      setSourceKey(base.key)
+      setSourceDigits(resolvedDigits)
+      setHasStartedDigitEntry(nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n)
+      pendingFocusRef.current = 'rightmost'
+      return
+    }
+
+    const up = event.key === 'ArrowUp' || event.key === 'PageUp'
+    const down = event.key === 'ArrowDown' || event.key === 'PageDown'
+    if (!up && !down) return
+    event.preventDefault()
+    const magnitude = event.key === 'PageUp' || event.key === 'PageDown' ? pageStep(sourceBase.radix) : 1n
+    stepValue(up ? magnitude : -magnitude)
   }
 
   return (

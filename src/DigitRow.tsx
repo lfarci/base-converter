@@ -4,7 +4,7 @@ import { POSITIONS, VALUE_LIMIT, type Base } from './conversion'
 type DigitRowProps = {
   base: Base
   boxes: string[]
-  onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => void
+  onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[], index: number) => void
   onEditDigit: (base: Base, boxes: string[], index: number, raw: string) => void
   registerCell: (key: string) => RefCallback<HTMLInputElement>
 }
@@ -42,7 +42,7 @@ export function DigitRow({ base, boxes, onDigitKeyDown, onEditDigit, registerCel
                     disabled={disabled}
                     title={disabled ? `Unavailable: beyond the ${POSITIONS}-bit value limit` : undefined}
                     onFocus={(event) => event.target.select()}
-                    onKeyDown={(event) => onDigitKeyDown(event, base, boxes)}
+                    onKeyDown={(event) => onDigitKeyDown(event, base, boxes, index)}
                     onChange={(event) => onEditDigit(base, boxes, index, event.target.value)}
                     aria-label={`${base.name} (base ${base.radix}) digit at position ${position}`}
                   />
