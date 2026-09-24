@@ -366,7 +366,11 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6" id="top">
+    // The card is capped so a wide window stops stretching the rows past the width
+    // the grid actually needs. The cap waits for the lg breakpoint, where the content
+    // box is already wider than the table, so it only binds on big screens and never
+    // pushes a narrower viewport into the horizontal scroller.
+    <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6 lg:max-w-[920px]" id="top">
       <header className="flex items-baseline justify-between py-6 sm:py-8">
         <a className="text-[15px] font-bold tracking-tight text-[#172b4d] no-underline" href="#top">basewise</a>
         <span className="text-[11px] text-[#63728a]">positional notation, plainly</span>
