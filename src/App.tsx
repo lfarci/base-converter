@@ -3,7 +3,21 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 const MIN_RADIX = 2
 const MAX_RADIX = 36
 const DIGIT_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-const SAFE_LIMIT = BigInt(Number.MAX_SAFE_INTEGER)
+
+// Every row is the same fixed grid of places. Sixteen binary positions hold up to
+// 65535, and binary is the row a value needs the most places in, so that is the cap:
+// anything that fits the grid fits every other row too.
+const POSITIONS = 16
+const VALUE_LIMIT = BigInt(2) ** BigInt(POSITIONS) - 1n
+
+// Digit geometry is one fixed pixel size, never a viewport-relative clamp: a row's
+// boxes must be the same size on a phone as on a wide desktop, because the width
+// that matters is the card's, not the window's. These are the maxima the previous
+// clamps resolved to at >=1280px, so wide-viewport appearance is unchanged.
+const BOX_SIZE = '30px'
+const BOX_TEXT = '17px'
+const GROUP_SLOT_W = '30px'
+const GROUP_SLOT_H = '21px'
 
 type Base = {
   key: string
@@ -40,43 +54,13 @@ function digitValue(char: string) {
   return DIGIT_ALPHABET.indexOf(char.toUpperCase())
 }
 
-// Register widths the rows can pad to. 'auto' keeps the natural, unpadded length.
-const WIDTH_OPTIONS = ['auto', 32, 64] as const
-type WidthChoice = (typeof WIDTH_OPTIONS)[number]
-type DigitWidth = Exclude<WidthChoice, 'auto'>
-
-function widthLabel(width: WidthChoice) {
-  return width === 'auto' ? 'Auto' : `${width}-bit`
-}
-
-// Largest value a register of this width can hold: 2^width - 1.
-function widthLimit(width: DigitWidth) {
-  return 2n ** BigInt(width) - 1n
-}
-
-// One wording per width choice, so the range guard and the render path agree.
-function limitMessage(width: WidthChoice) {
-  return width === 'auto'
-    ? 'That number is too large to convert accurately. Try a smaller whole number.'
-    : `That number is too large for a ${width}-bit width. A ${width}-bit word holds at most ${widthLimit(width).toString(10)}.`
-}
+// The one ceiling the page reports: a value that needs more places than the grid
+// has. Typing and stepping both raise this same message.
+const LIMIT_MESSAGE = `That number is too large. ${POSITIONS} positions hold at most ${VALUE_LIMIT}.`
 
 // PageUp/PageDown step by one place: ten in bases up to 10, sixteen above.
 function pageStep(radix: number) {
   return radix <= 10 ? 10n : 16n
-}
-
-// Positions a width occupies in a radix, derived from the radix itself (count
-// the digits of the largest value it can hold) so the two can never drift apart.
-function positionsForWidth(width: DigitWidth, radix: number) {
-  return widthLimit(width).toString(radix).length
-}
-
-// Leading-zero padding: boxes past the most significant digit render as 0.
-// An over-long value is left alone; the range check reports it instead.
-function padDigits(digits: string[], positions: number) {
-  if (digits.length === 0 || digits.length >= positions) return digits
-  return [...Array<string>(positions - digits.length).fill('0'), ...digits]
 }
 
 // Numeric-model seam: the view reads and writes numbers only through
@@ -88,9 +72,10 @@ type ParsedDigits =
   | { status: 'too-large'; value: bigint }
   | { status: 'ok'; value: bigint }
 
-// `limit` is the largest value the caller accepts: the safe-integer ceiling in
-// Auto mode, or 2^width - 1 when a fixed register width is selected.
-function parseDigits(text: string, radix: number, limit: bigint = SAFE_LIMIT): ParsedDigits {
+// `limit` is the largest value the caller accepts; it defaults to the grid's cap so
+// the app has exactly one ceiling, and stays a parameter because that is the seam a
+// wider model would widen.
+function parseDigits(text: string, radix: number, limit: bigint = VALUE_LIMIT): ParsedDigits {
   if (text.length === 0) return { status: 'empty' }
 
   let value = 0n
@@ -107,6 +92,15 @@ function parseDigits(text: string, radix: number, limit: bigint = SAFE_LIMIT): P
 
 function digitsForValue(value: bigint, radix: number) {
   return Array.from(value.toString(radix).toUpperCase())
+}
+
+// Every row is a fixed grid of POSITIONS places: the value's own digits sit in the
+// low places and the unused high places are filled with leading zeros. Keeping the
+// array at a constant length is what lets the caret stay on the same place while
+// typing — the places never shift underneath it.
+function padToPositions(digits: string[]) {
+  const zeros = Array.from({ length: Math.max(POSITIONS - digits.length, 0) }, () => '0')
+  return [...zeros, ...digits].slice(-POSITIONS)
 }
 
 function pickTypedChar(raw: string, previous: string) {
@@ -155,39 +149,38 @@ function groupBits(bits: string[], size: number, radix: number): BitGroup[] {
   return groups
 }
 
-// Decorative underboxes: one row per paired base still on the page, each drawing
-// the binary digits as that base reads them, with the paired digit beneath each
-// group. The row is hidden from assistive tech — the binary digits above are the
+// Decorative underbox for one paired row: it draws the binary digits the way that
+// base reads them, with the paired digit beneath each group. It renders inside the
+// paired row itself (octal under octal, hex under hex) and is derived from the
+// binary row's places. Hidden from assistive tech — the digit rows are the
 // accessible value, and nothing here is focusable or editable.
-function BinaryGroupings({ groupings }: { groupings: BitGrouping[] }) {
-  if (groupings.length === 0) return null
+function GroupingUnderbox({ grouping }: { grouping: BitGrouping | null }) {
+  if (grouping === null) return null
+
+  const { base, size, groups } = grouping
 
   return (
-    <div className="flex flex-col items-end gap-2" aria-hidden="true">
-      {groupings.map(({ base, size, groups }) => (
-        <div className="flex items-center gap-2" key={base.key}>
-          <span className="whitespace-nowrap font-mono text-[9px] font-semibold uppercase tracking-[0.5px]" style={{ color: base.accent }}>
-            {`${base.name.toLowerCase()} · ${size} bits`}
-          </span>
-          <ol className="m-0 flex list-none gap-px p-0">
-            {groups.map((group, index) => (
-              <li className="flex shrink-0 flex-col items-center gap-px rounded-[5px]" key={index} style={{ backgroundColor: `${base.accent}1f` }}>
-                <span className="flex gap-px">
-                  {Array.from({ length: group.placeholders }, (_, slot) => (
-                    <span className="h-[clamp(13px,3.1vw,21px)] w-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[3px] border border-dashed border-[#c9d4e3]" key={`missing-${slot}`} />
-                  ))}
-                  {group.bits.map((_, slot) => (
-                    <span className="h-[clamp(13px,3.1vw,21px)] w-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[3px] border" key={slot} style={{ borderColor: base.accent }} />
-                  ))}
-                </span>
-                <span className="w-full text-center font-mono text-[9px] font-bold leading-none" style={{ color: base.accent }}>
-                  {group.label}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))}
+    <div className="flex items-center gap-2" aria-hidden="true">
+      <span className="whitespace-nowrap font-mono text-[9px] font-semibold uppercase tracking-[0.5px]" style={{ color: base.accent }}>
+        {`${base.name.toLowerCase()} · ${size} bits`}
+      </span>
+      <ol className="m-0 flex list-none gap-px p-0">
+        {groups.map((group, index) => (
+          <li className="flex shrink-0 flex-col items-center gap-px rounded-[5px]" key={index} style={{ backgroundColor: `${base.accent}1f` }}>
+            <span className="flex gap-px">
+              {Array.from({ length: group.placeholders }, (_, slot) => (
+                <span className="shrink-0 rounded-[3px] border border-dashed border-[#c9d4e3]" style={{ width: GROUP_SLOT_W, height: GROUP_SLOT_H }} key={`missing-${slot}`} />
+              ))}
+              {group.bits.map((_, slot) => (
+                <span className="shrink-0 rounded-[3px] border" style={{ width: GROUP_SLOT_W, height: GROUP_SLOT_H, borderColor: base.accent }} key={slot} />
+              ))}
+            </span>
+            <span className="w-full text-center font-mono text-[9px] font-bold leading-none" style={{ color: base.accent }}>
+              {group.label}
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
@@ -196,46 +189,49 @@ function App() {
   const [rows, setRows] = useState<Base[]>(fixedBases)
   const [sourceKey, setSourceKey] = useState('decimal')
   const [sourceDigits, setSourceDigits] = useState('42')
-  const [width, setWidth] = useState<WidthChoice>('auto')
   const [rejection, setRejection] = useState('')
   const [pendingRadix, setPendingRadix] = useState('')
   const [baseError, setBaseError] = useState('')
 
   const sourceBase = rows.find((base) => base.key === sourceKey) ?? fixedBases[0]
-  const limit = width === 'auto' ? SAFE_LIMIT : widthLimit(width)
-  const parsed = parseDigits(sourceDigits, sourceBase.radix, limit)
+  const parsed = parseDigits(sourceDigits, sourceBase.radix)
   const value = parsed.status === 'ok' ? parsed.value : null
   const error = rejection
-    || (parsed.status === 'too-large' ? limitMessage(width) : '')
+    || (parsed.status === 'too-large' ? LIMIT_MESSAGE : '')
     || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
   const help = parsed.status === 'empty'
       ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
       : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type in another row to write in that base instead, or use the −/+ buttons to step the value by one.`
 
+  // Every row is the same fixed grid of POSITIONS places: the value's digits sit in
+  // the low places with leading zeros above them. A row with no value at all renders
+  // the grid empty rather than a dash or a field of zeros, so the columns keep their
+  // shape without claiming the value is zero.
   const displayed = rows.map((base) => {
     const isSource = base.key === sourceKey
-    const digits = isSource
-      ? Array.from(sourceDigits)
-      : value === null ? null : digitsForValue(value, base.radix)
-    const padded = width === 'auto' || digits === null ? digits : padDigits(digits, positionsForWidth(width, base.radix))
-    return { base, isSource, boxes: padded === null ? null : padded.length > 0 ? padded : [''] }
+    const digits = isSource ? Array.from(sourceDigits) : value === null ? [] : digitsForValue(value, base.radix)
+    const hasValue = isSource ? sourceDigits.length > 0 : value !== null
+    return {
+      base,
+      isSource,
+      boxes: hasValue ? padToPositions(digits) : Array.from({ length: POSITIONS }, () => ''),
+    }
   })
 
-  // Underboxes: one row per paired base still on the page, drawn from the binary
-  // row's own places — so a 32-bit view groups its padded digits, and removing a
-  // paired row removes its grouping. An empty or rejected entry groups nothing.
+  // Underboxes: each paired base draws its own grouping, derived from the binary
+  // row's own places, so 3-bit groups sit in the octal row and 4-bit groups in the
+  // hex row. The binary row is a full POSITIONS places, so at rest that is six octal
+  // groups (the leading one short) and four hex groups. Removing a paired row removes
+  // its grouping, and an empty or rejected entry groups nothing.
   const binaryBits = (displayed.find((row) => row.base.radix === 2)?.boxes ?? []).filter((digit) => digit.length > 0)
   const withGroupings = displayed.map((row) => {
-    const pairings = row.base.radix !== 2 || value === null || binaryBits.length === 0
-      ? []
-      : displayed.flatMap((paired) => {
-        const size = bitsPerDigit(paired.base.radix)
-        if (size === null || paired.base.radix === 2) return []
-        return [{ base: paired.base, size, groups: groupBits(binaryBits, size, paired.base.radix) }]
-      })
-    return { ...row, groupings: pairings }
+    const size = bitsPerDigit(row.base.radix)
+    const grouping = size === null || value === null || binaryBits.length === 0
+      ? null
+      : { base: row.base, size, groups: groupBits(binaryBits, size, row.base.radix) }
+    return { ...row, grouping }
   })
-  const digitCounts = displayed.map(({ boxes }) => boxes?.length ?? 0).join('-')
+  const digitCounts = displayed.map(({ boxes }) => boxes.length).join('-')
   const scrollerRef = useRef<HTMLDivElement>(null)
 
   // Every digit box registers itself here by base and place, so the editable
@@ -248,11 +244,16 @@ function App() {
   const caretIsInSurface = (node: Element | null = document.activeElement) =>
     node instanceof HTMLInputElement && node.dataset.digit === 'true'
 
-  // The source row is the editable surface. Its boxes always render — even when the
-  // value is out of range — so there is always somewhere to put the caret.
+  // The source row is the editable surface, and now that every row is padded it is a
+  // fixed POSITIONS grid too — the places never move, so the caret can stay where it
+  // is put. 'first' aims at the leading digit rather than the top of the grid, so
+  // typing on load writes into the number instead of filling the empty high places.
   const focusEditable = (where: 'first' | 'last' = 'first') => {
-    const places = Math.max(Array.from(sourceDigits).length, 1)
-    cellsRef.current.get(`${sourceBase.key}:${where === 'last' ? places - 1 : 0}`)?.focus()
+    const places = Math.min(Array.from(sourceDigits).length, POSITIONS)
+    const index = where === 'last'
+      ? POSITIONS - 1
+      : Math.min(Math.max(POSITIONS - places, 0), POSITIONS - 1)
+    cellsRef.current.get(`${sourceBase.key}:${index}`)?.focus()
   }
 
   const focusEditableRef = useRef(focusEditable)
@@ -267,9 +268,9 @@ function App() {
       focusEditableRef.current(where)
       return
     }
-    // A commit can take a place away (a step down, or typing into a padded row that
-    // then becomes the unpadded source) and drop the caret onto the page. Only that
-    // lost case is recovered: a control the reader aimed at keeps the focus.
+    // A commit can take a place away (a step down, or typing into a derived row that
+    // then becomes the source) and drop the caret onto the page. Only that lost case
+    // is recovered: a control the reader aimed at keeps the focus.
     if (document.activeElement === null || document.activeElement === document.body) {
       focusEditableRef.current('last')
     }
@@ -280,8 +281,8 @@ function App() {
     if (scroller) scroller.scrollLeft = scroller.scrollWidth
   }, [digitCounts, sourceKey])
 
-  // Focus policy: aiming at a control is a deliberate choice and wins, so the width
-  // radios, the base-add field and the remove buttons stay usable. Anything else — a
+  // Focus policy: aiming at a control is a deliberate choice and wins, so the
+  // base-add field, the remove buttons and the links stay usable. Anything else — a
   // release on plain content, a stray keypress, coming back to the tab — hands the
   // caret back so the next digit lands in the number. The page's own actions
   // (stepping, adding a base) ask for the caret themselves once they have finished.
@@ -329,8 +330,8 @@ function App() {
       setSourceDigits('0')
       return
     }
-    if (target > limit) {
-      setRejection(limitMessage(width))
+    if (target > VALUE_LIMIT) {
+      setRejection(LIMIT_MESSAGE)
       return
     }
     setRejection('')
@@ -356,25 +357,29 @@ function App() {
   const editDigit = (base: Base, boxes: string[], index: number, raw: string) => {
     // Layer 4: this array stays flat and most-significant-first; grouping is a
     // render-time concern.
+    // The row is a fixed grid of places, so editing writes into one place instead of
+    // adding or removing one: clearing a box blanks that place to zero rather than
+    // shortening the number, which is what keeps the places (and the caret) still.
     const next = boxes.slice()
+    const char = raw.length === 0 ? '0' : pickTypedChar(raw, boxes[index])
+    const digit = digitValue(char)
+    if (digit < 0 || digit >= base.radix) {
+      setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
+      return
+    }
+    next[index] = char
 
-    if (raw.length === 0) {
-      next.splice(index, 1)
-    } else {
-      const char = pickTypedChar(raw, boxes[index])
-      const digit = digitValue(char)
-      if (digit < 0 || digit >= base.radix) {
-        setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
-        return
-      }
-      next[index] = char
+    // Re-read the grid as a whole so the value keeps its one ceiling and the leading
+    // zeros the grid is showing never reach the number itself.
+    const typed = parseDigits(next.join(''), base.radix)
+    if (typed.status === 'too-large') {
+      setRejection(LIMIT_MESSAGE)
+      return
     }
 
     setRejection('')
     setSourceKey(base.key)
-    // The source row stays its natural length so its boxes do not move under the
-    // caret while typing; padding is a property of the derived rows only.
-    setSourceDigits(next.join(''))
+    setSourceDigits(typed.status === 'ok' ? digitsForValue(typed.value, base.radix).join('') : '')
   }
 
   const removeBase = (base: Base) => {
@@ -412,7 +417,7 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[760px] px-4 pb-16 text-[#172b4d] sm:px-6" id="top">
+    <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6" id="top">
       <header className="flex items-baseline justify-between py-6 sm:py-8">
         <a className="text-[15px] font-bold tracking-tight text-[#172b4d] no-underline" href="#top">basewise</a>
         <span className="text-[11px] text-[#63728a]">positional notation, plainly</span>
@@ -430,41 +435,9 @@ function App() {
           <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
           <p className="mt-1.5 text-xs text-[#8190a5]">
             Each box holds one position; the digit under a box is that position's index, so the rightmost box is always the units digit.
+            Every row shows the same sixteen positions, with leading zeros filling the ones the value does not use.
             Once the caret is in a box, ↑ and ↓ step the number by one and Page Up / Page Down step it by a whole place.
           </p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="text-[11px] font-semibold text-[#63728a]" id="digit-width-title">Digit width</span>
-            <div className="flex flex-wrap gap-2" role="group" aria-labelledby="digit-width-title" aria-describedby="digit-width-help">
-              {WIDTH_OPTIONS.map((option) => {
-                const isSelected = option === width
-                return (
-                  <label className={`flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 font-mono text-xs font-medium transition ${isSelected ? 'border-[#2458d3] bg-[#f0f4ff] text-[#172b4d]' : 'border-[#e3e9f1] text-[#344761] hover:border-[#a9bad2]'} has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#2458d3]`} key={option}>
-                    <input
-                      className="sr-only"
-                      type="radio"
-                      name="digit-width"
-                      value={option}
-                      checked={isSelected}
-                      onChange={() => setWidth(option)}
-                      // A pointer pick is finished business, so the caret comes back to the
-                      // number. A keyboard pick (detail === 0) is left alone, which keeps
-                      // arrow-key travel across the radios working.
-                      onClick={(event) => {
-                        if (event.detail > 0) pendingFocusRef.current = 'last'
-                      }}
-                    />
-                    {widthLabel(option)}
-                  </label>
-                )
-              })}
-            </div>
-            <p className="m-0 text-xs text-[#8190a5]" id="digit-width-help">
-              {width === 'auto'
-                ? 'Rows show only the positions the value needs.'
-                : `Every row pads to the positions a ${width}-bit word needs.`}
-            </p>
-          </div>
 
           <div className="mt-4 overflow-x-auto" ref={scrollerRef}>
             <table className="w-full border-separate border-spacing-0 text-left" aria-labelledby="result-title">
@@ -475,7 +448,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {withGroupings.map(({ base, isSource, boxes, groupings }) => (
+              {withGroupings.map(({ base, isSource, boxes, grouping }) => (
                 <tr className={isSource ? 'bg-[#f7f9fc]' : 'bg-white'} key={base.key}>
                   <th className="sticky left-0 z-10 border-b border-[#eef2f8] bg-inherit py-3 pr-3 align-middle font-normal" scope="row">
                     <span className="flex items-center gap-2 whitespace-nowrap">
@@ -498,8 +471,7 @@ function App() {
                     </span>
                   </th>
                   <td className="border-b border-[#eef2f8] py-3 pl-3 align-middle">
-                    {boxes ? (
-                      <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2">
                       <div className="flex items-end justify-end gap-2">
                       {isSource && (
                         <span className="mb-6 flex shrink-0 items-center gap-1" role="group" aria-label={`Step the ${base.name} value`}>
@@ -532,8 +504,8 @@ function App() {
                           return (
                             <li className="m-0 flex flex-col items-center" key={cellKey}>
                               <input
-                                className={`size-[clamp(18px,4.4vw,30px)] shrink-0 rounded-[4px] border bg-white p-0 text-center font-mono text-[clamp(12px,2.9vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25 ${isSource ? '' : 'border-[#dbe3ee] hover:border-[#a9bad2]'}`}
-                                style={isSource ? { borderColor: base.accent } : undefined}
+                                className={`shrink-0 rounded-[4px] border bg-white p-0 text-center font-mono font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25 ${isSource ? '' : 'border-[#dbe3ee] hover:border-[#a9bad2]'}`}
+                                style={{ width: BOX_SIZE, height: BOX_SIZE, fontSize: BOX_TEXT, ...(isSource ? { borderColor: base.accent } : {}) }}
                                 type="text"
                                 data-digit="true"
                                 ref={(node) => {
@@ -549,7 +521,7 @@ function App() {
                                 onChange={(event) => editDigit(base, boxes, index, event.target.value)}
                                 aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${isSource ? ', source base' : ''}`}
                               />
-                              <span className="size-[clamp(18px,4.4vw,30px)] shrink-0 pt-1 text-center font-mono text-[9px] leading-none text-[#a3b0c2]" aria-hidden="true">
+                              <span className="shrink-0 pt-1 text-center font-mono text-[9px] leading-none text-[#a3b0c2]" style={{ width: BOX_SIZE }} aria-hidden="true">
                                 {position}
                               </span>
                             </li>
@@ -557,11 +529,8 @@ function App() {
                         })}
                       </ol>
                       </div>
-                      <BinaryGroupings groupings={groupings} />
-                      </div>
-                    ) : (
-                      <span className="block text-right font-mono text-xl text-[#a3b0c2]">—</span>
-                    )}
+                      <GroupingUnderbox grouping={grouping} />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -604,7 +573,7 @@ function App() {
         </div>
 
         <p className="mt-10 border-t border-[#e7edf5] pt-5 text-xs leading-relaxed text-[#63728a]">
-          The number itself never changes — only the symbols that hold it, and how many places they need.
+          The number itself never changes — only the symbols that hold it. Every row shows the same sixteen positions, and the value sits in the low ones.
         </p>
       </section>
     </main>
