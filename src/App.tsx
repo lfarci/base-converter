@@ -1,7 +1,5 @@
-import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 
-const MIN_RADIX = 2
-const MAX_RADIX = 36
 const DIGIT_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 // Every row is the same fixed grid of places. Sixteen binary positions hold up to
@@ -24,27 +22,16 @@ type Base = {
   name: string
   radix: number
   accent: string
-  fixed: boolean
 }
 
-const fixedBases: Base[] = [
-  { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e8aa42', fixed: true },
-  { key: 'binary', name: 'Binary', radix: 2, accent: '#4381e6', fixed: true },
-  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d', fixed: true },
-  { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#9170d7', fixed: true },
+// The four rows the page reads in. Nothing adds to or removes from these: the grid
+// is the whole surface, and the value is written in whichever row the caret is in.
+const rows: Base[] = [
+  { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e8aa42' },
+  { key: 'binary', name: 'Binary', radix: 2, accent: '#4381e6' },
+  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d' },
+  { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#9170d7' },
 ]
-
-const addedAccents = ['#d4756b', '#4d9ecf', '#8f9f3d', '#c07ac0', '#4fb3a1', '#b1813f']
-
-function makeBase(radix: number, index: number): Base {
-  return {
-    key: `base-${radix}`,
-    name: `Base ${radix}`,
-    radix,
-    accent: addedAccents[index % addedAccents.length],
-    fixed: false,
-  }
-}
 
 function digitRange(radix: number) {
   return radix <= 10 ? `0–${radix - 1}` : `0–9 and A–${DIGIT_ALPHABET[radix - 1]}`
@@ -186,14 +173,11 @@ function GroupingUnderbox({ grouping }: { grouping: BitGrouping | null }) {
 }
 
 function App() {
-  const [rows, setRows] = useState<Base[]>(fixedBases)
   const [sourceKey, setSourceKey] = useState('decimal')
   const [sourceDigits, setSourceDigits] = useState('42')
   const [rejection, setRejection] = useState('')
-  const [pendingRadix, setPendingRadix] = useState('')
-  const [baseError, setBaseError] = useState('')
 
-  const sourceBase = rows.find((base) => base.key === sourceKey) ?? fixedBases[0]
+  const sourceBase = rows.find((base) => base.key === sourceKey) ?? rows[0]
   const parsed = parseDigits(sourceDigits, sourceBase.radix)
   const value = parsed.status === 'ok' ? parsed.value : null
   const error = rejection
@@ -281,11 +265,10 @@ function App() {
     if (scroller) scroller.scrollLeft = scroller.scrollWidth
   }, [digitCounts, sourceKey])
 
-  // Focus policy: aiming at a control is a deliberate choice and wins, so the
-  // base-add field, the remove buttons and the links stay usable. Anything else — a
-  // release on plain content, a stray keypress, coming back to the tab — hands the
-  // caret back so the next digit lands in the number. The page's own actions
-  // (stepping, adding a base) ask for the caret themselves once they have finished.
+  // Focus policy: aiming at a control is a deliberate choice and wins, so the links
+  // stay usable. Anything else — a release on plain content, a stray keypress, coming
+  // back to the tab — hands the caret back so the next digit lands in the number. The
+  // page's own actions (stepping) ask for the caret themselves once they have finished.
   useEffect(() => {
     const aimedAtAControl = (target: EventTarget | null) =>
       target instanceof Element && target.closest('input, button, select, textarea, label, a[href]') !== null
@@ -382,40 +365,6 @@ function App() {
     setSourceDigits(typed.status === 'ok' ? digitsForValue(typed.value, base.radix).join('') : '')
   }
 
-  const removeBase = (base: Base) => {
-    setRows((current) => current.filter((row) => row.key !== base.key))
-    if (base.key === sourceKey) {
-      setSourceKey(fixedBases[0].key)
-      setSourceDigits(parsed.status === 'ok' || parsed.status === 'too-large' ? parsed.value.toString(10) : '')
-      setRejection('')
-    }
-  }
-
-  const pendingValue = Number(pendingRadix)
-  const pendingIsValid = Number.isInteger(pendingValue) && pendingValue >= MIN_RADIX && pendingValue <= MAX_RADIX
-  const pendingTaken = pendingIsValid && rows.some((base) => base.radix === pendingValue)
-  const baseHelp = pendingIsValid && !pendingTaken
-    ? `Base ${pendingValue} uses digits ${digitRange(pendingValue)}.`
-    : `Any whole number from ${MIN_RADIX} to ${MAX_RADIX}. Digits above 9 use A–Z.`
-
-  const addBase = (event: FormEvent) => {
-    event.preventDefault()
-    if (!pendingIsValid) {
-      setBaseError(`Enter a whole number from ${MIN_RADIX} to ${MAX_RADIX}.`)
-      return
-    }
-    if (pendingTaken) {
-      setBaseError(`Base ${pendingValue} already has a row.`)
-      return
-    }
-    setRows((current) => [...current, makeBase(pendingValue, current.length)])
-    setBaseError('')
-    setPendingRadix('')
-    // The row was added; the next keystroke should land in the number, not in the field
-    // that is now empty. A rejected add leaves the caret where the correction is needed.
-    pendingFocusRef.current = 'last'
-  }
-
   return (
     <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6" id="top">
       <header className="flex items-baseline justify-between py-6 sm:py-8">
@@ -457,16 +406,6 @@ function App() {
                       <span className="font-mono text-[11px] text-[#8190a5]">{base.radix}</span>
                       {isSource && (
                         <span className="rounded-full border border-[#2458d3]/30 bg-[#f0f4ff] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.6px] text-[#2458d3]">source</span>
-                      )}
-                      {!base.fixed && (
-                        <button
-                          className="ml-1 grid size-5 shrink-0 place-items-center rounded-full border border-[#e3e9f1] text-[13px] leading-none text-[#63728a] transition hover:border-[#bd3b46] hover:text-[#bd3b46]"
-                          type="button"
-                          onClick={() => removeBase(base)}
-                          aria-label={`Remove the base ${base.radix} row`}
-                        >
-                          ×
-                        </button>
                       )}
                     </span>
                   </th>
@@ -540,35 +479,6 @@ function App() {
 
           <p className={`mt-3 min-h-5 text-xs leading-relaxed ${error ? 'text-[#a52736]' : 'text-[#63728a]'}`} id="edit-status" role={error ? 'alert' : 'status'}>
             {error || help}
-          </p>
-        </div>
-
-        <div className="mt-10">
-          <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="add-base-title">Add another base</h2>
-          <form className="mt-3 flex flex-wrap items-end gap-3" aria-labelledby="add-base-title" onSubmit={addBase} noValidate>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold text-[#63728a]" htmlFor="new-base-radix">Base to add (2–36)</label>
-              <input
-                className={`min-h-11 w-[132px] rounded-lg border bg-white px-3 font-mono text-sm font-semibold text-[#172b4d] outline-none transition focus:border-[#2458d3] focus:ring-[3px] focus:ring-[#2458d3]/15 ${baseError ? 'border-[#bd3b46]' : 'border-[#cdd7e5]'}`}
-                id="new-base-radix"
-                type="number"
-                min={MIN_RADIX}
-                max={MAX_RADIX}
-                step={1}
-                inputMode="numeric"
-                autoComplete="off"
-                value={pendingRadix}
-                onChange={(event) => setPendingRadix(event.target.value)}
-                aria-describedby="add-base-status"
-                aria-invalid={Boolean(baseError)}
-              />
-            </div>
-            <button className="min-h-11 rounded-lg border border-[#2458d3] bg-[#2458d3] px-4 text-xs font-semibold text-white transition hover:border-[#1d47ab] hover:bg-[#1d47ab]" type="submit">
-              Add base
-            </button>
-          </form>
-          <p className={`mt-2 min-h-5 text-xs leading-relaxed ${baseError ? 'text-[#a52736]' : 'text-[#63728a]'}`} id="add-base-status" role={baseError ? 'alert' : undefined}>
-            {baseError || baseHelp}
           </p>
         </div>
 
