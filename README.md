@@ -23,6 +23,13 @@ npm run lint
 npm run build
 ```
 
+Run the browser interaction suite in Chromium and Firefox with:
+
+```sh
+npx playwright install chromium firefox
+npm run test:e2e
+```
+
 ## Deployment
 
 Pushing to `main` triggers the [Deploy to GitHub Pages](.github/workflows/deploy-pages.yml)
