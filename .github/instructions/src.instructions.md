@@ -60,7 +60,7 @@ file holds what both share so it is stated once. Adapted from
   `-1` for the rest. Keep the global `:focus-visible` outline visible.
 - Digit boxes carry `aria-label` including base, radix, and position; disabled boxes carry
   a `title` explaining the limit. Keep these when editing `digits/DigitRow`.
-- The table keeps a 720px minimum width and scrolls horizontally on narrow screens, with
+- The table keeps a 768px minimum width and scrolls horizontally on narrow screens, with
   the base column `sticky left-0`. Verify layout at a 390px viewport.
 
 ## Conventions

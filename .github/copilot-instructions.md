@@ -33,7 +33,7 @@ npm run test:e2e        # Playwright, Chromium + Firefox
 
 `npm run test:e2e` needs browsers installed once with
 `npx playwright install chromium firefox`. It starts its own dev server on
-`http://127.0.0.1:5173/base-converter/` and reuses one that is already running locally.
+`http://127.0.0.1:5198/base-converter/`.
 
 ## Architecture
 
