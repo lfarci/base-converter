@@ -23,10 +23,10 @@ in `react-typescript.instructions.md`.
 - **This feature owns the DOM contract.** The Playwright specs bind to it, so a change here
   is a change to a public interface. Keep, exactly:
   - `data-digit` and `data-position` on every digit box; `data-editable` and
-    `data-highlighted` **only when true**. The tests check these attributes by presence, not
-    value, and `App.tsx` branches on `hasAttribute('data-editable')` — so never render
-    `data-editable={editable}` or `"false"`, or clicking a read-only readout starts counting
-    as a deliberate click target.
+      `data-highlighted` pass `editable || undefined`, never `false`: React would serialize
+      that to `data-editable="false"`, and `App.tsx` branches on
+      `hasAttribute('data-editable')`, so a read-only readout would start counting as a
+      deliberate click target.
   - the `aria-label` template `` `${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}` ``.
   - `tabIndex={0}` on the units box only; `-1` everywhere else. That is one *digit-box* Tab
     stop per row: the row toggle in `BaseHeaderCell` is the row's second stop, and the chain

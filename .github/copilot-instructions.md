@@ -94,8 +94,9 @@ what the instruction sets cannot know about this repository.
 - `react/only-export-components` warns by default, so a module exporting a component should
   not also export unrelated values. Put shared values in `core/conversion.ts`.
 - Do not rely on colour alone to convey state — the error is always present as words.
-- Each row exposes exactly one Tab stop: `tabIndex` is `0` only for the rightmost
-  (units) box and `-1` for every other box — do not add 16 Tab stops per row.
+- Each row exposes one *digit-box* Tab stop: `tabIndex` is `0` for the rightmost
+  (units) box and `-1` for every other box — the row's header toggle is its second Tab
+  stop. Do not add 16 Tab stops per row.
 - Verify layout at a 390px viewport; the table scrolls horizontally rather than collapsing.
 
 ## Workflow
