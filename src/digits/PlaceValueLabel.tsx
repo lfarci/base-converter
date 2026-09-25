@@ -19,7 +19,11 @@ export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabel
       style={highlighted
         ? {
             backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-paper-2))`,
-            borderColor: `color-mix(in srgb, ${base.accent} 70%, var(--color-ink))`,
+                        // 55/45 accent-to-ink, matching the breakdown term bar and the highlight ring: the
+                                    // border is a boundary, so it must clear 3:1 against its own tint. At 70/30
+                                    // decimal measured only 3.06:1 — passing, but with no margin for colour rounding.
+                                    // At 55/45 the worst accent sits at 4.11:1.
+                                    borderColor: `color-mix(in srgb, ${base.accent} 55%, var(--color-ink))`,
             color: 'var(--color-ink)',
             fontWeight: 600,
             textDecoration: 'underline',

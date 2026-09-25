@@ -121,7 +121,9 @@ input {
 
 /* The writable box is the most raised/selected cell: a deeper recess, the accent-derived
    2px frame (raw accent fails 3:1 as a boundary), and an accent tint. The tint stays on
-   the lighter panel surface so the frame still clears 3:1 against its own tint. */
+   the lighter panel surface so the frame still clears 3:1 against its own tint. The 55/45
+   mix matches the breakdown term bar and the highlight ring, so every accent-ink boundary on
+   the page uses one ratio. */
 .digit-box[data-editable] {
   border-width: 2px;
   border-color: var(--digit-frame);

@@ -69,7 +69,7 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     ['ink-soft on paper (intro)', page.locator('section[aria-labelledby="page-title"] > p').first()],
     ['ink-soft on paper (footer note)', page.locator('section > p').last()],
     ['ink on paper-3 (section header)', page.locator('#result-title')],
-      ['ink-soft on well (panel guidance)', page.locator('#result-title + p')],
+        ['ink-soft on well (panel guidance)', page.locator('#result-title + p')],
     ['ink on paper-3 (status strip)', page.locator('#edit-status')],
     ['ink on paper-3 (help label)', page.locator('details summary span').last()],
     ['ink-soft on paper-3 (help copy)', page.locator('details p')],
@@ -85,31 +85,38 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
   }
 
     // The digits sit on the inset field surface, which is the darkest tone any digit glyph
-    // lands on, so it is measured directly rather than inferred from the label above it.
-    const readout = digit(page, 'Decimal', 10, 4)
-    const readoutInk = await readout.evaluate((element) => ({
-      text: getComputedStyle(element).color,
-      fill: getComputedStyle(element).backgroundColor,
-    }))
-    expect(
-      contrast(readoutInk.text, readoutInk.fill),
-      `ink on the field surface: ${readoutInk.text} on ${readoutInk.fill}`,
-    ).toBeGreaterThanOrEqual(4.5)
+      // lands on, so it is measured directly rather than inferred from the label above it.
+      const readout = digit(page, 'Decimal', 10, 4)
+      const readoutInk = await readout.evaluate((element) => ({
+        text: getComputedStyle(element).color,
+        fill: getComputedStyle(element).backgroundColor,
+      }))
+      expect(
+        contrast(readoutInk.text, readoutInk.fill),
+        `ink on the field surface: ${readoutInk.text} on ${readoutInk.fill}`,
+      ).toBeGreaterThanOrEqual(4.5)
 
   // The writable box's frame has to separate the cell from the row surface and from its own
     // tint. All four bases are measured, not just decimal: each frame is a different accent-ink
     // mix, and decimal is the lightest accent, so it is the worst case for the tint pair and
-    // the suite would go blind to the others if it only ever sampled one. Both tinted states
-    // are covered — hover-highlighted at 12% and focused at 14% — because those are different
-    // mixes from the 8% default.
+    // the suite would go blind to the others if it only ever sampled one.
+    //
+    // All three skins are covered because each is a different border colour. The default and
+    // highlighted states both paint `--digit-frame` over an 8% / 12% accent tint, so those two
+    // are what actually pin the 55/45 mix. The focused state is *not* a frame measurement:
+    // `.digit-box[data-editable]:focus-visible` sets `border-color: var(--color-focus)`, which
+    // replaces `--digit-frame` outright, so what is asserted there is the focus token against
+    // the 14% tint. It is kept in this loop deliberately — a focused cell still has to clear
+    // 3:1 against its own background — but it must not be read as evidence about the accent mix.
     const bases: Array<[string, number]> = [['Decimal', 10], ['Binary', 2], ['Octal', 8], ['Hexadecimal', 16]]
     for (const [base, radix] of bases) {
-      for (const state of ['highlighted', 'focused'] as const) {
+      for (const state of ['default', 'highlighted', 'focused'] as const) {
         const box = digit(page, base, radix, 0)
         // Moving the pointer off the row first keeps the hover highlight from leaking in.
         await page.mouse.move(0, 0)
         if (state === 'highlighted') await box.hover()
-        else await box.focus()
+        else if (state === 'focused') await box.focus()
+        else await page.locator('body').click({ position: { x: 0, y: 0 } })
         await page.waitForTimeout(400)
 
         const writable = await sample(box)
@@ -127,6 +134,29 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
   // The source row's margin bar is a boundary, so it clears 3:1 against the row surface.
   const bar = await sample(page.locator('th[scope="row"][data-source] > div'))
   expect(contrast(bar.fill, bar.around), `source margin bar: ${bar.fill} on ${bar.around}`).toBeGreaterThanOrEqual(3)
+
+    // A highlighted place-value label's border is a boundary too, and it is the *other* site
+    // that mixes the accent with ink. It had no coverage at all, which is how a mix that
+    // measured only 3.06:1 — passing by 0.06 — sat unnoticed. The decimal row is measured
+    // because decimal is the lightest accent and therefore the worst case for every
+    // accent-vs-tint pair; sampling `[data-highlighted]` first would silently pick up a
+    // binary label and pass even with no mix at all.
+    const decimalUnitsForLabel = digit(page, 'Decimal', 10, 0)
+    await decimalUnitsForLabel.focus()
+    for (const key of '123') await page.keyboard.press(key)
+    const decimalLabel = digit(page, 'Decimal', 10, 1).locator('xpath=..').locator('.place-value-label')
+    // Hovering the digit is what marks the place as highlighted in both directions.
+    await digit(page, 'Decimal', 10, 1).hover()
+    await expect(decimalLabel).toHaveAttribute('data-highlighted', 'true')
+    const labelBox = await sample(decimalLabel)
+    expect(
+      contrast(labelBox.border, labelBox.fill),
+      `highlighted label border: ${labelBox.border} on ${labelBox.fill}`,
+    ).toBeGreaterThanOrEqual(3)
+    expect(
+      contrast(labelBox.border, labelBox.around),
+      `highlighted label border outside: ${labelBox.border} on ${labelBox.around}`,
+    ).toBeGreaterThanOrEqual(3)
 
   const units = digit(page, 'Decimal', 10, 0)
   await units.focus()
@@ -174,4 +204,32 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
       contrast(rule.colour, rule.fill),
       `breakdown inset rule: ${rule.colour} on ${rule.fill}`,
     ).toBeGreaterThanOrEqual(3)
-  })
+
+        // Each equation carries its own accent bar, painted as an inset `box-shadow` rather than
+            // a border. That is invisible to `borderLeftColor`, so the block above would not have
+            // caught a failing accent mix on it — which is exactly the gap that hid a 2.46:1 decimal
+            // bar. The bar only exists while the term is highlighted (focusing it sets the state, as
+            // hovering the matching digit would), so the term is focused first and the assertion
+            // demands the shadow colour actually be there rather than silently skipping.
+            const term = breakdown.locator('[data-breakdown-term]').first()
+            await term.focus()
+            await page.waitForTimeout(400)
+            const termBar = await term.evaluate((element) => {
+              const style = getComputedStyle(element)
+              // `inset 3px 0 0 0 <colour>`; match `color(srgb …)` first so the leading `rgb(` inside
+              // it is not mistaken for plain `rgb()` and divided by 255 by the luminance helper.
+              return {
+                colour: style.boxShadow.match(/color\([^)]+\)|rgba?\([^)]+\)/)?.[0] ?? null,
+                fill: style.backgroundColor,
+                shadow: style.boxShadow,
+              }
+            })
+            expect(
+              termBar.colour,
+              `highlighted term should paint an accent bar, but box-shadow was: ${termBar.shadow}`,
+            ).not.toBeNull()
+            expect(
+              contrast(termBar.colour!, termBar.fill),
+              `breakdown term accent bar: ${termBar.colour} on ${termBar.fill}`,
+            ).toBeGreaterThanOrEqual(3)
+          })

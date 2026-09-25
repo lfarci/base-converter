@@ -20,9 +20,10 @@ type ConversionTableProps = {
 
 export function ConversionTable({ displayed, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: ConversionTableProps) {
   return (
-    /* A framed ledger block. The frame is on the scroll region, not the table, so it adds no
-           horizontal padding to the digits `ol` (P4) — it only draws the outer edge. */
-            <div className="overflow-x-auto border border-frame" role="region" aria-label="Scrollable base conversion table">
+    /* A framed ledger block. The frame is on the scroll region rather than the table, so it
+           draws the outer edge without adding horizontal padding to the digits `ol` inside — the
+           first and last digit boxes still align to the grid's own edges. */
+        <div className="overflow-x-auto border border-frame" role="region" aria-label="Scrollable base conversion table">
           <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
             <thead>
               <tr>

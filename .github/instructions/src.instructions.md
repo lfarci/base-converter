@@ -68,6 +68,13 @@ file holds what they share so it is stated once. Adapted from
   4.5:1 against its actual surface; boundaries, focus rings, and the source-row margin bar
   must clear 3:1. Per-base accents are decoration and tint, never the sole boundary or state
   cue. When you move an element onto a different surface, re-measure rather than assume.
+- Every accent-ink boundary uses **one ratio: 55% accent, 45% ink** (`.digit-box`'s
+  `--digit-frame`, the highlighted place-value label's border, the breakdown term's inset
+  accent bar, and the highlight ring all use it). This is not arbitrary: decimal is the
+  lightest of the four accents and therefore the worst case for every accent-vs-tint pair,
+  and at the obvious-looking 70/30 it measured 2.46:1 against the breakdown tint — below the
+  3:1 a boundary needs. If you add another accent-ink boundary, use 55/45 and re-measure
+  against its own background rather than copying a nicer-sounding number.
 - Maintain a non-colour cue for every state: underlines on highlighted labels and breakdown
   terms, rings on highlighted boxes, and the solid ink margin bar on the source row. Those
   shapes are what survive `forced-colors`.

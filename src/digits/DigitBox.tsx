@@ -18,12 +18,12 @@ type DigitBoxProps = {
 //
 // The editable box is a worksheet cell you can write in: a 2px frame mixed from the row's
 // accent with ink, so the boundary clears 3:1 on paper and against its own tint where the
-// raw accent does not, plus a light accent tint. The mix is 65/35 rather than 70/30 because
+// raw accent does not, plus a light accent tint. The mix is 55/45 rather than 70/30 because
 // the decimal accent is the lightest of the four: at 70/30 its frame cleared the 3:1
-// boundary by only 0.02 against the focus tint, which any engine's colour rounding could
-// have flipped. At 65/35 the worst accent sits at 3.33:1 against its own tint while each
-// frame still reads as its base's hue. A highlight adds a ring, which is a shape cue that
-// survives forced-colors where a tint does not.
+// boundary by only 0.03 against its own tint, which any engine's colour rounding could have
+// flipped. At 55/45 the worst accent sits at 4.11:1 against its 12% tint and 4.22:1 against
+// the 8% default while each frame still reads as its base's hue. A highlight adds a ring,
+// which is a shape cue that survives forced-colors where a tint does not.
 //
 // The accent-derived colours arrive as inline *custom properties*, not as inline colours:
 // the skins live in `.digit-box` (src/index.css) and read these variables. That is what
@@ -43,7 +43,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
       data-highlighted={highlighted || undefined}
       style={{
         '--digit-accent': base.accent,
-        '--digit-frame': `color-mix(in srgb, ${base.accent} 65%, #172b4d)`,
+        '--digit-frame': `color-mix(in srgb, ${base.accent} 55%, #172b4d)`,
       } as CSSProperties}
       ref={surfaceRef}
       inputMode={base.radix <= 10 ? 'numeric' : 'text'}
