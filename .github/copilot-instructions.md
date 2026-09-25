@@ -16,6 +16,9 @@ no API calls, no persistence.
 - oxlint for linting (`.oxlintrc.json`).
 - Playwright for browser interaction tests (`playwright.config.ts`, `tests/`).
 
+For file-scoped React, Vite, and Tailwind best practices, see
+`.github/instructions/react-vite-tailwind.instructions.md`.
+
 ## Commands
 
 ```sh
@@ -74,6 +77,10 @@ Rules that follow from this:
 - **KISS**: prefer the direct solution. No abstraction with a single call site, no config
   layer, no state that can be derived during render.
 - **DRY**: each base's metadata and each rule is declared once in `src/conversion.ts`.
+- **YAGNI**: build only what the current requirement needs — no speculative props,
+  options, or components, and delete anything that stops being used.
+- **Tiny components**: one responsibility per component, explicit minimal props, no domain
+  logic in presentational pieces.
 - Strict TypeScript is on: `noUnusedLocals`, `noUnusedParameters`, and
   `verbatimModuleSyntax`. Import types with `import type { ... }` or inline `type`
   specifiers, and delete anything you stop using.
