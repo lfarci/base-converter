@@ -22,11 +22,11 @@ in `react-typescript.instructions.md`.
 
 - **This feature owns the DOM contract.** The Playwright specs bind to it, so a change here
   is a change to a public interface. Keep, exactly:
-  - `data-digit` and `data-position` on every digit box; `data-editable` and
-      `data-highlighted` pass `editable || undefined`, never `false`: React would serialize
-      that to `data-editable="false"`, and `App.tsx` branches on
-      `hasAttribute('data-editable')`, so a read-only readout would start counting as a
-      deliberate click target.
+  - `data-digit` and `data-position` on every digit box; `data-editable` passes
+      `editable || undefined` and `data-highlighted` passes `highlighted || undefined` —
+      never `false`: React would serialize that to `data-editable="false"`, and `App.tsx`
+      branches on `hasAttribute('data-editable')`, so a read-only readout would start
+      counting as a deliberate click target.
   - the `aria-label` template `` `${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}` ``.
   - `tabIndex={0}` on the units box only; `-1` everywhere else. That is one *digit-box* Tab
     stop per row: the row toggle in `BaseHeaderCell` is the row's second stop, and the chain
@@ -38,6 +38,10 @@ in `react-typescript.instructions.md`.
     colours, and its `data-position` / `data-highlighted` attributes.
   - the 144px width of the Base column and the `role="region"` /
     `aria-label="Scrollable base conversion table"` scroll wrapper.
+    - the toggle in `BaseHeaderCell` keeps `aria-expanded={isBreakdownOpen}` with
+      `aria-controls={breakdownId}`, and the exact
+      `` `Click to ${isBreakdownOpen ? 'close' : 'open'} the ${base.name.toLowerCase()} place-value breakdown` ``
+      `title` the specs assert.
 - **Import another feature through its entry component.** `digits/` may use
   `../breakdown/PlaceValueBreakdown`; it must not reach into `BreakdownTerm`,
   `BreakdownTotal`, or any other private part of that folder.

@@ -54,8 +54,9 @@ into JSX.
 
 Rules that follow from this:
 
-- All value math, parsing, and formatting lives in `src/core/conversion.ts` and must not
-  import React.
+- All shared parsing and value math lives in `src/core/conversion.ts` and must not
+  import React. The one exception is `breakdown/`, which owns the contribution arithmetic
+  and the `toString()` calls that render it.
 - Every component folder is a feature: it owns one part of the page, and imports another
   feature only through that feature's entry component (`digits/ConversionTable`,
   `breakdown/PlaceValueBreakdown`). Do not reach past an entry component into its private
@@ -78,7 +79,8 @@ Rules that follow from this:
 - Digits invalid for a row's base are rejected with the inline
   `Enter digits <range> for base <radix>.` message and the prior value is kept.
 - Empty input is valid and is distinct from zero. Values render with leading zeros to fill
-  all 16 positions; an empty source row renders blank.
+  every available place — five decimal, sixteen binary, six octal, four hexadecimal
+  (`positionsForBase`) — not a fixed sixteen per row; an empty source row renders blank.
 - `parseDigits` returns a discriminated result (`empty` / `invalid` / `too-large` / `ok`).
   Branch on `status` rather than re-deriving validity.
 - Stepping is on the *value*, not the text: in binary `1011` steps up to `1100`. Page
