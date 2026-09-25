@@ -69,7 +69,7 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     ['ink-soft on paper (intro)', page.locator('section[aria-labelledby="page-title"] > p').first()],
     ['ink-soft on paper (footer note)', page.locator('section > p').last()],
     ['ink on paper-3 (section header)', page.locator('#result-title')],
-    ['ink-soft on paper-2 (panel guidance)', page.locator('#result-title + p')],
+      ['ink-soft on well (panel guidance)', page.locator('#result-title + p')],
     ['ink on paper-3 (status strip)', page.locator('#edit-status')],
     ['ink on paper-3 (help label)', page.locator('details summary span').last()],
     ['ink-soft on paper-3 (help copy)', page.locator('details p')],
@@ -83,6 +83,18 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     const { text: colour, fill } = await sample(locator)
     expect(contrast(colour, fill), `${name}: ${colour} on ${fill}`).toBeGreaterThanOrEqual(4.5)
   }
+
+    // The digits sit on the inset field surface, which is the darkest tone any digit glyph
+    // lands on, so it is measured directly rather than inferred from the label above it.
+    const readout = digit(page, 'Decimal', 10, 4)
+    const readoutInk = await readout.evaluate((element) => ({
+      text: getComputedStyle(element).color,
+      fill: getComputedStyle(element).backgroundColor,
+    }))
+    expect(
+      contrast(readoutInk.text, readoutInk.fill),
+      `ink on the field surface: ${readoutInk.text} on ${readoutInk.fill}`,
+    ).toBeGreaterThanOrEqual(4.5)
 
   // The writable box's frame has to separate the cell from the row surface and from its own tint.
   const writable = await sample(digit(page, 'Decimal', 10, 0))
@@ -100,3 +112,31 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
   const ring = await sample(units)
   expect(contrast(ring.outline, ring.around), `focus ring: ${ring.outline} on ${ring.around}`).toBeGreaterThanOrEqual(3)
 })
+
+  // The worked calculation is a second inset field surface with its own two text roles, so it
+  // is measured with the breakdown actually open rather than assumed from the readouts.
+  test('the breakdown inset keeps its text and rules legible on the field surface', async ({ page }) => {
+    await page.goto('./')
+    await digit(page, 'Decimal', 10, 0).focus()
+    for (const key of '123') await page.keyboard.press(key)
+    await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+
+    const breakdown = page.locator('#decimal-place-value-breakdown section')
+    const heading = await sample(breakdown.locator('h3'))
+    expect(
+      contrast(heading.text, heading.fill),
+      `breakdown heading: ${heading.text} on ${heading.fill}`,
+    ).toBeGreaterThanOrEqual(4.5)
+
+    const equation = await sample(breakdown.locator('[data-breakdown-term]').first())
+    expect(
+      contrast(equation.text, equation.fill),
+      `breakdown equation: ${equation.text} on ${equation.fill}`,
+    ).toBeGreaterThanOrEqual(4.5)
+
+    const total = await sample(breakdown.locator('[role="math"]').last())
+    expect(
+      contrast(total.text, total.fill),
+      `breakdown total: ${total.text} on ${total.fill}`,
+    ).toBeGreaterThanOrEqual(4.5)
+  })

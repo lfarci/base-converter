@@ -1,4 +1,4 @@
-import type { KeyboardEvent, Ref } from 'react'
+import type { CSSProperties, KeyboardEvent, Ref } from 'react'
 import { bitRangeForDigit, type Base } from '../core/conversion'
 
 type DigitBoxProps = {
@@ -20,28 +20,27 @@ type DigitBoxProps = {
 // accent with ink, so the boundary clears 3:1 on paper where the raw accent does not, plus
 // a light accent tint. A highlight adds a ring, which is a shape cue that survives
 // forced-colors where a tint does not.
+//
+// The accent-derived colours arrive as inline *custom properties*, not as inline colours:
+// the skins live in `.digit-box` (src/index.css) and read these variables. That is what
+// lets one composed box-shadow carry both the recessed bevel and the highlight ring, so a
+// focused writable cell can show its inset, focus frame and outline at the same time —
+// an inline box-shadow would silently win over any class-based one.
 export function DigitBox({ base, position, digit, editable, highlighted, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
   const bitRange = bitRangeForDigit(base.radix, position)
-  const editableBorderColor = `color-mix(in srgb, ${base.accent} 70%, #172b4d)`
-  const boxStyle = highlighted
-    ? {
-        backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-paper-2))`,
-        borderColor: editable ? editableBorderColor : `color-mix(in srgb, ${base.accent} 70%, var(--color-ink))`,
-        boxShadow: `0 0 0 2px color-mix(in srgb, ${base.accent} 55%, var(--color-ink))`,
-      }
-    : editable
-      ? { backgroundColor: `color-mix(in srgb, ${base.accent} 8%, var(--color-paper-2))`, borderColor: editableBorderColor }
-      : undefined
 
   return (
     <input
-      className={`min-h-10 w-full min-w-0 rounded-[4px] border border-rule-soft bg-paper-2 p-0 text-center font-mono text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tabular-nums text-ink transition ${editable ? 'border-2 font-bold focus:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus' : 'cursor-default'}`}
+      className={`digit-box min-h-10 w-full min-w-0 p-0 text-center mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em] text-ink transition ${editable ? 'font-bold focus-visible:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus' : 'cursor-default'}`}
       type="text"
       data-digit="true"
       data-editable={editable || undefined}
       data-position={position}
       data-highlighted={highlighted || undefined}
-      style={boxStyle}
+      style={{
+        '--digit-accent': base.accent,
+        '--digit-frame': `color-mix(in srgb, ${base.accent} 70%, #172b4d)`,
+      } as CSSProperties}
       ref={surfaceRef}
       inputMode={base.radix <= 10 ? 'numeric' : 'text'}
       autoComplete="off"

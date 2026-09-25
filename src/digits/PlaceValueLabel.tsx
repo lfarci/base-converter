@@ -13,7 +13,7 @@ export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabel
 
   return (
     <span
-      className="place-value-label flex flex-col items-center gap-0.5 whitespace-nowrap rounded-sm border border-transparent px-0.5 py-0.5 text-center font-mono text-[10px] leading-tight text-ink-soft"
+      className="place-value-label mono-tech flex flex-col items-center gap-0.5 whitespace-nowrap rounded-sm border border-transparent px-0.5 py-0.5 text-center text-[10px] leading-tight tracking-[0.02em] text-ink-soft"
       data-position={position}
       data-highlighted={highlighted || undefined}
       style={highlighted
@@ -28,7 +28,7 @@ export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabel
         : undefined}
     >
       <span>{position}</span>
-      {bitRange && <span className="text-[9px] text-ink-soft">{bitRange}</span>}
+      {bitRange && <span className="mono-tech text-[9px] text-ink-soft">{bitRange}</span>}
     </span>
   )
 }

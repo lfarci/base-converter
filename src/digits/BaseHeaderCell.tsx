@@ -16,7 +16,7 @@ type BaseHeaderCellProps = {
 // and the next row below.
 export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, toggleRef, onToggle, onToggleKeyDown }: BaseHeaderCellProps) {
   return (
-    <th className="sticky left-0 z-10 w-[144px] border-b border-rule-soft bg-inherit py-3 pl-2 pr-2 align-top font-normal" scope="row" aria-label={base.name} data-source={isSource || undefined}>
+    <th className="sticky left-0 z-10 w-[144px] border-b border-dotted border-rule bg-inherit py-3 pl-2 pr-2 align-top font-normal" scope="row" aria-label={base.name} data-source={isSource || undefined}>
       {/* A shape cue, not a hue cue: the source row is marked by a solid ink bar at the
           cell's left edge. It is absolutely positioned and aria-hidden, so it never moves
           the cell's own metrics and never adds an announcement. */}
@@ -38,7 +38,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
         >
           <span className="whitespace-nowrap">{base.name}</span>
         </button>
-        <span className="w-5 text-right font-mono text-[11px] tabular-nums text-ink-soft">{base.radix}</span>
+        <span className="mono-tech w-5 text-right text-[11px] text-ink-soft">{base.radix}</span>
       </span>
     </th>
   )

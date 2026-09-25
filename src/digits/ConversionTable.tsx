@@ -20,14 +20,16 @@ type ConversionTableProps = {
 
 export function ConversionTable({ displayed, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: ConversionTableProps) {
   return (
-    <div className="overflow-x-auto" role="region" aria-label="Scrollable base conversion table">
-      <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
-        <thead>
-          <tr>
-            <th className="sticky left-0 z-20 w-[144px] border-b-2 border-t border-rule border-b-ink bg-paper-3 px-3 pb-1.5 pt-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-ink-soft" scope="col">Base</th>
-            <th className="border-b-2 border-t border-rule border-b-ink bg-paper-3 pb-1.5 pl-3 pr-3 pt-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-ink-soft" scope="col">Digits and place values</th>
-          </tr>
-        </thead>
+    /* A framed ledger block. The frame is on the scroll region, not the table, so it adds no
+           horizontal padding to the digits `ol` (P4) — it only draws the outer edge. */
+        <div className="overflow-x-auto border border-rule-soft" role="region" aria-label="Scrollable base conversion table">
+          <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-20 w-[144px] border-b-2 border-t border-rule border-b-frame bg-paper-3 px-3 pb-1.5 pt-2 mono-tech text-[10px] font-bold uppercase tracking-[0.12em] text-ink-soft" scope="col">Base</th>
+                <th className="border-b-2 border-t border-rule border-b-frame bg-paper-3 pb-1.5 pl-3 pr-3 pt-2 mono-tech text-[10px] font-bold uppercase tracking-[0.12em] text-ink-soft" scope="col">Digits and place values</th>
+              </tr>
+            </thead>
         <tbody>
           {displayed.map(({ base, boxes, isSource }) => (
             <DigitRow

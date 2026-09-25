@@ -19,25 +19,31 @@ Octal and hexadecimal digit labels show the bits represented by each place, coun
 
 ## Visual language
 
-The page is styled as a printed technical worksheet: warm paper surfaces, hairline and double rules, framed panels, uppercase mono section labels, serif prose, and monospace digits, positions, and equations. It is light-only (`color-scheme: light`), loads no webfonts, and adds no dependencies — the type stacks are system-available.
+The page is styled as a 1992 educational computer workbook, reimplemented cleanly for the web. The period supplies the structure, materials, framing, and ornament — heavy and double rules, a framed instrument panel, a ruled ledger, inset fields, a masthead mark — while the modern browser supplies the crisp rendering, contrast, and focus behaviour. It is light-only (`color-scheme: light`), loads nothing from the network at runtime, and adds no dependencies beyond the type stack.
 
-Colour, type, and surface decisions live in one `@theme` block at the top of `src/index.css`, which Tailwind 4 turns into utilities (`bg-paper-3`, `text-ink-soft`, `border-rule`, `font-display`, `outline-focus`, …):
+Colour, type, and surface decisions live in one `@theme` block at the top of `src/index.css`, which Tailwind 4 turns into utilities (`bg-paper-3`, `text-ink-soft`, `border-rule`, `font-display`, `outline-focus`, …). Four surface tones carry four distinct roles, so the page reads as layered sheets rather than one flat fill:
 
 | Token | Value | Role |
 | --- | --- | --- |
-| `--color-paper` | `#f6f1e4` | page surface |
-| `--color-paper-2` | `#fbf7ec` | panel and readout-cell surface |
-| `--color-paper-3` | `#ece4d2` | inset and band surface |
+| `--color-paper` | `#f5ecd6` | page surface — the desk |
+| `--color-paper-2` | `#fdfaf0` | panel and sheet surface — lighter than the page, so the panel sits *on* it |
+| `--color-paper-3` | `#ded3ac` | band surface — table header, panel title bar, status strip, help control |
+| `--color-well` | `#e9dfbd` | field surface — inset readouts, the instructional callout, the worked calculation |
+| `--color-frame` | `#75683f` | panel and table frame edges |
 | `--color-ink` | `#172b4d` | primary text |
-| `--color-ink-soft` | `#4d5b71` | secondary text (measured ≥4.5:1 on paper) |
-| `--color-rule` | `#c9bfa6` | meaningful hairline rules |
-| `--color-rule-soft` | `#ddd4bd` | decorative row separators |
+| `--color-ink-soft` | `#4d5b71` | secondary text |
+| `--color-rule` | `#b3a582` | meaningful hairline rules and the dotted ledger separators |
+| `--color-rule-soft` | `#ddd4bd` | decorative separators and bevel highlights |
 | `--color-focus` | `#2458d3` | focus ring |
 | `--color-danger` | `#a52736` | error text |
 
-Two rules follow from that layer. Faint, low-contrast values are for decorative rules only — never for text, because every text pair here is normal size and must clear 4.5:1. And per-base accents (defined in the `rows` array in `src/core/conversion.ts`) are decoration and tint only: a raw accent never serves as the sole boundary or state cue, which is why the writable box uses an accent-ink mix for its frame and why every state also carries a shape cue — the source-row margin bar, the highlight rings, and the underlines on highlighted labels and breakdown terms.
+Every text pair is measured, not assumed. `tests/contrast.spec.ts` reads the computed colours out of the running page and resolves each element's effective background by walking up the DOM, so moving an element onto a new surface re-measures it automatically rather than silently invalidating the claim. Ink measures 13.50:1 on the panel and 9.41:1 on the band; ink-soft measures 6.59:1 on the panel and 4.60:1 on the band. Ink-soft on the band is the tightest pair in the palette, so the band may not be darkened further.
 
-The stylesheet also answers three user preferences: `prefers-reduced-motion: reduce` drops the transitions, `prefers-contrast: more` swaps faint tints for solid rules and ink borders, and `forced-colors: active` keeps the writable box and highlight rings visible with system colours.
+Three rules follow from that layer. Faint, low-contrast values are for decorative rules only — never for text, because every text pair here is normal size and must clear 4.5:1. Per-base accents (defined in the `rows` array in `src/core/conversion.ts`) are decoration and tint only: a raw accent never serves as the sole boundary or state cue, which is why the writable box uses an accent-ink mix for its frame and why every state also carries a shape cue — the source-row margin bar, the highlight rings, and the underlines on highlighted labels and breakdown terms. And ornament is always `aria-hidden`, decorative, never the sole cue for a state or a boundary, never laid behind text, never a Tab stop, and removable without breaking layout or meaning. The allowed vocabulary is hairlines and double rules, coloured margin bars, hard offset shadows, inset bevels, small mono markers, and the one masthead monitor icon. Textures behind text, soft or glassy shadows, and gradients are not used.
+
+The notation type — digits, positions, bit ranges, radices, equations, and the status strip — is set in **IBM Plex Mono**, self-hosted from `src/assets/fonts/` under the SIL Open Font License 1.1 (licence file included beside it). Nothing is fetched from a CDN; the build fingerprints the three woff2 files into `dist/assets/`. The stack falls back through JetBrains Mono, Roboto Mono, DejaVu Sans Mono, `ui-monospace`, Cascadia Mono, Segoe UI Mono, Consolas, and Menlo. The `.mono-tech` utility also turns on slashed zero and tabular figures, so even a fallback face reads as machine print.
+
+The stylesheet also answers three user preferences: `prefers-reduced-motion: reduce` drops the transitions, `prefers-contrast: more` flattens the tints and bevels to solid rules and ink borders, and `forced-colors: active` keeps the writable box and highlight rings visible with system colours.
 
 ## Project layout
 

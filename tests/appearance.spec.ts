@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 import { digit } from './helpers'
 
 // The revamp has to keep every state readable without relying on hue: the source row, the
@@ -34,6 +34,58 @@ test('the source row carries data-source and a margin bar, and both follow the r
   await page.keyboard.press('A')
 
   await expect(page.locator('th[scope="row"][data-source] button')).toHaveText('Hexadecimal')
+})
+
+test('the page reads as layered sheets, not one flat fill', async ({ page }) => {
+  const backgroundOf = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor)
+
+  const pageTone = await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)
+  const panel = await backgroundOf(page.locator('#result-title').locator('xpath=..'))
+  const band = await backgroundOf(page.locator('#result-title'))
+  const field = await backgroundOf(digit(page, 'Decimal', 10, 4))
+
+  // Four roles, four tones: page (the desk), panel (the sheet on it), band (table header,
+  // title bar, status strip) and field (inset readouts). If two of these ever collapse to
+  // the same colour the layered-sheet cue is gone, which is the whole point of the change.
+  const tones = [pageTone, panel, band, field]
+  expect(new Set(tones).size, `four distinct surfaces, got ${tones.join(' | ')}`).toBe(4)
+})
+
+test('the converter panel is framed with a heavier top edge and a hard offset shadow', async ({ page }) => {
+  const panel = page.locator('#result-title').locator('xpath=..')
+
+  const top = await panel.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth))
+  const sides = await panel.evaluate((element) => [
+    parseFloat(getComputedStyle(element).borderLeftWidth),
+    parseFloat(getComputedStyle(element).borderRightWidth),
+    parseFloat(getComputedStyle(element).borderBottomWidth),
+  ])
+  expect(top).toBeGreaterThan(Math.max(...sides))
+
+  // A printed frame cue: an offset with zero blur, never a modern soft shadow.
+  const shadow = await panel.evaluate((element) => getComputedStyle(element).boxShadow)
+  expect(shadow, `panel shadow: ${shadow}`).toMatch(/\d+px \d+px 0px 0px/)
+})
+
+test('a focused writable cell keeps its recessed bevel and highlight ring at the same time', async ({ page }) => {
+  const units = digit(page, 'Decimal', 10, 0)
+  await units.focus()
+  await page.keyboard.press('1')
+  await units.focus()
+  // Let the focus transition settle so the sampled values are the end state.
+  await page.waitForTimeout(400)
+
+  await expect(units).toHaveAttribute('data-highlighted', 'true')
+
+  // All four cues at once: the inset bevel, the highlight ring, the focus frame and the
+  // focus outline. The ring and the bevel share one box-shadow, which is why the cell can
+  // be both highlighted and focused — an inline shadow would have hidden the bevel.
+  await expect(units).toHaveCSS('box-shadow', /inset/)
+  await expect(units).toHaveCSS('box-shadow', /inset[\s\S]*0px 0px 0px 2px/)
+  await expect(units).toHaveCSS('border-top-color', 'rgb(36, 88, 211)')
+  await expect(units).toHaveCSS('outline-style', 'solid')
+  await expect(units).toHaveCSS('outline-width', '3px')
+  await expect(units).toHaveCSS('border-top-left-radius', '2px')
 })
 
 test('highlighting a place carries an underline on its label and breakdown term, not colour alone', async ({ page }) => {

@@ -55,7 +55,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
             if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
           }}
         />
-        <td className="border-b border-rule-soft py-3 pl-3 pr-3 align-middle">
+        <td className="border-b border-dotted border-rule py-3 pl-3 pr-3 align-middle">
           <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${spansBitGrid ? POSITIONS : boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
               {boxes.map((digit, index) => {
                 const position = boxes.length - 1 - index
@@ -96,7 +96,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
       </tr>
       {isBreakdownOpen && (
         <tr>
-          <td className="border-b border-rule-soft bg-paper-2 py-0 pl-[140px] pr-3" colSpan={2}>
+          <td className="border-b border-dotted border-rule bg-paper-2 py-0 pl-[140px] pr-3" colSpan={2}>
             <div id={breakdownId}>
               <PlaceValueBreakdown
                 base={base}

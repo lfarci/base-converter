@@ -20,7 +20,7 @@ export function BreakdownTerm({ base, digit, digitValue: value, position, contri
 
   return (
     <span
-      className="rounded-sm border border-transparent px-1 py-0.5 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
+      className="mono-tech rounded-sm border border-transparent px-1 py-0.5 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
       role="math"
       tabIndex={0}
       data-breakdown-term="true"
@@ -28,7 +28,7 @@ export function BreakdownTerm({ base, digit, digitValue: value, position, contri
       data-highlighted={highlighted || undefined}
       style={highlighted
         ? {
-            backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-paper-3))`,
+                  backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-well))`,
             boxShadow: `inset 3px 0 0 0 color-mix(in srgb, ${base.accent} 70%, var(--color-ink))`,
             color: 'var(--color-ink)',
             fontWeight: 600,

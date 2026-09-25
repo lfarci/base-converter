@@ -62,6 +62,19 @@ in `react-typescript.instructions.md`.
   hands it to `core/entry.ts`, which decides the next state and the focus target.
 - `DigitBox` is the one place that owns a box's attributes, `inputMode`, `readOnly`, and
   colour-mix styles. Do not restate those in `DigitRow`.
+- **Digit boxes are physical fields, not modern cards.** They use `rounded-[2px]` — rounded
+  corners are the strongest "modern" tell. A readout is recessed into the `--color-well`
+  field surface with an inset bevel; the writable units box takes a deeper recess, the 2px
+  accent-ink frame, and its tint on the lighter panel surface, so it stays the most
+  raised/selected cell in the row and its frame still clears 3:1 against its own tint.
+- **The skins live in classes (`.digit-box` in `index.css`); the accent travels as inline
+  custom properties** (`--digit-accent`, `--digit-frame`). This is load-bearing: an inline
+  `boxShadow` beats a class, so an inline highlight ring would silently hide the focus inset
+  and R7's selection cue would never appear. One composed `box-shadow` carries both the
+  bevel and the highlight ring, and the focus variant adds the recess on top. Keep every
+  state that takes the highlight into that single composed shadow.
+- Row separators are 1px **dotted** `--color-rule` ledger rules, and the table frame is
+  `--color-frame`. Neither is a control boundary, so neither is held to 3:1.
 
 ## Checks
 

@@ -1,20 +1,60 @@
 @import "tailwindcss";
 
+/* IBM Plex Mono, self-hosted. SIL OFL 1.1 — see src/assets/fonts/IBM-Plex-Mono-LICENSE.txt.
+   Bundled rather than fetched so notation renders as machine print offline and without a
+   third-party request. Relative urls so Vite fingerprints them against the /base-converter/
+   base path. */
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./assets/fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("./assets/fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("./assets/fonts/ibm-plex-mono-latin-700-normal.woff2") format("woff2");
+}
+
 /* The design tokens. Tailwind 4 is CSS-first, so every token here is also a utility:
-   `bg-paper`, `text-ink-soft`, `border-rule-soft`, `font-mono`, `outline-focus`, … */
+   `bg-paper`, `text-ink-soft`, `border-rule-soft`, `font-mono`, `outline-focus`, …
+
+   Four surfaces, each with one role, spaced along a single warm cream axis so they read as
+   layered sheets rather than one flat fill. Measured lightness (L*) and the tightest text
+   pair on each:
+     --color-paper-2  L*98.3  panel/sheet (lighter than the page, so the panel sits on it)
+     --color-paper    L*93.6  page (the desk)
+     --color-well     L*88.8  field/inset (readouts, callouts, worked calculations)
+     --color-paper-3  L*84.5  band (table header, title bar, status strip, help control)
+   Every adjacent pair differs by >=4.3 L* and every documented text pair clears 4.5:1 —
+   the tightest is ink-soft on --color-paper-3 at 4.60, so the band may not go darker. */
 @theme {
-  --color-paper: #f6f1e4;
-  --color-paper-2: #fbf7ec;
-  --color-paper-3: #ece4d2;
+  --color-paper: #f5ecd6;
+  --color-paper-2: #fdfaf0;
+  --color-paper-3: #ded3ac;
+  --color-well: #e9dfbd;
+  --color-frame: #75683f;
   --color-ink: #172b4d;
   --color-ink-soft: #4d5b71;
-  --color-rule: #c9bfa6;
+  --color-rule: #b3a582;
   --color-rule-soft: #ddd4bd;
   --color-focus: #2458d3;
   --color-danger: #a52736;
 
   --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
-  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", "Roboto Mono", "DejaVu Sans Mono", ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, Menlo, monospace;
 }
 
 * {
@@ -54,6 +94,60 @@ input {
   outline-offset: 3px;
 }
 
+/* Machine print. Slashed zero + tabular figures so even a fallback mono reads as technical
+   notation rather than body text. Tracking is applied per element rather than here, so a
+   Tailwind `tracking-*` utility still wins. Sizes stay above the notation floor: >=11px
+   digit glyphs, >=10px position labels, >=9px bit-range lines. */
+.mono-tech {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "zero" 1, "tnum" 1;
+}
+
+/* Digit-box skins.
+   These are classes rather than inline styles because a highlighted cell and a focused
+   cell can both apply at once: the accent-derived colours come in as inline custom
+   properties (the one genuinely dynamic value, so the one sanctioned inline style), and
+   each state contributes to a single composed box-shadow. Inline box-shadow would have
+   silently overridden the highlight ring, which is why focus could never show its inset.
+   Unlayered, so they beat Tailwind's utility layer. */
+.digit-box {
+  border-radius: 2px;
+  border: 1px solid var(--color-rule-soft);
+  background-color: var(--color-well);
+  /* Recessed: dark top-left, light bottom-right — a field cut into the sheet. */
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.16), inset -1px -1px 0 rgb(255 255 255 / 0.65);
+}
+
+/* The writable box is the most raised/selected cell: a deeper recess, the accent-derived
+   2px frame (raw accent fails 3:1 as a boundary), and an accent tint. The tint stays on
+   the lighter panel surface so the frame still clears 3:1 against its own tint. */
+.digit-box[data-editable] {
+  border-width: 2px;
+  border-color: var(--digit-frame);
+  background-color: color-mix(in srgb, var(--digit-accent) 8%, var(--color-paper-2));
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.22), inset -1px -1px 0 rgb(255 255 255 / 0.7), inset 0 3px 0 rgb(23 43 77 / 0.06);
+}
+
+/* The highlight ring composes with whichever bevel is underneath instead of replacing it. */
+.digit-box[data-highlighted] {
+  border-color: var(--digit-frame);
+  background-color: color-mix(in srgb, var(--digit-accent) 12%, var(--color-paper-2));
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.16), inset -1px -1px 0 rgb(255 255 255 / 0.65), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink));
+}
+
+/* An old-software selection: the field recesses further and takes the focus frame, while
+   still showing its highlight ring. */
+.digit-box[data-editable]:focus-visible {
+  border-color: var(--color-focus);
+  background-color: color-mix(in srgb, var(--digit-accent) 14%, var(--color-paper-2));
+  outline-offset: 2px;
+}
+
+.digit-box[data-editable][data-highlighted]:focus-visible {
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.28), inset -1px -1px 0 rgb(255 255 255 / 0.7), inset 0 3px 0 rgb(23 43 77 / 0.08), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink));
+}
+
 /* Preference support. Each block restates component appearance for a user setting, which
    is a document-level concern, so the selectors live here beside the tokens they read —
    and these rules stay unlayered so they beat Tailwind's utility layer and any inline
@@ -65,14 +159,19 @@ input {
   }
 }
 
+/* With more contrast asked for, the four tints and the inset bevels flatten to solid
+   rule/ink boundaries — the layered-sheet cue is decorative and must not compete with
+   the user's own contrast preference. */
 @media (prefers-contrast: more) {
   input[data-digit] {
     background-color: var(--color-paper-2) !important;
     border-color: var(--color-rule) !important;
+    box-shadow: none !important;
   }
   input[data-editable] {
     background-color: var(--color-paper-2) !important;
     border-color: var(--color-ink) !important;
+    box-shadow: none !important;
   }
   input[data-highlighted],
   .place-value-label[data-highlighted],
