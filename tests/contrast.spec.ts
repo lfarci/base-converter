@@ -96,10 +96,33 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
       `ink on the field surface: ${readoutInk.text} on ${readoutInk.fill}`,
     ).toBeGreaterThanOrEqual(4.5)
 
-  // The writable box's frame has to separate the cell from the row surface and from its own tint.
-  const writable = await sample(digit(page, 'Decimal', 10, 0))
-  expect(contrast(writable.border, writable.around), `writable frame outside: ${writable.border} on ${writable.around}`).toBeGreaterThanOrEqual(3)
-  expect(contrast(writable.border, writable.fill), `writable frame inside: ${writable.border} on ${writable.fill}`).toBeGreaterThanOrEqual(3)
+  // The writable box's frame has to separate the cell from the row surface and from its own
+    // tint. All four bases are measured, not just decimal: each frame is a different accent-ink
+    // mix, and decimal is the lightest accent, so it is the worst case for the tint pair and
+    // the suite would go blind to the others if it only ever sampled one. Both tinted states
+    // are covered — hover-highlighted at 12% and focused at 14% — because those are different
+    // mixes from the 8% default.
+    const bases: Array<[string, number]> = [['Decimal', 10], ['Binary', 2], ['Octal', 8], ['Hexadecimal', 16]]
+    for (const [base, radix] of bases) {
+      for (const state of ['highlighted', 'focused'] as const) {
+        const box = digit(page, base, radix, 0)
+        // Moving the pointer off the row first keeps the hover highlight from leaking in.
+        await page.mouse.move(0, 0)
+        if (state === 'highlighted') await box.hover()
+        else await box.focus()
+        await page.waitForTimeout(400)
+
+        const writable = await sample(box)
+        expect(
+          contrast(writable.border, writable.around),
+          `writable frame outside (${base}, ${state}): ${writable.border} on ${writable.around}`,
+        ).toBeGreaterThanOrEqual(3)
+        expect(
+          contrast(writable.border, writable.fill),
+          `writable frame inside (${base}, ${state}): ${writable.border} on ${writable.fill}`,
+        ).toBeGreaterThanOrEqual(3)
+      }
+    }
 
   // The source row's margin bar is a boundary, so it clears 3:1 against the row surface.
   const bar = await sample(page.locator('th[scope="row"][data-source] > div'))
@@ -139,4 +162,16 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
       contrast(total.text, total.fill),
       `breakdown total: ${total.text} on ${total.fill}`,
     ).toBeGreaterThanOrEqual(4.5)
+
+    // The worked-calculation inset's left rule is a real boundary marking the block off from
+    // the panel, so it is held to 3:1 like the other frames rather than treated as a
+    // decorative hairline.
+    const rule = await breakdown.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { colour: style.borderLeftColor, fill: style.backgroundColor }
+    })
+    expect(
+      contrast(rule.colour, rule.fill),
+      `breakdown inset rule: ${rule.colour} on ${rule.fill}`,
+    ).toBeGreaterThanOrEqual(3)
   })

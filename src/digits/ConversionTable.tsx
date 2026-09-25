@@ -22,7 +22,7 @@ export function ConversionTable({ displayed, value, highlightedBits, onHoverPosi
   return (
     /* A framed ledger block. The frame is on the scroll region, not the table, so it adds no
            horizontal padding to the digits `ol` (P4) — it only draws the outer edge. */
-        <div className="overflow-x-auto border border-rule-soft" role="region" aria-label="Scrollable base conversion table">
+            <div className="overflow-x-auto border border-frame" role="region" aria-label="Scrollable base conversion table">
           <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
             <thead>
               <tr>
