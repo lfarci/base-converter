@@ -16,6 +16,10 @@ no API calls, no persistence.
 - oxlint for linting (`.oxlintrc.json`).
 - Playwright for browser interaction tests (`playwright.config.ts`, `tests/`).
 
+For file-scoped standards, see `.github/instructions/src.instructions.md` (shared rules for
+`src/`), plus `.github/instructions/react-typescript.instructions.md` (`.tsx`) and
+`.github/instructions/typescript.instructions.md` (`.ts`).
+
 ## Commands
 
 ```sh
@@ -71,29 +75,17 @@ Rules that follow from this:
 
 ## Conventions
 
-- **KISS**: prefer the direct solution. No abstraction with a single call site, no config
-  layer, no state that can be derived during render.
-- **DRY**: each base's metadata and each rule is declared once in `src/conversion.ts`.
-- Strict TypeScript is on: `noUnusedLocals`, `noUnusedParameters`, and
-  `verbatimModuleSyntax`. Import types with `import type { ... }` or inline `type`
-  specifiers, and delete anything you stop using.
+Every file under `src/` is governed by the instruction sets listed in **Stack** above —
+the principles (**KISS**, **DRY**, **YAGNI**), tiny-component, typing, styling, and
+accessibility rules all live there and are deliberately not restated here. What follows is
+what the instruction sets cannot know about this repository.
+
 - `react/only-export-components` warns by default, so a module exporting a component should
   not also export unrelated values. Put shared values in `conversion.ts`.
-- Formatting: two-space indent, no semicolons, single quotes.
-
-## UI, accessibility, and design
-
-- Keep the visual language: white surface, `#172b4d` text, `#2458d3` focus accent,
-  per-base accent colour from `rows`, monospace `tabular-nums` for digits.
+- Do not rely on colour alone to convey state — the error is always present as words.
 - Each row exposes exactly one Tab stop: `tabIndex` is `0` only for the rightmost
   (units) box and `-1` for every other box — do not add 16 Tab stops per row.
-- Digit boxes carry `aria-label` including base, radix, and position; disabled boxes carry
-  a `title` explaining the limit. Keep these when editing `DigitRow`.
-- The status line is a single live region: `role="alert"` when there is an error,
-  otherwise `role="status"`.
-- The table keeps a 720px minimum width and scrolls horizontally on narrow screens, with
-  the base column `sticky left-0`. Verify layout at a 390px viewport.
-- Do not rely on colour alone to convey state — the error is always present as words.
+- Verify layout at a 390px viewport; the table scrolls horizontally rather than collapsing.
 
 ## Workflow
 
