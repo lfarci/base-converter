@@ -1,21 +1,13 @@
 ---
-description: 'React + TypeScript component best practices for tiny, reusable function components'
+description: 'React component best practices for tiny, reusable function components'
 applyTo: '**/*.tsx'
 ---
 
 # React + TypeScript
 
-Best practices for this app's `.tsx` files: React 19 function components styled with
-Tailwind CSS 4. Adapted from [Awesome GitHub Copilot](https://awesome-copilot.github.com/).
-
-## Principles
-
-- **KISS**: prefer the direct solution. No abstraction with a single call site, no
-  configuration layer, no state that can be derived during render.
-- **DRY**: declare each rule and design token exactly once, then reuse it. Duplicated
-  values or branches are a bug waiting to drift apart.
-- **YAGNI**: build only what the current requirement needs. No speculative props, options,
-  variants, or "just in case" helpers — delete anything that stops being used.
+`.tsx`-specific guidance. Shared principles, layout, types, styling, and accessibility
+rules live in `src.instructions.md`. Adapted from
+[Awesome GitHub Copilot](https://awesome-copilot.github.com/).
 
 ## Tiny reusable components
 
@@ -33,6 +25,8 @@ Tailwind CSS 4. Adapted from [Awesome GitHub Copilot](https://awesome-copilot.gi
 - Keep pure, non-React logic in a `.ts` module so it can be tested without rendering.
 - Name props for their meaning (`value`, `onChange`), not their implementation
   (`data`, `setterFn`).
+- Declare props with a local `type XProps = { ... }` and type event handlers with React's
+  own types (`KeyboardEvent<HTMLInputElement>`).
 
 ## React 19
 
@@ -48,54 +42,12 @@ Tailwind CSS 4. Adapted from [Awesome GitHub Copilot](https://awesome-copilot.gi
   relies on referential equality.
 - Keys must be stable and derived from data, never array indices in reorderable lists.
 - `react/only-export-components` warns by default: a module exporting a component should
-  not also export unrelated values. Put shared values in a plain module.
+  not also export unrelated values. Put shared values in `conversion.ts`.
 - `react/rules-of-hooks` is an error — never work around it.
 
-## TypeScript in components
+## Tailwind in components
 
-- Strict mode is on (`noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`).
-- Import types with `import type { ... }` or inline `type` specifiers.
-- Declare props with a local `type XProps = { ... }`; delete props and imports you stop
-  using — the build fails on unused locals.
-- Prefer small local types and unions over optional-everything shapes. Reach for
-  discriminated unions when a value has distinct states.
-- Type event handlers with React's own types (`KeyboardEvent<HTMLInputElement>`).
-
-## Tailwind CSS 4
-
-- Configuration is CSS-first. No `tailwind.config.js` and no PostCSS config for Tailwind;
-  the `@tailwindcss/vite` plugin plus `@import "tailwindcss";` is the whole setup.
-- Keep the existing surface language: white surface, `#172b4d` text, `#2458d3` focus
-  accent, per-base accent from `rows`, and monospace `tabular-nums` for digits.
-- Reuse the same accent and spacing values across components instead of inventing near
-  duplicates (DRY).
 - Compose classes directly in JSX. Extract a repeated class cluster into a small component
   or a shared token before it is copy-pasted a third time.
-- Only reach for `style={...}` for genuinely dynamic values (for example a per-base accent
-  colour); static appearance belongs in classes.
 - Use responsive and state variants in the markup (`sm:`, `hover:`, `focus-visible:`)
   rather than conditional JavaScript.
-- Keep semantic HTML: tables, lists, `button`, `input`. Utilities style; they do not excuse
-  a `div` where an element has meaning.
-
-## Accessibility
-
-- Do not rely on colour alone to convey state; state is always present as words too.
-- Keep `aria-label`s describing base, radix, and position, and keep `title` on disabled
-  controls.
-- Interactive elements are `button`/`input`/`a`, not clickable `div`s.
-- Maintain a sane tab order: one Tab stop per logical row, `tabIndex={0}` only on the
-  control that should receive focus, `-1` for the rest.
-- The status line is a single live region: `role="alert"` for errors, otherwise
-  `role="status"`.
-- Verify focus is visible: the global `:focus-visible` outline is part of the design.
-
-## Checks
-
-Run these before calling a change done:
-
-```sh
-npm run typecheck
-npm run lint
-npm run build
-```
