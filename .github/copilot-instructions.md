@@ -16,8 +16,9 @@ no API calls, no persistence.
 - oxlint for linting (`.oxlintrc.json`).
 - Playwright for browser interaction tests (`playwright.config.ts`, `tests/`).
 
-For file-scoped React, Vite, and Tailwind best practices, see
-`.github/instructions/react-vite-tailwind.instructions.md`.
+For file-scoped TypeScript and React best practices, see
+`.github/instructions/typescript.instructions.md` (`.ts`) and
+`.github/instructions/react-typescript.instructions.md` (`.tsx`).
 
 ## Commands
 

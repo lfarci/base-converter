@@ -1,22 +1,21 @@
 ---
-description: 'React + Vite + Tailwind best practices for tiny, reusable function components'
-applyTo: '**/*.{ts,tsx,js,jsx,css}'
+description: 'React + TypeScript component best practices for tiny, reusable function components'
+applyTo: '**/*.tsx'
 ---
 
-# React + Vite + Tailwind
+# React + TypeScript
 
-Best practices for this app's stack: React 19 function components, strict TypeScript
-compiled by Vite, and Tailwind CSS 4 configured in CSS. Adapted from
-[Awesome GitHub Copilot](https://awesome-copilot.github.com/).
+Best practices for this app's `.tsx` files: React 19 function components styled with
+Tailwind CSS 4. Adapted from [Awesome GitHub Copilot](https://awesome-copilot.github.com/).
 
 ## Principles
 
 - **KISS**: prefer the direct solution. No abstraction with a single call site, no
   configuration layer, no state that can be derived during render.
-- **DRY**: declare each rule, base definition, and design token exactly once, then reuse
-  it. Duplicated values or branches are a bug waiting to drift apart.
-- **YAGNI**: build only what the current requirement needs. No speculative props,
-  options, variants, or "just in case" helpers — delete anything that stops being used.
+- **DRY**: declare each rule and design token exactly once, then reuse it. Duplicated
+  values or branches are a bug waiting to drift apart.
+- **YAGNI**: build only what the current requirement needs. No speculative props, options,
+  variants, or "just in case" helpers — delete anything that stops being used.
 
 ## Tiny reusable components
 
@@ -27,12 +26,11 @@ compiled by Vite, and Tailwind CSS 4 configured in CSS. Adapted from
 - Share behaviour through props and small pure helpers, not inheritance or render-prop
   pyramids. A presentational component receives data and callbacks and holds no domain
   logic.
-- Props are explicit and minimal: only what the component renders or forwards. No prop
-  that is always the same value at every call site (YAGNI).
+- Props are explicit and minimal: only what the component renders or forwards. No prop that
+  is always the same value at every call site (YAGNI).
 - Prefer composition over configuration: pass children/elements instead of adding mode
   flags.
-- Keep pure, non-React logic in a separate module so it can be unit tested without
-  rendering.
+- Keep pure, non-React logic in a `.ts` module so it can be tested without rendering.
 - Name props for their meaning (`value`, `onChange`), not their implementation
   (`data`, `setterFn`).
 
@@ -53,13 +51,15 @@ compiled by Vite, and Tailwind CSS 4 configured in CSS. Adapted from
   not also export unrelated values. Put shared values in a plain module.
 - `react/rules-of-hooks` is an error — never work around it.
 
-## TypeScript
+## TypeScript in components
 
 - Strict mode is on (`noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`).
 - Import types with `import type { ... }` or inline `type` specifiers.
-- Delete imports, props, and helpers you stop using — the build fails on unused locals.
+- Declare props with a local `type XProps = { ... }`; delete props and imports you stop
+  using — the build fails on unused locals.
 - Prefer small local types and unions over optional-everything shapes. Reach for
   discriminated unions when a value has distinct states.
+- Type event handlers with React's own types (`KeyboardEvent<HTMLInputElement>`).
 
 ## Tailwind CSS 4
 
@@ -77,15 +77,6 @@ compiled by Vite, and Tailwind CSS 4 configured in CSS. Adapted from
   rather than conditional JavaScript.
 - Keep semantic HTML: tables, lists, `button`, `input`. Utilities style; they do not excuse
   a `div` where an element has meaning.
-
-## Vite
-
-- `vite.config.ts` owns `base`, plugins, and dev-server settings — do not duplicate that
-  configuration elsewhere.
-- The app is served under `/base-converter/`; use relative paths inside the app.
-- Keep dev-only settings (for example the polling watcher for WSL) in the Vite config,
-  out of component code.
-- Restart the dev server after changing Vite or TypeScript config.
 
 ## Accessibility
 
