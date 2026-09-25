@@ -10,7 +10,7 @@ type DigitRowProps = {
   onHoverPosition: (position: number | null) => void
   onFocusPosition: (position: number | null) => void
   onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[], index: number) => void
-  onEditDigit: (base: Base, boxes: string[], index: number, raw: string) => void
+  onEditDigit: (base: Base, boxes: string[], raw: string) => void
   registerCell: (key: string) => RefCallback<HTMLInputElement>
   registerBreakdownToggle: (key: string) => RefCallback<HTMLButtonElement>
   onTabFromUnits: (event: KeyboardEvent<HTMLInputElement>, base: Base) => void
@@ -26,6 +26,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
   const breakdownId = `${base.key}-place-value-breakdown`
   const registerToggle = registerBreakdownToggle(base.key)
   const highlightedPosition = hoveredPosition ?? focusedPosition
+  const editableBorderColor = `color-mix(in srgb, ${base.accent} 70%, #172b4d)`
   const bitsPerDigit = Math.log2(base.radix)
   const usesBitGrid = Number.isInteger(bitsPerDigit)
   const hoverPosition = (position: number | null) => {
@@ -66,9 +67,19 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
                 const position = boxes.length - 1 - index
                 const bitRange = bitRangeForDigit(base.radix, position)
                 const cellKey = `${base.key}:${index}`
+                // Only the units box (the one at the right of the row) takes the
+                // caret and typing. The other boxes are read-only readouts of the
+                // value, so they never focus, never paint a frame and never show a
+                // write cursor — they still report hover so the bit groups link up.
+                const isEditable = index === lastIndex
                 const isHighlighted = bitsPerDigit === 1 && highlightedBits
                   ? position >= highlightedBits.low && position <= highlightedBits.high
                   : highlightedPosition === position
+                const cellStyle = isHighlighted
+                  ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: isEditable ? editableBorderColor : base.accent }
+                  : isEditable
+                    ? { backgroundColor: `color-mix(in srgb, ${base.accent} 8%, white)`, borderColor: editableBorderColor }
+                    : undefined
                 return (
                   <li
                     className="m-0 flex min-w-0 flex-col items-center gap-1"
@@ -80,24 +91,29 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
                     onBlurCapture={() => focusPosition(null)}
                   >
                     <input
-                      className="h-10 w-full min-w-0 rounded-[4px] border border-[#dbe3ee] bg-white p-0 text-center font-mono text-[clamp(9px,2.5vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition hover:border-[#a9bad2] focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25"
+                      className={`h-10 w-full min-w-0 rounded-[4px] border border-[#dbe3ee] bg-white p-0 text-center font-mono text-[clamp(9px,2.5vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition ${isEditable ? 'border-2 font-bold shadow-sm focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25' : 'cursor-default'}`}
                       type="text"
                       data-digit="true"
+                      data-editable={isEditable || undefined}
                       data-position={position}
                       data-highlighted={isHighlighted || undefined}
-                      style={isHighlighted ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: base.accent } : undefined}
+                      style={cellStyle}
                       ref={registerCell(cellKey)}
                       inputMode={base.radix <= 10 ? 'numeric' : 'text'}
                       autoComplete="off"
                       spellCheck={false}
+                      readOnly={!isEditable}
                       value={digit}
-                      tabIndex={index === lastIndex ? 0 : -1}
-                      onFocus={(event) => event.target.select()}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Tab' && index === lastIndex) onTabFromUnits(event, base)
-                        else onDigitKeyDown(event, base, boxes, index)
-                      }}
-                      onChange={(event) => onEditDigit(base, boxes, index, event.target.value)}
+                      tabIndex={isEditable ? 0 : -1}
+                      onMouseDown={isEditable ? undefined : (event) => event.preventDefault()}
+                      onFocus={isEditable ? (event) => event.target.select() : undefined}
+                      onKeyDown={isEditable
+                        ? (event) => {
+                          if (event.key === 'Tab') onTabFromUnits(event, base)
+                          else onDigitKeyDown(event, base, boxes, index)
+                        }
+                        : undefined}
+                      onChange={isEditable ? (event) => onEditDigit(base, boxes, event.target.value) : undefined}
                       aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}`}
                     />
                     <span
@@ -106,7 +122,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
                       data-highlighted={isHighlighted || undefined}
                       style={isHighlighted ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: base.accent, color: '#172b4d', fontWeight: 600 } : undefined}
                     >
-                      <span>{base.radix}<sup>{position}</sup></span>
+                      <span>{position}</span>
                       {bitRange && <span className="text-[8px] text-[#8190a5]">{bitRange}</span>}
                     </span>
                   </li>

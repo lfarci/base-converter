@@ -15,12 +15,12 @@ test.beforeEach(async ({ page }) => {
 
 test('place-value help stays concise and each row breakdown is collapsed by default', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Digits and place values', exact: true })).toBeVisible()
-  await expect(page.getByText('Each position has a value: baseposition.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Each position is numbered from zero on the right and labeled under its box.', { exact: false })).toBeVisible()
 
   const instructions = page.locator('details').filter({ has: page.getByText('How to use', { exact: true }) })
   await expect(instructions).not.toHaveAttribute('open', '')
   await instructions.locator('summary').click()
-  await expect(instructions).toContainText('Tab moves from each row\'s units digit to its base name, which toggles that row\'s breakdown')
+  await expect(instructions).toContainText('Tab moves from each row\'s units digit to its base-name toggle, which opens or closes that row\'s breakdown')
   await expect(instructions).toContainText('Backspace and Delete remove the newest digit')
   await expect(instructions).toContainText('16-bit limit')
 
@@ -35,30 +35,29 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
 
 test('each base shows only its available places and bit groups', async ({ page }) => {
   const rows = [
-    { name: 'Decimal', radix: 10, positions: 5 },
-    { name: 'Binary', radix: 2, positions: 16 },
-    { name: 'Octal', radix: 8, positions: 6 },
-    { name: 'Hexadecimal', radix: 16, positions: 4 },
+    { name: 'Decimal', radix: 10, positions: 5, labelSpans: 1 },
+    { name: 'Binary', radix: 2, positions: 16, labelSpans: 1 },
+    { name: 'Octal', radix: 8, positions: 6, labelSpans: 2 },
+    { name: 'Hexadecimal', radix: 16, positions: 4, labelSpans: 2 },
   ]
 
-  for (const { name, radix, positions } of rows) {
+  for (const { name, radix, positions, labelSpans } of rows) {
     const digitRow = page.getByRole('row', { name: new RegExp(`^${name}`) })
-    const powers = digitRow.locator('.place-value-label')
-    await expect(powers).toHaveCount(positions)
+    const placeLabels = digitRow.locator('.place-value-label')
+    await expect(placeLabels).toHaveCount(positions)
     await expect(digitRow.locator('[data-digit="true"]:disabled')).toHaveCount(0)
 
     for (let index = 0; index < positions; index += 1) {
       const position = positions - 1 - index
       const input = digit(page, name, radix, position)
-      const label = powers.nth(index)
-      await expect(label.locator(':scope > span').first()).toHaveText(`${radix}${position}`)
-      await expect(label.locator('sup')).toHaveText(String(position))
       await expect(input).toHaveValue('0')
-      if (radix === 8 || radix === 16) {
-        await expect(label.locator(':scope > span')).toHaveCount(2)
+
+      const label = placeLabels.nth(index)
+      await expect(label.locator(':scope > span')).toHaveCount(labelSpans)
+      await expect(label.locator(':scope > span').first()).toHaveText(String(position))
+      await expect(label.locator('sup')).toHaveCount(0)
+      if (labelSpans === 2) {
         await expect(label.locator(':scope > span').nth(1)).toContainText('bit')
-      } else {
-        await expect(label.locator(':scope > span')).toHaveCount(1)
       }
     }
   }
