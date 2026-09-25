@@ -18,7 +18,7 @@ test('arrow and page keys step the value in the active base', async ({ page }) =
   await expect(decimalUnits).toBeFocused()
 })
 
-test('Tab reaches each breakdown toggle between the units digits in row order', async ({ page }) => {
+test('Tab reaches each base title between the units digits in row order', async ({ page }) => {
   const rows = [
     { name: 'Decimal', radix: 10 },
     { name: 'Binary', radix: 2 },
@@ -30,7 +30,7 @@ test('Tab reaches each breakdown toggle between the units digits in row order', 
   for (let index = 0; index < rows.length; index += 1) {
     const { name } = rows[index]
     await page.keyboard.press('Tab')
-    await expect(page.getByRole('button', { name: `Show ${name} place-value breakdown` })).toBeFocused()
+    await expect(page.getByRole('button', { name: `Toggle ${name} place-value breakdown` })).toBeFocused()
 
     const nextRow = rows[index + 1]
     if (nextRow) {
@@ -40,13 +40,28 @@ test('Tab reaches each breakdown toggle between the units digits in row order', 
   }
 })
 
-test('Shift+Tab moves backward from units digits to the previous row toggle', async ({ page }) => {
+test('Shift+Tab moves backward from units digits to the previous row base title', async ({ page }) => {
   await digit(page, 'Binary', 2, 0).focus()
 
   await page.keyboard.press('Shift+Tab')
-  await expect(page.getByRole('button', { name: 'Show Decimal place-value breakdown' })).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })).toBeFocused()
   await page.keyboard.press('Shift+Tab')
   await expect(digit(page, 'Decimal', 10, 0)).toBeFocused()
+})
+
+test('an open breakdown places terms directly after the base title in the Tab order', async ({ page }) => {
+  const units = digit(page, 'Decimal', 10, 0)
+  await units.focus()
+  await page.keyboard.press('1')
+
+  const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  await toggle.click()
+  await page.keyboard.press('Tab')
+
+  const firstTerm = page.locator('#decimal-place-value-breakdown [data-breakdown-term]').first()
+  await expect(firstTerm).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })).toBeFocused()
 })
 
 test('backspace removes the newest typed digit', async ({ page }) => {
@@ -68,7 +83,7 @@ test('hover links a digit, its position label, and its matching breakdown term',
   await page.keyboard.press('2')
   await page.keyboard.press('3')
 
-  await page.getByRole('button', { name: 'Show Decimal place-value breakdown' }).click()
+  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
   const tensDigit = digit(page, 'Decimal', 10, 1)
   const tensLabel = tensDigit.locator('xpath=..').locator('.place-value-label')
   const tensTerm = page.locator('#decimal-place-value-breakdown [data-breakdown-term][data-position="1"]')
@@ -138,7 +153,7 @@ test('hovering a hexadecimal digit or focusing a breakdown term links its binary
   const hexadecimalUnits = digit(page, 'Hexadecimal', 16, 0)
   await hexadecimalUnits.focus()
   await page.keyboard.press('A')
-  await page.getByRole('button', { name: 'Show Hexadecimal place-value breakdown' }).click()
+  await page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' }).click()
   const term = page.locator('#hexadecimal-place-value-breakdown [data-breakdown-term][data-position="0"]')
   await term.focus()
   await expect(digit(page, 'Binary', 2, 0)).toHaveAttribute('data-highlighted', 'true')
@@ -185,7 +200,7 @@ test('only the units box of each row is writable and focusable', async ({ page }
 test('collapsed rows highlight position labels without opening, and digit typing still works', async ({ page }) => {
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   const unitsLabel = decimalUnits.locator('xpath=..').locator('.place-value-label')
-  const toggle = page.getByRole('button', { name: 'Show Decimal place-value breakdown' })
+  const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
 
   await decimalUnits.hover()
   await expect(decimalUnits).toHaveAttribute('data-highlighted', 'true')

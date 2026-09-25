@@ -49,7 +49,7 @@ test('shows only valid digit places and labels octal and hexadecimal bit groups'
 
 test('orders rows decimal, binary, octal, hexadecimal', async ({ page }) => {
   const names = await page.locator('tbody > tr').evaluateAll((rows) =>
-    rows.map((row) => row.querySelector('th[scope="row"] > span > span:nth-child(2)')?.textContent?.trim() ?? ''),
+    rows.map((row) => row.querySelector('th[scope="row"] button')?.textContent?.trim() ?? ''),
   )
 
   expect(names).toEqual(['Decimal', 'Binary', 'Octal', 'Hexadecimal'])

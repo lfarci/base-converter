@@ -20,16 +20,17 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   const instructions = page.locator('details').filter({ has: page.getByText('How to use', { exact: true }) })
   await expect(instructions).not.toHaveAttribute('open', '')
   await instructions.locator('summary').click()
-  await expect(instructions).toContainText('Tab moves from each row\'s units digit to its breakdown toggle')
+  await expect(instructions).toContainText('Tab moves from each row\'s units digit to its base-name toggle, which opens or closes that row\'s breakdown')
   await expect(instructions).toContainText('Backspace and Delete remove the newest digit')
   await expect(instructions).toContainText('16-bit limit')
 
   for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
-    const toggle = page.getByRole('button', { name: `Show ${base} place-value breakdown` })
+    const toggle = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
     await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toHaveCount(0)
   }
   await expect(page.getByText('Show place-value breakdown', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Breakdown' })).toHaveCount(0)
 })
 
 test('each base shows only its available places and bit groups', async ({ page }) => {
@@ -61,11 +62,11 @@ test('each base shows only its available places and bit groups', async ({ page }
     }
   }
 
-  await page.getByRole('button', { name: 'Show Hexadecimal place-value breakdown' }).click()
+  await page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' }).click()
   const hexadecimalBreakdown = page.getByRole('region', { name: 'Hexadecimal place-value breakdown', exact: true })
   await expect(hexadecimalBreakdown).toContainText('0 = 0')
   await expect(page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Hide Hexadecimal place-value breakdown' })).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })).toHaveAttribute('aria-expanded', 'true')
 })
 
 test('digit rows share aligned edges and bit groups without overflowing', async ({ page }) => {
@@ -117,6 +118,54 @@ test('digit rows share aligned edges and bit groups without overflowing', async 
   }
 })
 
+test('base row toggles and radix labels align across rows', async ({ page }) => {
+  for (const viewportWidth of [390, 1280]) {
+    await page.setViewportSize({ width: viewportWidth, height: 844 })
+    const rows = ['Decimal', 'Binary', 'Octal', 'Hexadecimal']
+    const headers = []
+
+    for (const name of rows) {
+      const row = page.getByRole('row', { name: new RegExp(`^${name}`) })
+      const toggle = await row.getByRole('button').boundingBox()
+      const radix = await row.locator('th > span > span').last().boundingBox()
+      expect(toggle).not.toBeNull()
+      expect(radix).not.toBeNull()
+      headers.push({ toggle: toggle!, radix: radix! })
+    }
+
+    for (const header of headers.slice(1)) {
+      expect(Math.abs(header.toggle.x - headers[0].toggle.x)).toBeLessThan(1)
+      expect(Math.abs(header.radix.x - headers[0].radix.x)).toBeLessThan(1)
+      expect(Math.abs(header.radix.width - headers[0].radix.width)).toBeLessThan(1)
+    }
+  }
+})
+
+test('base title and breakdown heading align with the digit grid at narrow and wide widths', async ({ page }) => {
+  for (const viewportWidth of [390, 1280]) {
+    await page.setViewportSize({ width: viewportWidth, height: 844 })
+    const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+    const row = page.getByRole('row', { name: /^Decimal/ })
+    const grid = await row.locator('ol').boundingBox()
+    const title = await toggle.boundingBox()
+    const digitBox = await digit(page, 'Decimal', 10, 0).boundingBox()
+    expect(grid).not.toBeNull()
+    expect(title).not.toBeNull()
+    expect(digitBox).not.toBeNull()
+    expect(Math.abs(title!.y + title!.height / 2 - digitBox!.y - digitBox!.height / 2)).toBeLessThan(3)
+    await expect(row.locator('th')).toHaveCSS('width', '144px')
+
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    const heading = await page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
+      .getByRole('heading', { name: 'Breakdown' })
+      .boundingBox()
+    expect(heading).not.toBeNull()
+    expect(Math.abs(heading!.x - grid!.x)).toBeLessThan(1)
+    await toggle.click()
+  }
+})
+
 test('place-value breakdown shows non-zero digit terms and the decimal total', async ({ page }) => {
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   await decimalUnits.focus()
@@ -131,7 +180,7 @@ test('place-value breakdown shows non-zero digit terms and the decimal total', a
   ] as const
 
   for (const { name, terms, sum } of examples) {
-    await page.getByRole('button', { name: `Show ${name} place-value breakdown` }).click()
+    await page.getByRole('button', { name: `Toggle ${name} place-value breakdown` }).click()
     const breakdown = page.getByRole('region', { name: `${name} place-value breakdown`, exact: true })
     await expect(breakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
     const equations = breakdown.getByRole('math')
@@ -144,6 +193,23 @@ test('place-value breakdown shows non-zero digit terms and the decimal total', a
     await expect(superscripts.nth(0)).toHaveText(name === 'Binary' ? '4' : '1')
     await expect(superscripts.nth(1)).toHaveText('0')
   }
+})
+
+test('clicking the base title toggles its breakdown and preserves focus', async ({ page }) => {
+  const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  await expect(toggle).toHaveCSS('cursor', 'pointer')
+  await expect(toggle).toHaveAttribute('title', 'Click to open the decimal place-value breakdown')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('title', 'Click to close the decimal place-value breakdown')
+
+  const breakdown = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
+  await expect(breakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(breakdown.getByRole('button')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+  await expect(breakdown).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })).toBeFocused()
 })
 
 test('digit powers stay aligned with their boxes while the table scrolls', async ({ page }) => {
@@ -173,12 +239,12 @@ test('typing in a row converts the value and leaves focus on the clicked breakdo
   await expect(decimalUnits).toHaveValue('0')
   await expect(digit(page, 'Decimal', 10, 1)).toHaveValue('1')
   await expect(digit(page, 'Hexadecimal', 16, 0)).toHaveValue('A')
-  await page.getByRole('button', { name: 'Show Hexadecimal place-value breakdown' }).click()
+  await page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' }).click()
   const hexadecimalBreakdown = page.getByRole('region', { name: 'Hexadecimal place-value breakdown', exact: true })
   await expect(hexadecimalBreakdown.getByRole('math').first()).toHaveAttribute('aria-label', '16 to the power of 0 times 10 (A) equals 10')
   await expect(hexadecimalBreakdown.locator('[data-breakdown-term]').first()).toHaveText('160 × 10 (A) = 10')
   await expect(hexadecimalBreakdown.getByRole('math').last()).toHaveText('10 → 10')
-  await expect(page.getByRole('button', { name: 'Hide Hexadecimal place-value breakdown' })).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })).toBeFocused()
 })
 
 test('hexadecimal letter digits show their decimal value and symbol in each term', async ({ page }) => {
@@ -188,7 +254,7 @@ test('hexadecimal letter digits show their decimal value and symbol in each term
   await page.keyboard.press('6')
   await page.keyboard.press('0')
 
-  await page.getByRole('button', { name: 'Show Hexadecimal place-value breakdown' }).click()
+  await page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' }).click()
   const breakdown = page.getByRole('region', { name: 'Hexadecimal place-value breakdown', exact: true })
   const term = breakdown.locator('[data-breakdown-term]')
   await expect(term).toHaveCount(1)
