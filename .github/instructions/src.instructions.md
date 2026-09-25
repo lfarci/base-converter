@@ -49,13 +49,54 @@ file holds what they share so it is stated once. Adapted from
 
 ## Styling and accessibility
 
-- Keep the visual language: white surface, `#172b4d` text, `#2458d3` focus accent,
-  per-base accent from `rows`, monospace `tabular-nums` for digits. Reuse those values
-  instead of inventing near duplicates (DRY).
+- Keep the visual language: a 1992 educational computer workbook, reimplemented cleanly for
+  the web. The period supplies the structure, materials, framing, and ornament; the modern
+  browser supplies the crisp rendering, contrast, and focus behaviour. Never reproduce a
+  dated usability limitation.
+- Four surface tones carry four distinct roles, so the page reads as layered sheets rather
+  than one flat fill: `--color-paper` (page — the desk), `--color-paper-2` (panel and sheet —
+  lighter than the page, so the panel sits on it), `--color-paper-3` (band — table header,
+  panel title bar, status strip, help control), and `--color-well` (field — inset readouts,
+  the instructional callout, the worked calculation). Frames use `--color-frame`; text uses
+  `--color-ink` and `--color-ink-soft`; rules use `--color-rule` and `--color-rule-soft`;
+  `--color-focus` is the focus ring and `--color-danger` is errors. Serif display type is for
+  prose and base names; `.mono-tech` is for digits, positions, bit ranges, radices,
+  equations, and the status strip. Reuse those values instead of inventing near duplicates
+  (DRY). Every colour lives in the `@theme` block in `index.css`; do not write ad-hoc hex
+  values in components.
+- Faint values are for decorative rules only. Every text pair is normal size and must clear
+  4.5:1 against its actual surface; boundaries, focus rings, and the source-row margin bar
+  must clear 3:1. Per-base accents are decoration and tint, never the sole boundary or state
+  cue. When you move an element onto a different surface, re-measure rather than assume.
+- Every accent-ink boundary uses **one ratio: 55% accent, 45% ink** (`.digit-box`'s
+  `--digit-frame`, the highlighted place-value label's border, the breakdown term's inset
+  accent bar, and the highlight ring all use it). This is not arbitrary: decimal is the
+  lightest of the four accents and therefore the worst case for every accent-vs-tint pair,
+  and at the obvious-looking 70/30 it measured 2.46:1 against the breakdown tint — below the
+  3:1 a boundary needs. If you add another accent-ink boundary, use 55/45 and re-measure
+  against its own background rather than copying a nicer-sounding number.
+- Maintain a non-colour cue for every state: underlines on highlighted labels and breakdown
+  terms, rings on highlighted boxes, and the solid ink margin bar on the source row. Those
+  shapes are what survive `forced-colors`.
+- Ornament is allowed and wanted, but disciplined. Every ornament is `aria-hidden`,
+  decorative, and never the sole cue for a state or a boundary; it must never be laid behind
+  text, never reduce a contrast pair below AA, never occupy a Tab stop, and must be removable
+  without breaking layout or meaning. The allowed vocabulary is hairlines and double rules,
+  coloured margin bars, hard offset shadows, inset bevels, small mono markers, and the
+  masthead monitor icon. Not allowed: textures behind text, soft or glassy shadows,
+  gradients, or anything that implies a state by itself.
+- Do not add a runtime CDN font. The notation face is self-hosted IBM Plex Mono under the SIL
+  Open Font License 1.1, with its licence file beside the woff2 assets in
+  `src/assets/fonts/`; reference its files with a relative `url()` so the build fingerprints
+  them against the Pages subpath.
+- `index.css` also carries the `prefers-reduced-motion`, `prefers-contrast: more`, and
+  `forced-colors: active` blocks. Keep them unlayered so they beat Tailwind utilities and
+  any accent colour a component computes inline; update them when you add a state cue.
 - Tailwind is configured CSS-first: no `tailwind.config.js` and no PostCSS config for
   Tailwind. The `@tailwindcss/vite` plugin plus `@import "tailwindcss";` is the whole setup.
-- Only reach for `style={...}` for genuinely dynamic values (for example a per-base accent
-  colour); static appearance belongs in classes.
+- Only reach for `style={...}` for genuinely dynamic values — a per-base accent colour, or
+  the accent-derived custom properties (`--digit-accent`, `--digit-frame`) that let a digit
+  box's skins live in classes. Static appearance belongs in classes.
 - Keep semantic HTML — tables, lists, `button`, `input`. Utilities style; they do not
   excuse a `div` where an element has meaning.
 - Do not rely on colour alone to convey state; state is also always present as words. The

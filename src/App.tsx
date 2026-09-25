@@ -113,23 +113,37 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6 lg:max-w-[920px]" id="top">
+    <main className="mx-auto w-full px-4 pb-16 text-ink sm:px-6 lg:max-w-[920px]" id="top">
       <PageHeader />
 
       <section aria-labelledby="page-title">
-        <h1 className="mt-5 text-[clamp(22px,3.4vw,28px)] font-bold leading-tight tracking-[-0.6px]" id="page-title">
+              <p className="mono-tech mt-6 text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+          Positional notation worksheet
+        </p>
+              <h1 className="m-0 mt-2 font-display text-[clamp(28px,4.4vw,40px)] leading-[1.06] font-bold tracking-[-0.01em]" id="page-title">
           One number, any base
         </h1>
-        <p className="mt-2 max-w-[54ch] text-[13px] leading-relaxed text-[#63728a]">
-          Type into a row's units box. That row becomes the base you are writing in, and every other row rewrites itself as you go.
-        </p>
+              {/* The heavy rule that closes a chapter heading. A div, not a <p>: P2 binds the
+                  first and last direct-child <p> of this section to the eyebrow and the footer. */}
+              <div aria-hidden="true" className="mt-3 h-[3px] w-[56px] bg-ink" />
+              <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-ink-soft">
+                Type into a row's units box. That row becomes the base you are writing in, and every other row rewrites itself as you go.
+              </p>
 
-        <div className="mt-8">
-          <h2 className="m-0 text-xs font-semibold text-[#63728a]" id="result-title">The same value, written out</h2>
-          <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-[#8190a5]">
-            Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
-          </p>
-          <HelpDetails />
+              <HelpDetails />
+
+              {/* The framed instrument: a darker frame all round, a heavier top edge, and a hard
+                  offset shadow with zero blur — a printed frame cue, never a modern soft shadow. */}
+              <div className="mt-4 rounded-[3px] border border-frame border-t-[3px] border-t-frame bg-paper-2 shadow-[2px_2px_0_var(--color-rule)]">
+                <h2 className="m-0 border-b-2 border-frame bg-paper-3 px-3 py-2 mono-tech text-[11px] font-bold uppercase tracking-[0.14em] text-ink" id="result-title">
+                  The same value, written out
+                </h2>
+                {/* Stays the immediate next sibling of the h2 (P1), so the callout skin lives on
+                    this <p> itself rather than on a wrapper. */}
+                <p className="m-0 max-w-[60ch] border-b border-rule-soft border-l-[3px] border-l-frame bg-well px-3 py-3 text-[13px] leading-relaxed text-ink-soft">
+                  <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
+                  Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
+                </p>
 
           <ConversionTable
             displayed={displayed}
@@ -161,7 +175,7 @@ function App() {
           <StatusLine isError={error !== ''}>{message}</StatusLine>
         </div>
 
-        <p className="mt-10 border-t border-[#e7edf5] pt-5 text-xs leading-relaxed text-[#63728a]">
+        <p className="mt-10 border-t-[3px] border-ink pt-5 text-[13px] leading-relaxed text-ink-soft">
           The number itself never changes — only the symbols that hold it. Each row shows all of its available places, and octal and hexadecimal show which bits combine to make each digit.
         </p>
       </section>

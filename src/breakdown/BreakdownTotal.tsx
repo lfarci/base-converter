@@ -7,7 +7,7 @@ type BreakdownTotalProps = {
 export function BreakdownTotal({ contributions, total }: BreakdownTotalProps) {
   return (
     <span
-      className="border-l border-[#dbe3ee] pl-4 font-semibold text-[#172b4d]"
+      className="mono-tech border-l border-rule pl-4 font-semibold text-ink"
       role="math"
       aria-label={`${contributions.map((contribution) => contribution.toString()).join(' plus ')} equals ${total}`}
     >
