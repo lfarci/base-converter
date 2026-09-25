@@ -11,7 +11,8 @@ repo-wide layout, types, styling, and accessibility rules live in `src.instructi
 
 ## What belongs here
 
-- The digit alphabet, `POSITIONS`, `VALUE_LIMIT`, and the `rows` base definitions.
+- The digit alphabet, `POSITIONS`, `VALUE_LIMIT`, `LIMIT_MESSAGE`, and the `rows` base
+  definitions.
 - Pure helpers that parse, format, compare, or step a value: `parseDigits`,
   `digitsForValue`, `padToPositions`, `digitRange`, `digitValue`, `pickTypedChar`,
   `pageStep`, `positionsForBase`, `bitSpanForDigit`, `bitRangeForDigit`, `bitsPerDigit`,

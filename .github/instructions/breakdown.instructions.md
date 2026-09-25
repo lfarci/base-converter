@@ -30,9 +30,11 @@ layout, types, styling, and accessibility rules live in `src.instructions.md`;
     `digit` `=` `contribution`, e.g. `160 × 10 (A) = 10`.
 - Terms follow the Tab order of the row toggle, so keep `tabIndex={0}` on terms and report
   Tab to the parent through the `onTabFromTerm` callback rather than moving focus yourself.
-- **Read-only.** This feature renders an explanation of a value it is given. It never parses,
-  formats, converts, or steps anything: contributions come from `../core/conversion`
-  (`digitValue`) and the total from the `value` prop.
+- **Read-only.** This feature explains a value it is given: it never parses digits or steps
+  the value. It does own the arithmetic and formatting that the explanation needs — the
+  contribution (`BigInt(amount) * BigInt(base.radix) ** position`) and the `toString()` calls
+  are local to this folder, because React cannot render a `bigint`. `digitValue` supplies
+  only the digit's small numeric value.
 - Hide a term whose digit is zero, and show the zero case when nothing contributes. A blank
   or unparsed value says so in words rather than rendering an empty sum — never rely on
   colour or an absent term to convey that.

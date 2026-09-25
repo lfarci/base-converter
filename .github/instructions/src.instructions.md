@@ -60,8 +60,9 @@ file holds what they share so it is stated once. Adapted from
   status line is a single live region: `role="alert"` for errors, otherwise `role="status"`.
 - Maintain a sane tab order: `tabIndex={0}` only on the control that should receive focus,
   `-1` for the rest. Keep the global `:focus-visible` outline visible.
-- Digit boxes carry `aria-label` including base, radix, and position; disabled boxes carry
-  a `title` explaining the limit. Keep these when editing `digits/DigitRow`.
+- Digit boxes carry `aria-label` including base, radix, and position, and mark themselves
+  read-only rather than disabled (`readOnly`, plus `data-editable` only when editable).
+  Keep these when editing `digits/DigitBox`.
 - The table keeps a 768px minimum width and scrolls horizontally on narrow screens, with
   the base column `sticky left-0`. Verify layout at a 390px viewport.
 

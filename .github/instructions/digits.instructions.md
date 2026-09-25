@@ -22,13 +22,22 @@ in `react-typescript.instructions.md`.
 
 - **This feature owns the DOM contract.** The Playwright specs bind to it, so a change here
   is a change to a public interface. Keep, exactly:
-  - `data-digit`, `data-editable`, `data-position`, `data-highlighted` on every digit box.
+  - `data-digit` and `data-position` on every digit box; `data-editable` and
+    `data-highlighted` **only when true**. The tests check these attributes by presence, not
+    value, and `App.tsx` branches on `hasAttribute('data-editable')` — so never render
+    `data-editable={editable}` or `"false"`, or clicking a read-only readout starts counting
+    as a deliberate click target.
   - the `aria-label` template `` `${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}` ``.
-  - `tabIndex={0}` on the units box only; `-1` everywhere else. A row exposes exactly one
-    Tab stop, and the chain is units → row toggle → next row's units.
-  - the `.place-value-label` structure (a wrapper with one or two spans) and its per-base
-    colours, the 144px width of the Base column, and the
-    `role="region"` / `aria-label="Scrollable base conversion table"` scroll wrapper.
+  - `tabIndex={0}` on the units box only; `-1` everywhere else. That is one *digit-box* Tab
+    stop per row: the row toggle in `BaseHeaderCell` is the row's second stop, and the chain
+    is units → row toggle → any open breakdown terms → next row's units.
+  - the breakdown id convention `` `${base.key}-place-value-breakdown` ``, declared in
+    `DigitRow.tsx` and consumed by `App.tsx` and the specs. `breakdown/` renders into it and
+    must not rename it.
+  - the `.place-value-label` structure (a wrapper with one or two spans), its per-base
+    colours, and its `data-position` / `data-highlighted` attributes.
+  - the 144px width of the Base column and the `role="region"` /
+    `aria-label="Scrollable base conversion table"` scroll wrapper.
 - **Import another feature through its entry component.** `digits/` may use
   `../breakdown/PlaceValueBreakdown`; it must not reach into `BreakdownTerm`,
   `BreakdownTotal`, or any other private part of that folder.
@@ -40,7 +49,6 @@ in `react-typescript.instructions.md`.
   the row. Value state and focus policy stay in `App.tsx`.
 - `DigitBox` is the one place that owns a box's attributes, `inputMode`, `readOnly`, and
   colour-mix styles. Do not restate those in `DigitRow`.
-- The table scrolls horizontally rather than collapsing. Verify at a 390px viewport.
 
 ## Checks
 
