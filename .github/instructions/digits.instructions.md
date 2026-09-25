@@ -46,11 +46,13 @@ in `react-typescript.instructions.md`.
   `../breakdown/PlaceValueBreakdown`; it must not reach into `BreakdownTerm`,
   `BreakdownTotal`, or any other private part of that folder.
 - **Presentational only.** A component here receives data and callbacks via props and holds
-  no domain logic. Any parse, format, or step goes through `../core/conversion`.
+  no domain logic. Any parse, format, or step goes through `../core/conversion`, and any
+  entry or caret decision goes through `../core/entry` and `../core/focus`.
 - Never hard-code a radix, digit set, or accent colour. Read them from the `base` prop,
   which comes from the `rows` array in `core/`.
 - Per-row UI state (which breakdown is open, which place is hovered or focused) is local to
-  the row. Value state and focus policy stay in `App.tsx`.
+  the row. Value state and the caret policy live in `core/`: `App.tsx` holds the state and
+  hands it to `core/entry.ts`, which decides the next state and the focus target.
 - `DigitBox` is the one place that owns a box's attributes, `inputMode`, `readOnly`, and
   colour-mix styles. Do not restate those in `DigitRow`.
 

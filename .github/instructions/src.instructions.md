@@ -23,8 +23,10 @@ file holds what they share so it is stated once. Adapted from
 
 ## Layout
 
-- `src/core/conversion.ts` is the single source of truth: digit alphabet, `POSITIONS`,
-  `VALUE_LIMIT`, the `rows` base definitions, and pure helpers. It must not import React.
+- `src/core/` is the single source of truth: digit alphabet, `POSITIONS`, `VALUE_LIMIT`,
+  the `rows` base definitions, and the pure helpers. `conversion.ts` is the value math;
+  `entry.ts` is the entry state machine; `display.ts` derives what the page shows;
+  `focus.ts` decides where Tab goes. `core/` must not import React or touch the DOM.
 - Organize `src/` by feature folder: `core/` (pure logic), `digits/`, `breakdown/`, and
   `layout/` (page furniture). A feature imports another feature through that feature's
   entry component only. Each folder's own instruction file states what belongs in it.
@@ -79,3 +81,6 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+Run `npm run test:unit` when the change touches `src/core/`, and `npm run test:e2e` when it
+touches digit entry, keyboard handling, or the DOM.

@@ -1,13 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { bitSpanForDigit } from '../src/core/conversion'
 import { digit } from './helpers'
-
-test('bit spans clip the highest octal group to the 16-bit limit', () => {
-  expect(bitSpanForDigit(8, 0)).toEqual({ low: 0, high: 2 })
-  expect(bitSpanForDigit(8, 5)).toEqual({ low: 15, high: 15 })
-  expect(bitSpanForDigit(16, 2)).toEqual({ low: 8, high: 11 })
-  expect(bitSpanForDigit(10, 0)).toBeNull()
-})
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./')

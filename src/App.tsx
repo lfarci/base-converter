@@ -3,133 +3,60 @@ import { ConversionTable } from './digits/ConversionTable'
 import { HelpDetails } from './layout/HelpDetails'
 import { PageHeader } from './layout/PageHeader'
 import { StatusLine } from './layout/StatusLine'
+import { bitSpanForDigit, parseDigits, type Base, type BitSpan } from './core/conversion'
+import { displayedRows, sourceBaseFor, statusFor } from './core/display'
 import {
-  bitSpanForDigit,
-  digitRange,
-  digitValue,
-  digitsForValue,
-  errorForParsed,
-  LIMIT_MESSAGE,
-  pageStep,
-  padToPositions,
-  parseDigits,
-  pickTypedChar,
-  positionsForBase,
-  POSITIONS,
-  rows,
-  VALUE_LIMIT,
-  type Base,
-  type BitSpan,
-} from './core/conversion'
-
-// What the page shows above the rows. The value is null while the source row does not
-// hold a number yet, so every other row renders blank rather than zero.
-function describe(parsed: ReturnType<typeof parseDigits>, base: Base, rejection: string) {
-  const error = rejection || errorForParsed(parsed, base.radix)
-  const help = parsed.status === 'empty'
-    ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
-    : `Reading base ${base.radix}, digits ${digitRange(base.radix)}. Type into another row's units box to write in that base instead, or use Arrow Up/Down to step the value by one.`
-  return { error, message: error || help, value: parsed.status === 'ok' ? parsed.value : null }
-}
+  entryForDeletion,
+  entryForDigit,
+  entryForStep,
+  initialEntryState,
+  keyActionFor,
+  type EntryState,
+  type EntryUpdate,
+} from './core/entry'
+import { breakdownIdFor, tabFromBreakdownTerm, tabFromToggle, tabFromUnits, unitsCellKey, type FocusTarget } from './core/focus'
 
 function App() {
-  const [sourceKey, setSourceKey] = useState('decimal')
-  const [sourceDigits, setSourceDigits] = useState('0')
-  const [hasStartedDigitEntry, setHasStartedDigitEntry] = useState(false)
-  const [rejection, setRejection] = useState('')
+  const [entry, setEntry] = useState<EntryState>(initialEntryState)
   const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
   const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
 
-  const sourceBase = rows.find((base) => base.key === sourceKey) ?? rows[0]
-  const parsed = parseDigits(sourceDigits, sourceBase.radix)
-  const { error, message, value } = describe(parsed, sourceBase, rejection)
-
-  // Each row uses only the places that fit within the 16-bit limit, with leading
-  // zeros in those places. An empty source renders blank; zero stays visible.
-  const displayed = rows.map((base) => {
-    const isSource = base.key === sourceKey
-    const digits = isSource ? Array.from(sourceDigits) : value === null ? [] : digitsForValue(value, base.radix)
-    const hasValue = isSource ? sourceDigits.length > 0 : value !== null
-    const places = positionsForBase(base.radix)
-    return {
-      base,
-      boxes: hasValue ? padToPositions(digits, places) : Array.from({ length: places }, () => ''),
-    }
-  })
+  const sourceBase = sourceBaseFor(entry.sourceKey)
+  const parsed = parseDigits(entry.sourceDigits, sourceBase.radix)
+  const { error, message, value } = statusFor(parsed, sourceBase, entry.rejection)
+  const displayed = displayedRows(entry.sourceKey, entry.sourceDigits, value)
 
   // Every digit box registers itself here by base and place, so the editable
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
   const breakdownTogglesRef = useRef(new Map<string, HTMLButtonElement>())
-  const unitsKey = (base: Base) => `${base.key}:${positionsForBase(base.radix) - 1}`
-  const focusRowControl = (event: KeyboardEvent, base: Base, direction: -1 | 1) => {
-    const rowIndex = rows.findIndex((row) => row.key === base.key)
-    const targetRow = rows[rowIndex + direction]
-    if (!targetRow) return
+  const pendingFocusRef = useRef<FocusTarget | null>(null)
 
-    event.preventDefault()
-    if (direction === 1) cellsRef.current.get(unitsKey(targetRow))?.focus()
-    else breakdownTogglesRef.current.get(targetRow.key)?.focus()
-  }
-  const focusToggleFromUnits = (event: KeyboardEvent<HTMLInputElement>, base: Base) => {
-    if (event.shiftKey) {
-      focusRowControl(event, base, -1)
-      return
-    }
-
-    event.preventDefault()
-    breakdownTogglesRef.current.get(base.key)?.focus()
-  }
-  const focusUnitsFromToggle = (event: KeyboardEvent<HTMLButtonElement>, base: Base, breakdownOpen: boolean) => {
-    if (event.shiftKey) {
-      event.preventDefault()
-      cellsRef.current.get(unitsKey(base))?.focus()
-      return
-    }
-
-    if (breakdownOpen) {
-      const firstTerm = document.getElementById(`${base.key}-place-value-breakdown`)?.querySelector<HTMLElement>('[data-breakdown-term]')
-      if (firstTerm) {
-        event.preventDefault()
-        firstTerm.focus()
-        return
-      }
-    }
-
-    focusRowControl(event, base, 1)
-  }
-  const focusUnitsFromBreakdownTerm = (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => {
-    if (event.shiftKey && isFirst) {
-      event.preventDefault()
-      breakdownTogglesRef.current.get(base.key)?.focus()
-    } else if (!event.shiftKey && isLast) {
-      focusRowControl(event, base, 1)
+  const focusTarget = (target: FocusTarget) => {
+    if (target.kind === 'cell') cellsRef.current.get(target.cellKey)?.focus()
+    else if (target.kind === 'toggle') breakdownTogglesRef.current.get(target.baseKey)?.focus()
+    else {
+      const breakdown = document.getElementById(target.breakdownId)
+      breakdown?.querySelector<HTMLElement>('[data-breakdown-term]')?.focus()
     }
   }
-  // Restore focus after edits commit so the caret stays anchored through React rerenders.
-  const pendingFocusRef = useRef<string | null>(null)
-  const caretIsInSurface = (node: Element | null = document.activeElement) =>
-    node instanceof HTMLInputElement && node.dataset.digit === 'true'
 
   // Focus the units place on the active row. Every other box is a read-only readout
   // that never takes the caret — not by mouse, not by Tab, not by typing — so each
   // row still exposes exactly one editable stop.
-  const focusEditable = () => {
-    cellsRef.current.get(unitsKey(sourceBase))?.focus()
-  }
+  const focusEditable = () => focusTarget({ kind: 'cell', cellKey: unitsCellKey(sourceBase) })
 
   const focusEditableRef = useRef(focusEditable)
   useEffect(() => {
     focusEditableRef.current = focusEditable
   })
 
+  // Restore focus after edits commit so the caret stays anchored through React rerenders.
   useEffect(() => {
     const where = pendingFocusRef.current
     pendingFocusRef.current = null
-    if (where === 'rightmost') focusEditableRef.current()
-    else if (where) cellsRef.current.get(where)?.focus()
+    if (where) focusTarget(where)
   })
-
 
   // Focus policy: aiming at a control is a deliberate choice and wins, so the links
   // stay usable. Anything else — a release on plain content, a stray keypress, coming
@@ -145,6 +72,8 @@ function App() {
       if (digitBox) return digitBox.hasAttribute('data-editable')
       return target.closest('input, button, select, textarea, label, a[href], [data-breakdown-term]') !== null
     }
+    const caretIsInSurface = () =>
+      document.activeElement instanceof HTMLInputElement && document.activeElement.dataset.digit === 'true'
     const returnToSurface = (event: Event) => {
       if (event.type === 'keydown' && (event as globalThis.KeyboardEvent).key === 'Tab') return
       if (aimedAtAControl(event.target) || caretIsInSurface()) return
@@ -159,103 +88,28 @@ function App() {
     }
   }, [])
 
-  // Stepping works on the number, never on the text: in binary 1011 steps up to
-  // 1100. Empty counts as zero, so the first step up starts at 1 and the first step
-  // down has nothing to give. Stepping up past the limit leaves the value alone and
-  // raises the same message the row would raise on its own.
-  const stepValue = (delta: bigint) => {
-    if (delta === 0n || parsed.status === 'invalid') return
-    const current = parsed.status === 'empty' ? 0n : parsed.value
-    const target = current + delta
-    if (target < 0n) {
-      setRejection('')
-      setSourceDigits('0')
-      setHasStartedDigitEntry(false)
-      return
-    }
-    if (target > VALUE_LIMIT) {
-      setRejection(LIMIT_MESSAGE)
-      return
-    }
-    setRejection('')
-    setSourceDigits(target.toString(sourceBase.radix))
-    setHasStartedDigitEntry(false)
-  }
-
-  // Arrow keys step by one; Page Up/Down step by a whole place — ten in the bases we
-  // read as tens and units, sixteen from base 11 up where a place is a nibble wider.
-  // Only the units box is writable, so an edit always appends a newest digit to the
-  // active value rather than replacing the place the caret happens to sit in.
-  const editDigit = (base: Base, boxes: string[], raw: string) => {
-    if (raw.length === 0) return
-
-    const char = pickTypedChar(raw, boxes[boxes.length - 1])
-    const digit = digitValue(char)
-    if (digit < 0 || digit >= base.radix) {
-      setRejection(`Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
-      return
-    }
-
-    const current = parseDigits(boxes.join(''), base.radix)
-    const currentDigits = !hasStartedDigitEntry
-      ? ''
-      : base.key === sourceKey
-        ? sourceDigits
-        : current.status === 'ok'
-          ? digitsForValue(current.value, base.radix).join('')
-          : ''
-    const nextDigits = `${currentDigits}${char}`
-    const nextValue = parseDigits(nextDigits, base.radix)
-    if (nextDigits.length > POSITIONS || nextValue.status === 'too-large') {
-      setRejection(LIMIT_MESSAGE)
-      return
-    }
-
-    setRejection('')
-    setSourceKey(base.key)
-    setSourceDigits(nextDigits)
-    setHasStartedDigitEntry(true)
-    pendingFocusRef.current = 'rightmost'
+  // Applying an update is all App does with it: the entry state machine decides, and the
+  // caret follows only when the decision asked for it.
+  const apply = (update: EntryUpdate | null) => {
+    if (!update) return
+    setEntry(update.state)
+    pendingFocusRef.current = update.focus
   }
 
   const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => {
-    const digit = digitValue(event.key)
-    if (!event.ctrlKey && !event.metaKey && !event.altKey && digit >= 0 && digit < base.radix) {
-      event.preventDefault()
-      editDigit(base, boxes, event.key)
-      return
-    }
+    const action = keyActionFor(event.key, event, base.radix, sourceBase.radix)
+    if (!action) return
 
-    if (event.key === 'Delete' || event.key === 'Backspace') {
-      event.preventDefault()
-      const current = parseDigits(boxes.join(''), base.radix)
-      if (current.status === 'invalid' || current.status === 'too-large') return
-
-      const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
-      const isTypedEntryBuffer = hasStartedDigitEntry && base.key === sourceKey
-      const nextDigits = isTypedEntryBuffer
-        ? sourceDigits.slice(0, -1)
-        : digitsForValue(nextValue, base.radix).join('')
-      const nextDigitsValue = parseDigits(nextDigits, base.radix)
-      const resolvedDigits = nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n
-        ? nextDigits
-        : '0'
-      setRejection('')
-      setSourceKey(base.key)
-      setSourceDigits(resolvedDigits)
-      setHasStartedDigitEntry(
-        isTypedEntryBuffer && nextDigitsValue.status === 'ok' && nextDigitsValue.value !== 0n,
-      )
-      pendingFocusRef.current = 'rightmost'
-      return
-    }
-
-    const up = event.key === 'ArrowUp' || event.key === 'PageUp'
-    const down = event.key === 'ArrowDown' || event.key === 'PageDown'
-    if (!up && !down) return
     event.preventDefault()
-    const magnitude = event.key === 'PageUp' || event.key === 'PageDown' ? pageStep(sourceBase.radix) : 1n
-    stepValue(up ? magnitude : -magnitude)
+    if (action.kind === 'digit') apply(entryForDigit(entry, base, boxes, action.raw))
+    else if (action.kind === 'delete') apply(entryForDeletion(entry, base, boxes))
+    else apply(entryForStep(entry, sourceBase, action.delta))
+  }
+
+  const onTab = (event: KeyboardEvent, target: FocusTarget | null) => {
+    if (!target) return
+    event.preventDefault()
+    focusTarget(target)
   }
 
   return (
@@ -284,7 +138,7 @@ function App() {
             onHoverPosition={(base, position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position))}
             onFocusPosition={(base, position) => setFocusedBits(position === null ? null : bitSpanForDigit(base.radix, position))}
             onDigitKeyDown={onCellKeyDown}
-            onEditDigit={editDigit}
+            onEditDigit={(base, boxes, raw) => apply(entryForDigit(entry, base, boxes, raw))}
             registerCell={(cellKey) => (node) => {
               if (node) cellsRef.current.set(cellKey, node)
               else cellsRef.current.delete(cellKey)
@@ -293,9 +147,15 @@ function App() {
               if (node) breakdownTogglesRef.current.set(key, node)
               else breakdownTogglesRef.current.delete(key)
             }}
-            onTabFromUnits={focusToggleFromUnits}
-            onTabFromToggle={focusUnitsFromToggle}
-            onTabFromBreakdownTerm={focusUnitsFromBreakdownTerm}
+            onTabFromUnits={(event, base) => onTab(event, tabFromUnits(base, event.shiftKey))}
+            onTabFromToggle={(event, base, breakdownOpen) => onTab(
+              event,
+              tabFromToggle(base, event.shiftKey, breakdownOpen && hasBreakdownTerm(base)),
+            )}
+            onTabFromBreakdownTerm={(event, base, isFirst, isLast) => onTab(
+              event,
+              tabFromBreakdownTerm(base, event.shiftKey, isFirst, isLast),
+            )}
           />
 
           <StatusLine isError={error !== ''}>{message}</StatusLine>
@@ -307,6 +167,12 @@ function App() {
       </section>
     </main>
   )
+}
+
+// The breakdown only exists in the DOM once a row has opened it, so its terms are the one
+// Tab target App has to look up rather than reach through a registered ref.
+function hasBreakdownTerm(base: Base) {
+  return document.getElementById(breakdownIdFor(base))?.querySelector('[data-breakdown-term]') !== null
 }
 
 export default App

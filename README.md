@@ -23,11 +23,11 @@ Octal and hexadecimal digit labels show the bits represented by each place, coun
 
 | Folder | Contents |
 | --- | --- |
-| `src/core/` | `conversion.ts` — the value math, digit alphabet, and base definitions. No React. |
+| `src/core/` | The rules, in plain TypeScript. `conversion.ts` — the value math, digit alphabet, and base definitions. `entry.ts` — the entry state machine. `display.ts` — the derived page data. `focus.ts` — where Tab goes next. No React, no DOM. |
 | `src/digits/` | The digit-entry feature: the scrolling table, one row per base, one box per place, and the base header. |
 | `src/breakdown/` | The place-value breakdown shown under an expanded row. |
 | `src/layout/` | Page furniture: the header, the "how to use" details, and the status line. |
-| `src/App.tsx` | Owns the state, the focus policy, and the keyboard stepping, and composes the feature folders. |
+| `src/App.tsx` | Page structure: it holds the state, wires the features together, and turns a focus target into a real node. |
 
 ## Checks
 
@@ -35,6 +35,12 @@ Octal and hexadecimal digit labels show the bits represented by each place, coun
 npm run typecheck
 npm run lint
 npm run build
+```
+
+Run the unit suite for the `src/core/` rules with:
+
+```sh
+npm run test:unit
 ```
 
 Run the browser interaction suite in Chromium and Firefox with:
