@@ -129,7 +129,7 @@ function App() {
   // page's own actions (stepping) ask for the caret themselves once they have finished.
   useEffect(() => {
     const aimedAtAControl = (target: EventTarget | null) =>
-      target instanceof Element && target.closest('input, button, select, textarea, label, a[href]') !== null
+      target instanceof Element && target.closest('input, button, select, textarea, label, a[href], [data-breakdown-term]') !== null
     const returnToSurface = (event: Event) => {
       if (event.type === 'keydown' && (event as globalThis.KeyboardEvent).key === 'Tab') return
       if (aimedAtAControl(event.target) || caretIsInSurface()) return
@@ -281,7 +281,7 @@ function App() {
           <details className="mt-1 text-xs text-[#63728a]">
             <summary className="flex min-h-11 cursor-pointer items-center font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]">How to use</summary>
             <p className="mb-2 max-w-[65ch] leading-relaxed text-[#8190a5]">
-              Type into any row; it becomes the source, and the others convert automatically. Tab moves from each row's units digit to its breakdown toggle beside the base name, then to the next row. Digits shift left as you type; Backspace and Delete remove the newest digit. With a box focused, ↑ and ↓ change the value by one, and Page Up / Page Down change it by a whole place. Each row shows only the digit places that fit within the 16-bit limit; octal and hexadecimal digits are labeled with the bits they represent.
+              Type into any row; it becomes the source, and the others convert automatically. Tab moves from each row's units digit to its base name, which toggles that row's breakdown, then to the next row. When a breakdown is open, its terms are included in the Tab order. Digits shift left as you type; Backspace and Delete remove the newest digit. With a box focused, ↑ and ↓ change the value by one, and Page Up / Page Down change it by a whole place. Each row shows only the digit places that fit within the 16-bit limit; octal and hexadecimal digits are labeled with the bits they represent.
             </p>
           </details>
 
@@ -289,7 +289,7 @@ function App() {
             <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 w-[176px] border-b border-[#e3e9f1] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
+                  <th className="sticky left-0 z-10 w-[144px] border-b border-[#e3e9f1] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
                   <th className="border-b border-[#e3e9f1] pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Digits and place values</th>
                 </tr>
               </thead>

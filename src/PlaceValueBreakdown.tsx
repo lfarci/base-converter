@@ -24,7 +24,7 @@ export function PlaceValueBreakdown({ base, boxes, value, highlightedPosition, o
   const total = value?.toString() ?? ''
 
   return (
-    <section className="px-4 py-2 text-xs text-[#63728a]" aria-label={`${base.name} place-value breakdown`}>
+    <section className="py-2 pl-4 pr-0 text-xs text-[#63728a]" aria-label={`${base.name} place-value breakdown`}>
       <h3 className="m-0 text-[10px] font-medium text-[#8190a5]">Breakdown</h3>
       {value === null ? (
         <p className="mb-0 mt-2 leading-relaxed">Enter a valid value to see this row's place-value breakdown.</p>

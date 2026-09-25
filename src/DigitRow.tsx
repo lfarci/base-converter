@@ -24,6 +24,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
   const [focusedPosition, setFocusedPosition] = useState<number | null>(null)
   const lastIndex = boxes.length - 1
   const breakdownId = `${base.key}-place-value-breakdown`
+  const registerToggle = registerBreakdownToggle(base.key)
   const highlightedPosition = hoveredPosition ?? focusedPosition
   const bitsPerDigit = Math.log2(base.radix)
   const usesBitGrid = Number.isInteger(bitsPerDigit)
@@ -35,29 +36,28 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
     setFocusedPosition(position)
     onFocusPosition(position)
   }
-
   return (
     <>
       <tr className="bg-white">
-        <th className="sticky left-0 z-10 w-[176px] border-b border-[#eef2f8] bg-inherit py-3 pr-3 align-middle font-normal" scope="row">
-          <span className="flex items-center gap-1.5">
+        <th className="sticky left-0 z-10 w-[144px] border-b border-[#eef2f8] bg-inherit py-3 pr-2 align-top font-normal" scope="row" aria-label={base.name}>
+          <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
             <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: base.accent }} aria-hidden="true" />
-            <span className="whitespace-nowrap text-[13px] font-bold text-[#172b4d]">{base.name}</span>
             <button
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded text-[#63728a] transition hover:bg-[#f1f4f8] hover:text-[#172b4d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]"
+              className="group inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left text-[12px] font-bold text-[#172b4d] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]"
               type="button"
-              ref={registerBreakdownToggle(base.key)}
+              ref={registerToggle}
               onKeyDown={(event) => {
                 if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
               }}
               aria-expanded={isBreakdownOpen}
               aria-controls={breakdownId}
-              aria-label={`${isBreakdownOpen ? 'Hide' : 'Show'} ${base.name} place-value breakdown`}
+              title={`Click to ${isBreakdownOpen ? 'close' : 'open'} the ${base.name.toLowerCase()} place-value breakdown`}
+              aria-label={`Toggle ${base.name} place-value breakdown`}
               onClick={() => setIsBreakdownOpen((open) => !open)}
             >
-              <span className={`size-2 border-r-2 border-t-2 transition-transform ${isBreakdownOpen ? 'rotate-[135deg]' : 'rotate-45'}`} aria-hidden="true" />
+              <span className="whitespace-nowrap">{base.name}</span>
             </button>
-            <span className="font-mono text-[11px] text-[#8190a5]">{base.radix}</span>
+            <span className="w-5 text-right font-mono text-[11px] tabular-nums text-[#8190a5]">{base.radix}</span>
           </span>
         </th>
         <td className="border-b border-[#eef2f8] py-3 pl-3 pr-3 align-middle">
@@ -117,7 +117,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
       </tr>
       {isBreakdownOpen && (
         <tr>
-          <td className="border-b border-[#eef2f8] bg-[#f8fafd] p-0" colSpan={2}>
+          <td className="border-b border-[#eef2f8] bg-[#f8fafd] py-0 pl-[140px] pr-3" colSpan={2}>
             <div id={breakdownId}>
               <PlaceValueBreakdown
                 base={base}
