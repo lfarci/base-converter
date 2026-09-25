@@ -172,7 +172,7 @@ function App() {
 // The breakdown only exists in the DOM once a row has opened it, so its terms are the one
 // Tab target App has to look up rather than reach through a registered ref.
 function hasBreakdownTerm(base: Base) {
-  return document.getElementById(breakdownIdFor(base))?.querySelector('[data-breakdown-term]') !== null
+  return Boolean(document.getElementById(breakdownIdFor(base))?.querySelector('[data-breakdown-term]'))
 }
 
 export default App

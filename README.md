@@ -50,6 +50,10 @@ npx playwright install chromium firefox
 npm run test:e2e
 ```
 
+Pull requests run both suites: the
+[Check Playwright tests](.github/workflows/check-playwright-test.yml) workflow executes
+`npm run test:unit` and then `npm run test:e2e`.
+
 ## Deployment
 
 Pushing to `main` triggers the [Deploy to GitHub Pages](.github/workflows/deploy-pages.yml)

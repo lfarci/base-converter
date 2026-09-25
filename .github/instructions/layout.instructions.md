@@ -31,8 +31,9 @@ Also covered by this file:
 - Colour never carries state alone: the copy always says what happened, so the message must
   stay meaningful as plain text.
 - Page furniture holds no domain logic and never touches `core/` value math. `StatusLine`
-  renders a message it is given; deciding whether that message is an error happens in
-  `App.tsx` (via `errorForParsed`).
+  takes no message prop: it renders its `children` and only switches `role`/colour on the
+  `isError` boolean. `core/display.ts` (`statusFor`) produces the `message`/`error` strings,
+  and `App.tsx` passes them on as children plus `isError={error !== ''}`.
 - No component here reads or writes app state. If one needs data, it arrives as props from
   `App.tsx`.
 - Keep semantic HTML — `header`, `a`, `details`, `summary`, `p` — so the page keeps its

@@ -40,6 +40,9 @@ npm run test:e2e        # Playwright, Chromium + Firefox
 `npx playwright install chromium firefox`. It starts its own dev server on
 `http://127.0.0.1:5198/base-converter/`.
 
+Pull requests run the unit suite and the browser suite together in the
+`check-playwright-test.yml` workflow.
+
 ## Architecture
 
 Keep the app split by responsibility — do not let digit parsing or value math creep back
