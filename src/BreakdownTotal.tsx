@@ -1,0 +1,22 @@
+type BreakdownTotalProps = {
+  contributions: bigint[]
+  total: string
+}
+
+// The same contributions added back up to the value, so the breakdown reads as one sum.
+export function BreakdownTotal({ contributions, total }: BreakdownTotalProps) {
+  return (
+    <span
+      className="border-l border-[#dbe3ee] pl-4 font-semibold text-[#172b4d]"
+      role="math"
+      aria-label={`${contributions.map((contribution) => contribution.toString()).join(' plus ')} equals ${total}`}
+    >
+      {contributions.map((contribution, index) => (
+        <span key={`${index}-${contribution}`}>
+          {index > 0 && <span aria-hidden="true"> + </span>}
+          {contribution.toString()}
+        </span>
+      ))} <span aria-hidden="true">→</span> {total}
+    </span>
+  )
+}

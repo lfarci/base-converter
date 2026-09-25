@@ -1,6 +1,9 @@
 import { useState, type KeyboardEvent, type RefCallback } from 'react'
-import { bitRangeForDigit, POSITIONS, type Base, type BitSpan } from './conversion'
+import { BaseHeaderCell } from './BaseHeaderCell'
+import { DigitBox } from './DigitBox'
 import { PlaceValueBreakdown } from './PlaceValueBreakdown'
+import { PlaceValueLabel } from './PlaceValueLabel'
+import { bitsPerDigit, POSITIONS, usesBitGrid, type Base, type BitSpan } from './conversion'
 
 type DigitRowProps = {
   base: Base
@@ -9,7 +12,7 @@ type DigitRowProps = {
   highlightedBits: BitSpan | null
   onHoverPosition: (position: number | null) => void
   onFocusPosition: (position: number | null) => void
-  onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[], index: number) => void
+  onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => void
   onEditDigit: (base: Base, boxes: string[], raw: string) => void
   registerCell: (key: string) => RefCallback<HTMLInputElement>
   registerBreakdownToggle: (key: string) => RefCallback<HTMLButtonElement>
@@ -26,9 +29,8 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
   const breakdownId = `${base.key}-place-value-breakdown`
   const registerToggle = registerBreakdownToggle(base.key)
   const highlightedPosition = hoveredPosition ?? focusedPosition
-  const editableBorderColor = `color-mix(in srgb, ${base.accent} 70%, #172b4d)`
-  const bitsPerDigit = Math.log2(base.radix)
-  const usesBitGrid = Number.isInteger(bitsPerDigit)
+  const spansBitGrid = usesBitGrid(base.radix)
+  const bitWidth = bitsPerDigit(base.radix)
   const hoverPosition = (position: number | null) => {
     setHoveredPosition(position)
     onHoverPosition(position)
@@ -37,94 +39,53 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
     setFocusedPosition(position)
     onFocusPosition(position)
   }
+
   return (
     <>
       <tr className="bg-white">
-        <th className="sticky left-0 z-10 w-[144px] border-b border-[#eef2f8] bg-inherit py-3 pr-2 align-top font-normal" scope="row" aria-label={base.name}>
-          <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
-            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: base.accent }} aria-hidden="true" />
-            <button
-              className="group inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left text-[12px] font-bold text-[#172b4d] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]"
-              type="button"
-              ref={registerToggle}
-              onKeyDown={(event) => {
-                if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
-              }}
-              aria-expanded={isBreakdownOpen}
-              aria-controls={breakdownId}
-              title={`Click to ${isBreakdownOpen ? 'close' : 'open'} the ${base.name.toLowerCase()} place-value breakdown`}
-              aria-label={`Toggle ${base.name} place-value breakdown`}
-              onClick={() => setIsBreakdownOpen((open) => !open)}
-            >
-              <span className="whitespace-nowrap">{base.name}</span>
-            </button>
-            <span className="w-5 text-right font-mono text-[11px] tabular-nums text-[#8190a5]">{base.radix}</span>
-          </span>
-        </th>
+        <BaseHeaderCell
+          base={base}
+          isBreakdownOpen={isBreakdownOpen}
+          breakdownId={breakdownId}
+          toggleRef={registerToggle}
+          onToggle={() => setIsBreakdownOpen((open) => !open)}
+          onToggleKeyDown={(event) => {
+            if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
+          }}
+        />
         <td className="border-b border-[#eef2f8] py-3 pl-3 pr-3 align-middle">
-          <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${usesBitGrid ? POSITIONS : boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
+          <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${spansBitGrid ? POSITIONS : boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
               {boxes.map((digit, index) => {
                 const position = boxes.length - 1 - index
-                const bitRange = bitRangeForDigit(base.radix, position)
                 const cellKey = `${base.key}:${index}`
-                // Only the units box (the one at the right of the row) takes the
-                // caret and typing. The other boxes are read-only readouts of the
-                // value, so they never focus, never paint a frame and never show a
-                // write cursor — they still report hover so the bit groups link up.
                 const isEditable = index === lastIndex
-                const isHighlighted = bitsPerDigit === 1 && highlightedBits
+                const isHighlighted = bitWidth === 1 && highlightedBits
                   ? position >= highlightedBits.low && position <= highlightedBits.high
                   : highlightedPosition === position
-                const cellStyle = isHighlighted
-                  ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: isEditable ? editableBorderColor : base.accent }
-                  : isEditable
-                    ? { backgroundColor: `color-mix(in srgb, ${base.accent} 8%, white)`, borderColor: editableBorderColor }
-                    : undefined
                 return (
                   <li
                     className="m-0 flex min-w-0 flex-col items-center gap-1"
                     key={cellKey}
-                    style={usesBitGrid ? { gridColumn: `span ${Math.min(bitsPerDigit, POSITIONS - position * bitsPerDigit)}` } : undefined}
+                    style={spansBitGrid ? { gridColumn: `span ${Math.min(bitWidth, POSITIONS - position * bitWidth)}` } : undefined}
                     onMouseEnter={() => hoverPosition(position)}
                     onMouseLeave={() => hoverPosition(null)}
                     onFocusCapture={() => focusPosition(position)}
                     onBlurCapture={() => focusPosition(null)}
                   >
-                    <input
-                      className={`h-10 w-full min-w-0 rounded-[4px] border border-[#dbe3ee] bg-white p-0 text-center font-mono text-[clamp(9px,2.5vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition ${isEditable ? 'border-2 font-bold shadow-sm focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25' : 'cursor-default'}`}
-                      type="text"
-                      data-digit="true"
-                      data-editable={isEditable || undefined}
-                      data-position={position}
-                      data-highlighted={isHighlighted || undefined}
-                      style={cellStyle}
-                      ref={registerCell(cellKey)}
-                      inputMode={base.radix <= 10 ? 'numeric' : 'text'}
-                      autoComplete="off"
-                      spellCheck={false}
-                      readOnly={!isEditable}
-                      value={digit}
-                      tabIndex={isEditable ? 0 : -1}
-                      onMouseDown={isEditable ? undefined : (event) => event.preventDefault()}
-                      onFocus={isEditable ? (event) => event.target.select() : undefined}
-                      onKeyDown={isEditable
-                        ? (event) => {
-                          if (event.key === 'Tab') onTabFromUnits(event, base)
-                          else onDigitKeyDown(event, base, boxes, index)
-                        }
-                        : undefined}
-                      onChange={isEditable ? (event) => onEditDigit(base, boxes, event.target.value) : undefined}
-                      aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}`}
+                    <DigitBox
+                      base={base}
+                      position={position}
+                      digit={digit}
+                      editable={isEditable}
+                      highlighted={isHighlighted}
+                      surfaceRef={registerCell(cellKey)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab') onTabFromUnits(event, base)
+                        else onDigitKeyDown(event, base, boxes)
+                      }}
+                      onEditDigit={(raw) => onEditDigit(base, boxes, raw)}
                     />
-                    <span
-                      className="place-value-label flex flex-col items-center gap-0.5 whitespace-nowrap rounded-sm border border-transparent px-0.5 py-0.5 font-mono text-[9px] leading-none text-[#63728a]"
-                      data-position={position}
-                      data-highlighted={isHighlighted || undefined}
-                      style={isHighlighted ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: base.accent, color: '#172b4d', fontWeight: 600 } : undefined}
-                    >
-                      <span>{position}</span>
-                      {bitRange && <span className="text-[8px] text-[#8190a5]">{bitRange}</span>}
-                    </span>
+                    <PlaceValueLabel base={base} position={position} highlighted={isHighlighted} />
                   </li>
                 )
               })}

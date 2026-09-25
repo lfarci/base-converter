@@ -1,10 +1,14 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
-import { DigitRow } from './DigitRow'
+import { ConversionTable } from './ConversionTable'
+import { HelpDetails } from './HelpDetails'
+import { PageHeader } from './PageHeader'
+import { StatusLine } from './StatusLine'
 import {
   bitSpanForDigit,
   digitRange,
   digitValue,
   digitsForValue,
+  errorForParsed,
   LIMIT_MESSAGE,
   pageStep,
   padToPositions,
@@ -18,6 +22,16 @@ import {
   type BitSpan,
 } from './conversion'
 
+// What the page shows above the rows. The value is null while the source row does not
+// hold a number yet, so every other row renders blank rather than zero.
+function describe(parsed: ReturnType<typeof parseDigits>, base: Base, rejection: string) {
+  const error = rejection || errorForParsed(parsed, base.radix)
+  const help = parsed.status === 'empty'
+    ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
+    : `Reading base ${base.radix}, digits ${digitRange(base.radix)}. Type into another row's units box to write in that base instead, or use Arrow Up/Down to step the value by one.`
+  return { error, message: error || help, value: parsed.status === 'ok' ? parsed.value : null }
+}
+
 function App() {
   const [sourceKey, setSourceKey] = useState('decimal')
   const [sourceDigits, setSourceDigits] = useState('0')
@@ -28,13 +42,7 @@ function App() {
 
   const sourceBase = rows.find((base) => base.key === sourceKey) ?? rows[0]
   const parsed = parseDigits(sourceDigits, sourceBase.radix)
-  const value = parsed.status === 'ok' ? parsed.value : null
-  const error = rejection
-    || (parsed.status === 'too-large' ? LIMIT_MESSAGE : '')
-    || (parsed.status === 'invalid' ? `Enter digits ${digitRange(sourceBase.radix)} for base ${sourceBase.radix}.` : '')
-  const help = parsed.status === 'empty'
-      ? 'Nothing typed yet — ↑ starts at 1, ↓ stays at 0.'
-      : `Reading base ${sourceBase.radix}, digits ${digitRange(sourceBase.radix)}. Type into another row's units box to write in that base instead, or use Arrow Up/Down to step the value by one.`
+  const { error, message, value } = describe(parsed, sourceBase, rejection)
 
   // Each row uses only the places that fit within the 16-bit limit, with leading
   // zeros in those places. An empty source renders blank; zero stays visible.
@@ -42,12 +50,10 @@ function App() {
     const isSource = base.key === sourceKey
     const digits = isSource ? Array.from(sourceDigits) : value === null ? [] : digitsForValue(value, base.radix)
     const hasValue = isSource ? sourceDigits.length > 0 : value !== null
+    const places = positionsForBase(base.radix)
     return {
       base,
-      isSource,
-      boxes: hasValue
-        ? padToPositions(digits, positionsForBase(base.radix))
-        : Array.from({ length: positionsForBase(base.radix) }, () => ''),
+      boxes: hasValue ? padToPositions(digits, places) : Array.from({ length: places }, () => ''),
     }
   })
 
@@ -55,16 +61,17 @@ function App() {
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
   const breakdownTogglesRef = useRef(new Map<string, HTMLButtonElement>())
+  const unitsKey = (base: Base) => `${base.key}:${positionsForBase(base.radix) - 1}`
   const focusRowControl = (event: KeyboardEvent, base: Base, direction: -1 | 1) => {
     const rowIndex = rows.findIndex((row) => row.key === base.key)
     const targetRow = rows[rowIndex + direction]
     if (!targetRow) return
 
     event.preventDefault()
-    if (direction === 1) cellsRef.current.get(`${targetRow.key}:${positionsForBase(targetRow.radix) - 1}`)?.focus()
+    if (direction === 1) cellsRef.current.get(unitsKey(targetRow))?.focus()
     else breakdownTogglesRef.current.get(targetRow.key)?.focus()
   }
-  const focusToggleFromUnits = (event: React.KeyboardEvent<HTMLInputElement>, base: Base) => {
+  const focusToggleFromUnits = (event: KeyboardEvent<HTMLInputElement>, base: Base) => {
     if (event.shiftKey) {
       focusRowControl(event, base, -1)
       return
@@ -73,10 +80,10 @@ function App() {
     event.preventDefault()
     breakdownTogglesRef.current.get(base.key)?.focus()
   }
-  const focusUnitsFromToggle = (event: React.KeyboardEvent<HTMLButtonElement>, base: Base, breakdownOpen: boolean) => {
+  const focusUnitsFromToggle = (event: KeyboardEvent<HTMLButtonElement>, base: Base, breakdownOpen: boolean) => {
     if (event.shiftKey) {
       event.preventDefault()
-      cellsRef.current.get(`${base.key}:${positionsForBase(base.radix) - 1}`)?.focus()
+      cellsRef.current.get(unitsKey(base))?.focus()
       return
     }
 
@@ -91,7 +98,7 @@ function App() {
 
     focusRowControl(event, base, 1)
   }
-  const focusUnitsFromBreakdownTerm = (event: React.KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => {
+  const focusUnitsFromBreakdownTerm = (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => {
     if (event.shiftKey && isFirst) {
       event.preventDefault()
       breakdownTogglesRef.current.get(base.key)?.focus()
@@ -108,7 +115,7 @@ function App() {
   // that never takes the caret — not by mouse, not by Tab, not by typing — so each
   // row still exposes exactly one editable stop.
   const focusEditable = () => {
-    cellsRef.current.get(`${sourceBase.key}:${positionsForBase(sourceBase.radix) - 1}`)?.focus()
+    cellsRef.current.get(unitsKey(sourceBase))?.focus()
   }
 
   const focusEditableRef = useRef(focusEditable)
@@ -211,7 +218,7 @@ function App() {
     pendingFocusRef.current = 'rightmost'
   }
 
-  const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[], _index: number) => {
+  const onCellKeyDown = (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => {
     const digit = digitValue(event.key)
     if (!event.ctrlKey && !event.metaKey && !event.altKey && digit >= 0 && digit < base.radix) {
       event.preventDefault()
@@ -253,10 +260,7 @@ function App() {
 
   return (
     <main className="mx-auto w-full px-4 pb-16 text-[#172b4d] sm:px-6 lg:max-w-[920px]" id="top">
-      <header className="flex items-baseline justify-between py-6 sm:py-8">
-        <a className="text-[15px] font-bold tracking-tight text-[#172b4d] no-underline" href="#top" tabIndex={-1}>basewise</a>
-        <span className="text-[11px] text-[#63728a]">positional notation, plainly</span>
-      </header>
+      <PageHeader />
 
       <section aria-labelledby="page-title">
         <h1 className="mt-5 text-[clamp(22px,3.4vw,28px)] font-bold leading-tight tracking-[-0.6px]" id="page-title">
@@ -271,53 +275,30 @@ function App() {
           <p className="mt-1.5 max-w-[60ch] text-xs leading-relaxed text-[#8190a5]">
             Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
           </p>
-          <details className="mt-1 text-xs text-[#63728a]">
-            <summary className="flex min-h-11 cursor-pointer items-center font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2458d3]">How to use</summary>
-            <p className="mb-2 max-w-[65ch] leading-relaxed text-[#8190a5]">
-              Each row has one writable box, its units place on the right; the rest are read-only readouts of the same value. Type there and that row becomes the source, with the others converting automatically. Tab moves from each row's units digit to its base-name toggle, which opens or closes that row's breakdown, then to the next row. When a breakdown is open, its terms are included in the Tab order. Digits shift left as you type; Backspace and Delete remove the newest digit. With a box focused, ↑ and ↓ change the value by one, and Page Up / Page Down change it by a whole place. Each row shows only the digit places that fit within the 16-bit limit; octal and hexadecimal digits are labeled with the bits they represent.
-            </p>
-          </details>
+          <HelpDetails />
 
-          <div className="mt-4 overflow-x-auto" role="region" aria-label="Scrollable base conversion table">
-            <table className="w-full min-w-[768px] table-fixed border-separate border-spacing-0 text-left" aria-labelledby="result-title">
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-10 w-[144px] border-b border-[#e3e9f1] bg-white pb-2 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Base</th>
-                  <th className="border-b border-[#e3e9f1] pb-2 pl-3 pr-3 text-[10px] font-bold uppercase tracking-[0.9px] text-[#8190a5]" scope="col">Digits and place values</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayed.map(({ base, boxes }) => (
-                  <DigitRow
-                    key={base.key}
-                    base={base}
-                    boxes={boxes}
-                    value={value}
-                    highlightedBits={hoveredBits ?? focusedBits}
-                    onHoverPosition={(position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position))}
-                    onFocusPosition={(position) => setFocusedBits(position === null ? null : bitSpanForDigit(base.radix, position))}
-                    onDigitKeyDown={onCellKeyDown}
-                    onEditDigit={editDigit}
-                    registerCell={(cellKey) => (node) => {
-                      if (node) cellsRef.current.set(cellKey, node)
-                      else cellsRef.current.delete(cellKey)
-                    }}
-                    registerBreakdownToggle={(key) => (node) => {
-                      if (node) breakdownTogglesRef.current.set(key, node)
-                      else breakdownTogglesRef.current.delete(key)
-                    }}
-                    onTabFromUnits={focusToggleFromUnits}
-                    onTabFromToggle={focusUnitsFromToggle}
-                    onTabFromBreakdownTerm={focusUnitsFromBreakdownTerm}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ConversionTable
+            displayed={displayed}
+            value={value}
+            highlightedBits={hoveredBits ?? focusedBits}
+            onHoverPosition={(base, position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position))}
+            onFocusPosition={(base, position) => setFocusedBits(position === null ? null : bitSpanForDigit(base.radix, position))}
+            onDigitKeyDown={onCellKeyDown}
+            onEditDigit={editDigit}
+            registerCell={(cellKey) => (node) => {
+              if (node) cellsRef.current.set(cellKey, node)
+              else cellsRef.current.delete(cellKey)
+            }}
+            registerBreakdownToggle={(key) => (node) => {
+              if (node) breakdownTogglesRef.current.set(key, node)
+              else breakdownTogglesRef.current.delete(key)
+            }}
+            onTabFromUnits={focusToggleFromUnits}
+            onTabFromToggle={focusUnitsFromToggle}
+            onTabFromBreakdownTerm={focusUnitsFromBreakdownTerm}
+          />
 
-          <p className={`mt-3 min-h-5 text-xs leading-relaxed ${error ? 'text-[#a52736]' : 'text-[#63728a]'}`} id="edit-status" role={error ? 'alert' : 'status'}>
-            {error || help}
-          </p>
+          <StatusLine isError={error !== ''}>{message}</StatusLine>
         </div>
 
         <p className="mt-10 border-t border-[#e7edf5] pt-5 text-xs leading-relaxed text-[#63728a]">
