@@ -50,6 +50,9 @@ Read the request, the relevant source, and `.github/copilot-instructions.md` bef
 touching anything. Follow `.github/instructions/src.instructions.md`,
 `.github/instructions/react-typescript.instructions.md`, and
 `.github/instructions/typescript.instructions.md` for the files they govern.
+Use `.github/skills/retro-educational-ui-design/SKILL.md` for the visual direction and
+`.github/skills/accessibility-first-interface-planning/SKILL.md` for design-stage
+accessibility criteria.
 
 Inspect the existing UI and its interaction states before choosing changes. Preserve
 working behaviour and identify conflicts between the brief and existing visual rules
@@ -103,7 +106,8 @@ Apply these acceptance criteria to every design:
 ## 3. Hand off implementation
 
 Turn the design plan into a self-contained implementation brief for the repository's
-`Developer` custom agent. Include:
+`Developer` custom agent. Follow `.github/skills/designer-developer-handoff/SKILL.md`
+to make the brief actionable and complete. Include:
 
 - the requested outcome, scope, non-goals, assumptions, and any conflict with existing
   visual instructions,
