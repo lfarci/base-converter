@@ -8,6 +8,7 @@ import { bitsPerDigit, POSITIONS, usesBitGrid, type Base, type BitSpan } from '.
 type DigitRowProps = {
   base: Base
   boxes: string[]
+  isSource: boolean
   value: bigint | null
   highlightedBits: BitSpan | null
   onHoverPosition: (position: number | null) => void
@@ -21,7 +22,7 @@ type DigitRowProps = {
   onTabFromBreakdownTerm: (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => void
 }
 
-export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
+export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
   const [hoveredPosition, setHoveredPosition] = useState<number | null>(null)
   const [focusedPosition, setFocusedPosition] = useState<number | null>(null)
@@ -42,9 +43,10 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
 
   return (
     <>
-      <tr className="bg-white">
+      <tr className="bg-paper-2">
         <BaseHeaderCell
           base={base}
+          isSource={isSource}
           isBreakdownOpen={isBreakdownOpen}
           breakdownId={breakdownId}
           toggleRef={registerToggle}
@@ -53,7 +55,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
             if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
           }}
         />
-        <td className="border-b border-[#eef2f8] py-3 pl-3 pr-3 align-middle">
+        <td className="border-b border-rule-soft py-3 pl-3 pr-3 align-middle">
           <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${spansBitGrid ? POSITIONS : boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
               {boxes.map((digit, index) => {
                 const position = boxes.length - 1 - index
@@ -94,7 +96,7 @@ export function DigitRow({ base, boxes, value, highlightedBits, onHoverPosition,
       </tr>
       {isBreakdownOpen && (
         <tr>
-          <td className="border-b border-[#eef2f8] bg-[#f8fafd] py-0 pl-[140px] pr-3" colSpan={2}>
+          <td className="border-b border-rule-soft bg-paper-2 py-0 pl-[140px] pr-3" colSpan={2}>
             <div id={breakdownId}>
               <PlaceValueBreakdown
                 base={base}

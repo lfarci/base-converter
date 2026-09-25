@@ -1,13 +1,31 @@
 @import "tailwindcss";
 
+/* The design tokens. Tailwind 4 is CSS-first, so every token here is also a utility:
+   `bg-paper`, `text-ink-soft`, `border-rule-soft`, `font-mono`, `outline-focus`, … */
+@theme {
+  --color-paper: #f6f1e4;
+  --color-paper-2: #fbf7ec;
+  --color-paper-3: #ece4d2;
+  --color-ink: #172b4d;
+  --color-ink-soft: #4d5b71;
+  --color-rule: #c9bfa6;
+  --color-rule-soft: #ddd4bd;
+  --color-focus: #2458d3;
+  --color-danger: #a52736;
+
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+}
+
 * {
   box-sizing: border-box;
 }
 
 :root {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #172b4d;
-  background: #fbfcfe;
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,11 +45,57 @@ input {
 }
 
 ::selection {
-  color: #172b4d;
-  background: #dce7ff;
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-focus) 20%, var(--color-paper-2));
 }
 
 :focus-visible {
-  outline: 3px solid #2458d3;
+  outline: 3px solid var(--color-focus);
   outline-offset: 3px;
+}
+
+/* Preference support. Each block restates component appearance for a user setting, which
+   is a document-level concern, so the selectors live here beside the tokens they read —
+   and these rules stay unlayered so they beat Tailwind's utility layer and any inline
+   colour a component computes from a per-base accent. */
+@media (prefers-reduced-motion: reduce) {
+  input[data-digit],
+  th[scope='row'] button {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  input[data-digit] {
+    background-color: var(--color-paper-2) !important;
+    border-color: var(--color-rule) !important;
+  }
+  input[data-editable] {
+    background-color: var(--color-paper-2) !important;
+    border-color: var(--color-ink) !important;
+  }
+  input[data-highlighted],
+  .place-value-label[data-highlighted],
+  [data-breakdown-term][data-highlighted] {
+    background-color: var(--color-paper-3) !important;
+    border-color: var(--color-ink) !important;
+  }
+}
+
+/* In forced-colors a colour-mix tint and a box-shadow are dropped, so the state cues that
+   survive are the shape ones: a system-colour frame on the writable box and an outline
+   ring on every highlighted cell. Text underlines are already part of the label and term
+   skins, which is what carries the cue there. */
+@media (forced-colors: active) {
+  input[data-editable] {
+    border-color: CanvasText !important;
+  }
+  input[data-highlighted],
+  .place-value-label[data-highlighted],
+  [data-breakdown-term][data-highlighted] {
+    outline: 2px solid CanvasText;
+  }
+  input[data-highlighted]:focus-visible {
+    outline: 3px solid Highlight;
+  }
 }

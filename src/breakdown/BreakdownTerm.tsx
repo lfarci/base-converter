@@ -20,13 +20,21 @@ export function BreakdownTerm({ base, digit, digitValue: value, position, contri
 
   return (
     <span
-      className="rounded-sm border border-transparent px-1 py-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#2458d3]"
+      className="rounded-sm border border-transparent px-1 py-0.5 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
       role="math"
       tabIndex={0}
       data-breakdown-term="true"
       data-position={position}
       data-highlighted={highlighted || undefined}
-      style={highlighted ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: base.accent, color: '#172b4d', fontWeight: 600 } : undefined}
+      style={highlighted
+        ? {
+            backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-paper-3))`,
+            boxShadow: `inset 3px 0 0 0 color-mix(in srgb, ${base.accent} 70%, var(--color-ink))`,
+            color: 'var(--color-ink)',
+            fontWeight: 600,
+            textDecoration: 'underline',
+          }
+        : undefined}
       aria-label={`${base.radix} to the power of ${position} times ${displayedDigit} equals ${contribution}`}
       onMouseEnter={() => onHover(position)}
       onMouseLeave={() => onHover(null)}

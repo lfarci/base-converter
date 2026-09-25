@@ -12,6 +12,7 @@ import {
 export type DisplayedRow = {
   base: Base
   boxes: string[]
+  isSource: boolean
 }
 
 export function sourceBaseFor(sourceKey: string) {
@@ -40,6 +41,7 @@ export function displayedRows(sourceKey: string, sourceDigits: string, value: bi
     return {
       base,
       boxes: hasValue ? padToPositions(digits, places) : Array.from({ length: places }, () => ''),
+      isSource,
     }
   })
 }

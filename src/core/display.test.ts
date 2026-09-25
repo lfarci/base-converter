@@ -93,4 +93,16 @@ describe('displayedRows', () => {
     expect(parseDigits(VALUE_LIMIT.toString(10), 10)).toEqual({ status: 'ok', value: VALUE_LIMIT })
     expect(parseDigits((VALUE_LIMIT + 1n).toString(10), 10).status).toBe('too-large')
   })
+
+  it('names exactly the source row, so a component never has to re-derive it', () => {
+    const displayed = displayedRows('octal', '17', 15n)
+
+    expect(displayed.filter(({ isSource }) => isSource).map(({ base }) => base.key)).toEqual(['octal'])
+  })
+
+  it('keeps the source flag off every other row even when nothing is typed', () => {
+    const displayed = displayedRows('binary', '', null)
+
+    expect(displayed.filter(({ isSource }) => isSource).map(({ base }) => base.key)).toEqual(['binary'])
+  })
 })

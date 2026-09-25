@@ -41,8 +41,12 @@ layout, types, styling, and accessibility rules live in `src.instructions.md`;
 - Hover and focus highlighting is reported upward (`onHoverPosition`, `onFocusPosition`) so
   the matching digit box and position label can highlight with it; do not highlight the
   binary row from inside this folder.
-- Reuse the shared visual language: monospace `tabular-nums` for the numbers, `#172b4d`
-  text, and the per-base accent from the `base` prop.
+- Reuse the shared visual language: monospace `tabular-nums` for the numbers, `--color-ink`
+  text on a `--color-paper-3` inset panel with a left rule, and the per-base accent from
+  the `base` prop for decoration and tint only. A highlighted term adds a shape cue â€” an
+  inset accent bar plus `text-decoration: underline` â€” so the state never rests on hue, and
+  the panel's leading padding stays balanced with `DigitRow`'s cell padding so the heading
+  keeps lining up with the digit grid.
 
 ## Checks
 

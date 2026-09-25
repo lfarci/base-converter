@@ -13,13 +13,22 @@ export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabel
 
   return (
     <span
-      className="place-value-label flex flex-col items-center gap-0.5 whitespace-nowrap rounded-sm border border-transparent px-0.5 py-0.5 font-mono text-[9px] leading-none text-[#63728a]"
+      className="place-value-label flex flex-col items-center gap-0.5 whitespace-nowrap rounded-sm border border-transparent px-0.5 py-0.5 text-center font-mono text-[10px] leading-tight text-ink-soft"
       data-position={position}
       data-highlighted={highlighted || undefined}
-      style={highlighted ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: base.accent, color: '#172b4d', fontWeight: 600 } : undefined}
+      style={highlighted
+        ? {
+            backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-paper-2))`,
+            borderColor: `color-mix(in srgb, ${base.accent} 70%, var(--color-ink))`,
+            color: 'var(--color-ink)',
+            fontWeight: 600,
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }
+        : undefined}
     >
       <span>{position}</span>
-      {bitRange && <span className="text-[8px] text-[#8190a5]">{bitRange}</span>}
+      {bitRange && <span className="text-[9px] text-ink-soft">{bitRange}</span>}
     </span>
   )
 }

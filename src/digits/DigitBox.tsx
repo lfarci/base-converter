@@ -15,18 +15,27 @@ type DigitBoxProps = {
 // One place of one row. Only the units box of a row is editable; the rest are read-only
 // readouts of the same value, so they never focus, never paint a frame and never show a
 // write cursor.
+//
+// The editable box is a worksheet cell you can write in: a 2px frame mixed from the row's
+// accent with ink, so the boundary clears 3:1 on paper where the raw accent does not, plus
+// a light accent tint. A highlight adds a ring, which is a shape cue that survives
+// forced-colors where a tint does not.
 export function DigitBox({ base, position, digit, editable, highlighted, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
   const bitRange = bitRangeForDigit(base.radix, position)
   const editableBorderColor = `color-mix(in srgb, ${base.accent} 70%, #172b4d)`
   const boxStyle = highlighted
-    ? { backgroundColor: `color-mix(in srgb, ${base.accent} 12%, white)`, borderColor: editable ? editableBorderColor : base.accent }
+    ? {
+        backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-paper-2))`,
+        borderColor: editable ? editableBorderColor : `color-mix(in srgb, ${base.accent} 70%, var(--color-ink))`,
+        boxShadow: `0 0 0 2px color-mix(in srgb, ${base.accent} 55%, var(--color-ink))`,
+      }
     : editable
-      ? { backgroundColor: `color-mix(in srgb, ${base.accent} 8%, white)`, borderColor: editableBorderColor }
+      ? { backgroundColor: `color-mix(in srgb, ${base.accent} 8%, var(--color-paper-2))`, borderColor: editableBorderColor }
       : undefined
 
   return (
     <input
-      className={`h-10 w-full min-w-0 rounded-[4px] border border-[#dbe3ee] bg-white p-0 text-center font-mono text-[clamp(9px,2.5vw,17px)] font-semibold leading-none tabular-nums text-[#172b4d] outline-none transition ${editable ? 'border-2 font-bold shadow-sm focus:border-[#2458d3] focus:ring-2 focus:ring-[#2458d3]/25' : 'cursor-default'}`}
+      className={`min-h-10 w-full min-w-0 rounded-[4px] border border-rule-soft bg-paper-2 p-0 text-center font-mono text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tabular-nums text-ink transition ${editable ? 'border-2 font-bold focus:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus' : 'cursor-default'}`}
       type="text"
       data-digit="true"
       data-editable={editable || undefined}

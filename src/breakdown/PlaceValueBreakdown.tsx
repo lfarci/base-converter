@@ -23,12 +23,12 @@ export function PlaceValueBreakdown({ base, boxes, value, highlightedPosition, o
   })
 
   return (
-    <section className="py-2 pl-4 pr-0 text-xs text-[#63728a]" aria-label={`${base.name} place-value breakdown`}>
-      <h3 className="m-0 text-[10px] font-medium text-[#8190a5]">Breakdown</h3>
+    <section className="border-l-2 border-rule bg-paper-3 py-3 pl-[14px] pr-3 text-[13px] text-ink-soft" aria-label={`${base.name} place-value breakdown`}>
+      <h3 className="m-0 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-soft">Breakdown</h3>
       {value === null ? (
         <p className="mb-0 mt-2 leading-relaxed">Enter a valid value to see this row's place-value breakdown.</p>
       ) : (
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-[12px] text-[#33445f]">
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-[13px] text-ink">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {terms.length === 0 ? (
               <span role="math" aria-label="Zero equals zero">0 = 0</span>

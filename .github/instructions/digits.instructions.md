@@ -42,6 +42,13 @@ in `react-typescript.instructions.md`.
       `aria-controls={breakdownId}`, and the exact
       `` `Click to ${isBreakdownOpen ? 'close' : 'open'} the ${base.name.toLowerCase()} place-value breakdown` ``
       `title` the specs assert.
+  - `data-source={isSource || undefined}` on the row's `th[scope="row"]` â€” set on exactly
+    the source row and omitted everywhere else, never serialized as `false`. `isSource`
+    comes from `displayedRows` in `core/display.ts` and travels `ConversionTable` â†’
+    `DigitRow` â†’ `BaseHeaderCell` as an explicit prop; the source rule is never
+    re-derived in a component. The visible cue is a 3px `aria-hidden` ink bar absolutely
+    positioned at the cell's left edge, which adds no layout impact; if it ever disturbs a
+    measured contract, the attribute and the status line's wording carry the state alone.
 - **Import another feature through its entry component.** `digits/` may use
   `../breakdown/PlaceValueBreakdown`; it must not reach into `BreakdownTerm`,
   `BreakdownTotal`, or any other private part of that folder.

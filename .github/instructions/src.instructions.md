@@ -49,9 +49,22 @@ file holds what they share so it is stated once. Adapted from
 
 ## Styling and accessibility
 
-- Keep the visual language: white surface, `#172b4d` text, `#2458d3` focus accent,
-  per-base accent from `rows`, monospace `tabular-nums` for digits. Reuse those values
-  instead of inventing near duplicates (DRY).
+- Keep the visual language: a warm printed worksheet. Paper surfaces (`--color-paper`,
+  `--color-paper-2`, `--color-paper-3`), `--color-ink` text, `--color-ink-soft` secondary
+  text, `--color-rule`/`--color-rule-soft` rules, `--color-focus` for the focus ring,
+  `--color-danger` for errors, the per-base accent from `rows`, serif display type for
+  prose and base names, and monospace `tabular-nums` for digits, positions, and equations.
+  Reuse those values instead of inventing near duplicates (DRY). Every colour lives in the
+  `@theme` block in `index.css`; do not write ad-hoc hex values in components.
+- Faint values are for decorative rules only. Every text pair is normal size and must clear
+  4.5:1 against its surface; boundaries, focus rings, and the source-row margin bar must
+  clear 3:1. Per-base accents are decoration and tint, never the sole boundary or state cue.
+- Maintain a non-colour cue for every state: underlines on highlighted labels and breakdown
+  terms, rings on highlighted boxes, and the solid margin bar on the source row. Those
+  shapes are what survive `forced-colors`.
+- `index.css` also carries the `prefers-reduced-motion`, `prefers-contrast: more`, and
+  `forced-colors: active` blocks. Keep them unlayered so they beat Tailwind utilities and
+  any accent colour a component computes inline; update them when you add a state cue.
 - Tailwind is configured CSS-first: no `tailwind.config.js` and no PostCSS config for
   Tailwind. The `@tailwindcss/vite` plugin plus `@import "tailwindcss";` is the whole setup.
 - Only reach for `style={...}` for genuinely dynamic values (for example a per-base accent

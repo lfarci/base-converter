@@ -20,8 +20,10 @@ Also covered by this file:
 
 - `src/main.tsx` — the React root. Mounts `App` into `#root` and imports `index.css`.
   Nothing else: no state, no routing, no listeners.
-- `src/index.css` — Tailwind's `@import` and any genuinely global CSS (focus-visible
-  defaults, font stack). Component styling lives in the component, not here.
+- `src/index.css` — Tailwind's `@import`, the `@theme` design token block, and any
+  genuinely global CSS (the display and mono font stacks, the focus-visible defaults, the
+  `prefers-reduced-motion`, `prefers-contrast`, and `forced-colors` blocks). Component
+  styling lives in the component, not here.
 
 ## Rules
 
@@ -41,6 +43,15 @@ Also covered by this file:
 - `main.tsx` stays a single `createRoot(...).render(...)` call, and every global CSS rule in
   `index.css` must apply to the whole document. If a rule styles one component, it belongs
   in that component (DRY).
+- **Design tokens live in the `@theme` block in `src/index.css`** — colour, the font stacks,
+  and the surfaces. Tailwind 4 turns each one into a utility (`bg-paper-3`, `text-ink-soft`,
+  `border-rule`, `font-display`, `outline-focus`, …), so no component needs an ad-hoc hex
+  value. The three preference media blocks live there too, unlayered so they beat Tailwind
+  utilities; extend them when page furniture gains a new colour or state cue.
+- Page furniture is the worksheet chrome: the masthead's double rule, the boxed section
+  header bar, the inset status readout with its 3px left rule, and the bracketed help note
+  bar. Keep `HelpDetails`'s summary label wrapped in its own `<span>How to use</span>` —
+  the specs match that text exactly.
 - Leave `src/vite-env.d.ts` alone: it is Vite's ambient declaration, not application code.
 
 ## Checks
