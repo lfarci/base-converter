@@ -1,9 +1,9 @@
 import { useState, type KeyboardEvent, type RefCallback } from 'react'
 import { BaseHeaderCell } from './BaseHeaderCell'
 import { DigitBox } from './DigitBox'
-import { PlaceValueBreakdown } from './PlaceValueBreakdown'
+import { PlaceValueBreakdown } from '../breakdown/PlaceValueBreakdown'
 import { PlaceValueLabel } from './PlaceValueLabel'
-import { bitsPerDigit, POSITIONS, usesBitGrid, type Base, type BitSpan } from './conversion'
+import { bitsPerDigit, POSITIONS, usesBitGrid, type Base, type BitSpan } from '../core/conversion'
 
 type DigitRowProps = {
   base: Base

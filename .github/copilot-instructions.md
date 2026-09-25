@@ -42,20 +42,28 @@ into JSX.
 
 | Path | Responsibility |
 | --- | --- |
-| `src/conversion.ts` | The single source of truth: digit alphabet, `POSITIONS`, `VALUE_LIMIT`, the `rows` base definitions, and pure helpers (`parseDigits`, `digitsForValue`, `padToPositions`, `digitRange`, `digitValue`, `pickTypedChar`, `pageStep`). |
-| `src/DigitRow.tsx` | Presentational row: renders one base's boxes, wires `onKeyDown`/`onChange`, disables boxes beyond `VALUE_LIMIT.toString(radix).length`, and registers cells for focus management. |
-| `src/App.tsx` | Owns state (`sourceKey`, `sourceDigits`, `hasStartedDigitEntry`, `rejection`), the focus/caret policy, keyboard stepping, and the table layout. |
+| `src/core/conversion.ts` | The single source of truth: digit alphabet, `POSITIONS`, `VALUE_LIMIT`, the `rows` base definitions, and pure helpers (`parseDigits`, `digitsForValue`, `padToPositions`, `digitRange`, `digitValue`, `pickTypedChar`, `pageStep`). |
+| `src/digits/` | The digit-entry feature: `ConversionTable` (the scrolling table), `DigitRow` (one base's boxes), `DigitBox` (one place), `PlaceValueLabel` (the position label under a box), and `BaseHeaderCell` (the base name, radix, and breakdown toggle). |
+| `src/breakdown/` | The place-value breakdown feature: `PlaceValueBreakdown` (the section), `BreakdownTerm` (one non-zero digit's equation), and `BreakdownTotal` (the sum). |
+| `src/layout/` | Page furniture shared by the shell: `PageHeader`, `HelpDetails`, and `StatusLine`. |
+| `src/App.tsx` | Owns state (`sourceKey`, `sourceDigits`, `hasStartedDigitEntry`, `rejection`), the focus/caret policy, keyboard stepping, and composes the features above. |
 | `tests/` | Playwright specs. `tests/helpers.ts` exposes the `digit(page, base, radix, position)` locator — use it instead of writing raw selectors. |
 
 Rules that follow from this:
 
-- All value math, parsing, and formatting lives in `src/conversion.ts` and must not import
-  React.
-- `DigitRow` receives data and callbacks via props and holds no domain logic.
-- Add or change a base by editing the `rows` array in `src/conversion.ts` only. Nothing
-  else should hard-code a radix, digit set, or accent colour.
-- New pure helpers go in `conversion.ts` and get a spec in `tests/`. New presentational
-  pieces go beside `DigitRow.tsx`.
+- All value math, parsing, and formatting lives in `src/core/conversion.ts` and must not
+  import React.
+- Every component folder is a feature: it owns one part of the page, and imports another
+  feature only through that feature's entry component (`digits/ConversionTable`,
+  `breakdown/PlaceValueBreakdown`). Do not reach past an entry component into its private
+  parts.
+- `src/core/` holds no components; `src/layout/` and the feature folders hold no domain
+  logic.
+- Add or change a base by editing the `rows` array in `src/core/conversion.ts` only.
+  Nothing else should hard-code a radix, digit set, or accent colour.
+- New pure helpers go in `src/core/conversion.ts` and get a spec in `tests/`. New
+  presentational pieces go in the feature folder that owns them, or in `src/layout/` when
+  they are page furniture.
 
 ## Domain rules that must not regress
 
@@ -81,7 +89,7 @@ accessibility rules all live there and are deliberately not restated here. What 
 what the instruction sets cannot know about this repository.
 
 - `react/only-export-components` warns by default, so a module exporting a component should
-  not also export unrelated values. Put shared values in `conversion.ts`.
+  not also export unrelated values. Put shared values in `core/conversion.ts`.
 - Do not rely on colour alone to convey state — the error is always present as words.
 - Each row exposes exactly one Tab stop: `tabIndex` is `0` only for the rightmost
   (units) box and `-1` for every other box — do not add 16 Tab stops per row.

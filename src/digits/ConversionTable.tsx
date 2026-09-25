@@ -1,6 +1,6 @@
 import type { KeyboardEvent, RefCallback } from 'react'
 import { DigitRow } from './DigitRow'
-import type { Base, BitSpan } from './conversion'
+import type { Base, BitSpan } from '../core/conversion'
 
 type DisplayedRow = { base: Base; boxes: string[] }
 

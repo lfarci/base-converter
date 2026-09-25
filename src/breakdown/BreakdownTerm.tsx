@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react'
-import { type Base } from './conversion'
+import { type Base } from '../core/conversion'
 
 type BreakdownTermProps = {
   base: Base

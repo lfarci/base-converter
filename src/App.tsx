@@ -1,8 +1,8 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
-import { ConversionTable } from './ConversionTable'
-import { HelpDetails } from './HelpDetails'
-import { PageHeader } from './PageHeader'
-import { StatusLine } from './StatusLine'
+import { ConversionTable } from './digits/ConversionTable'
+import { HelpDetails } from './layout/HelpDetails'
+import { PageHeader } from './layout/PageHeader'
+import { StatusLine } from './layout/StatusLine'
 import {
   bitSpanForDigit,
   digitRange,
@@ -20,7 +20,7 @@ import {
   VALUE_LIMIT,
   type Base,
   type BitSpan,
-} from './conversion'
+} from './core/conversion'
 
 // What the page shows above the rows. The value is null while the source row does not
 // hold a number yet, so every other row renders blank rather than zero.

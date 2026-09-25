@@ -1,5 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react'
-import type { Base } from './conversion'
+import type { Base } from '../core/conversion'
 
 type BaseHeaderCellProps = {
   base: Base

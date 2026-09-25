@@ -1,5 +1,5 @@
 import type { KeyboardEvent, Ref } from 'react'
-import { bitRangeForDigit, type Base } from './conversion'
+import { bitRangeForDigit, type Base } from '../core/conversion'
 
 type DigitBoxProps = {
   base: Base

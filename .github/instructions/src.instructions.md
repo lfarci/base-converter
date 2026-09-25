@@ -21,9 +21,12 @@ file holds what both share so it is stated once. Adapted from
 
 ## Layout
 
-- `src/conversion.ts` is the single source of truth: digit alphabet, `POSITIONS`,
+- `src/core/conversion.ts` is the single source of truth: digit alphabet, `POSITIONS`,
   `VALUE_LIMIT`, the `rows` base definitions, and pure helpers. It must not import React.
-- Presentational pieces live beside `DigitRow.tsx` and hold no domain logic.
+- Organize `src/` by feature folder: `core/` (pure logic), `digits/`, `breakdown/`, and
+  `layout/` (page furniture). A feature imports another feature through that feature's
+  entry component only.
+- Presentational pieces live in the feature folder that owns them and hold no domain logic.
 - Add or change a base by editing the `rows` array only; nothing else hard-codes a radix,
   digit set, or accent colour.
 - One module, one responsibility. Pure, framework-free logic belongs in a plain `.ts`
@@ -56,7 +59,7 @@ file holds what both share so it is stated once. Adapted from
 - Maintain a sane tab order: `tabIndex={0}` only on the control that should receive focus,
   `-1` for the rest. Keep the global `:focus-visible` outline visible.
 - Digit boxes carry `aria-label` including base, radix, and position; disabled boxes carry
-  a `title` explaining the limit. Keep these when editing `DigitRow`.
+  a `title` explaining the limit. Keep these when editing `digits/DigitRow`.
 - The table keeps a 720px minimum width and scrolls horizontally on narrow screens, with
   the base column `sticky left-0`. Verify layout at a 390px viewport.
 

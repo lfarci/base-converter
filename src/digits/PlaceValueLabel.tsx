@@ -1,4 +1,4 @@
-import { bitRangeForDigit, type Base } from './conversion'
+import { bitRangeForDigit, type Base } from '../core/conversion'
 
 type PlaceValueLabelProps = {
   base: Base

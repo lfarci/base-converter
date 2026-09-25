@@ -17,6 +17,18 @@ Each row shows only as many digit places as fit within the 16-bit value limit: f
 
 Octal and hexadecimal digit labels show the bits represented by each place, counting from the units bit on the right. Hovering or focusing one of these digits (or its breakdown term) highlights the corresponding binary boxes and labels. The highest octal digit covers only bit 15, since sixteen is not a multiple of three; the other octal places group three bits each. Hexadecimal places each group four bits.
 
+## Project layout
+
+`src/` is organized by feature folder:
+
+| Folder | Contents |
+| --- | --- |
+| `src/core/` | `conversion.ts` — the value math, digit alphabet, and base definitions. No React. |
+| `src/digits/` | The digit-entry feature: the scrolling table, one row per base, one box per place, and the base header. |
+| `src/breakdown/` | The place-value breakdown shown under an expanded row. |
+| `src/layout/` | Page furniture: the header, the "how to use" details, and the status line. |
+| `src/App.tsx` | Owns the state, the focus policy, and the keyboard stepping, and composes the feature folders. |
+
 ## Checks
 
 ```sh

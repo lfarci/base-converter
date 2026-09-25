@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { BreakdownTerm } from './BreakdownTerm'
 import { BreakdownTotal } from './BreakdownTotal'
-import { digitValue, type Base } from './conversion'
+import { digitValue, type Base } from '../core/conversion'
 
 type PlaceValueBreakdownProps = {
   base: Base

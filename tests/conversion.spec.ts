@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { bitSpanForDigit } from '../src/conversion'
+import { bitSpanForDigit } from '../src/core/conversion'
 import { digit } from './helpers'
 
 test('bit spans clip the highest octal group to the 16-bit limit', () => {
