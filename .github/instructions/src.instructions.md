@@ -6,8 +6,10 @@ applyTo: 'src/**'
 # src/ standards
 
 Project-wide rules for everything under `src/`. Language-specific guidance lives in
-`react-typescript.instructions.md` (`.tsx`) and `typescript.instructions.md` (`.ts`); this
-file holds what both share so it is stated once. Adapted from
+`react-typescript.instructions.md` (`.tsx`) and `typescript.instructions.md` (`.ts`); each
+feature folder has its own file on top of these — `core.instructions.md`,
+`digits.instructions.md`, `breakdown.instructions.md`, and `layout.instructions.md`. This
+file holds what they share so it is stated once. Adapted from
 [Awesome GitHub Copilot](https://awesome-copilot.github.com/).
 
 ## Principles
@@ -21,9 +23,14 @@ file holds what both share so it is stated once. Adapted from
 
 ## Layout
 
-- `src/conversion.ts` is the single source of truth: digit alphabet, `POSITIONS`,
-  `VALUE_LIMIT`, the `rows` base definitions, and pure helpers. It must not import React.
-- Presentational pieces live beside `DigitRow.tsx` and hold no domain logic.
+- `src/core/` is the single source of truth: digit alphabet, `POSITIONS`, `VALUE_LIMIT`,
+  the `rows` base definitions, and the pure helpers. `conversion.ts` is the value math;
+  `entry.ts` is the entry state machine; `display.ts` derives what the page shows;
+  `focus.ts` decides where Tab goes. `core/` must not import React or touch the DOM.
+- Organize `src/` by feature folder: `core/` (pure logic), `digits/`, `breakdown/`, and
+  `layout/` (page furniture). A feature imports another feature through that feature's
+  entry component only. Each folder's own instruction file states what belongs in it.
+- Presentational pieces live in the feature folder that owns them and hold no domain logic.
 - Add or change a base by editing the `rows` array only; nothing else hard-codes a radix,
   digit set, or accent colour.
 - One module, one responsibility. Pure, framework-free logic belongs in a plain `.ts`
@@ -55,9 +62,10 @@ file holds what both share so it is stated once. Adapted from
   status line is a single live region: `role="alert"` for errors, otherwise `role="status"`.
 - Maintain a sane tab order: `tabIndex={0}` only on the control that should receive focus,
   `-1` for the rest. Keep the global `:focus-visible` outline visible.
-- Digit boxes carry `aria-label` including base, radix, and position; disabled boxes carry
-  a `title` explaining the limit. Keep these when editing `DigitRow`.
-- The table keeps a 720px minimum width and scrolls horizontally on narrow screens, with
+- Digit boxes carry `aria-label` including base, radix, and position, and mark themselves
+  read-only rather than disabled (`readOnly`, plus `data-editable` only when editable).
+  Keep these when editing `digits/DigitBox`.
+- The table keeps a 768px minimum width and scrolls horizontally on narrow screens, with
   the base column `sticky left-0`. Verify layout at a 390px viewport.
 
 ## Conventions
@@ -73,3 +81,6 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+Run `npm run test:unit` when the change touches `src/core/`, and `npm run test:e2e` when it
+touches digit entry, keyboard handling, or the DOM.

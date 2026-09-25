@@ -56,12 +56,22 @@ export function positionsForBase(radix: number) {
   return VALUE_LIMIT.toString(radix).length
 }
 
-export function bitSpanForDigit(radix: number, position: number): BitSpan | null {
-  const bitsPerDigit = Math.log2(radix)
-  if (radix <= 2 || !Number.isInteger(bitsPerDigit)) return null
+export function bitsPerDigit(radix: number) {
+  return Math.log2(radix)
+}
 
-  const low = position * bitsPerDigit
-  const high = Math.min(low + bitsPerDigit - 1, POSITIONS - 1)
+// Radix 8 and 16 are the bases whose digits are whole groups of binary bits, so their
+// boxes span the bits they represent and line up with the binary row.
+export function usesBitGrid(radix: number) {
+  return radix > 2 && Number.isInteger(bitsPerDigit(radix))
+}
+
+export function bitSpanForDigit(radix: number, position: number): BitSpan | null {
+  const width = bitsPerDigit(radix)
+  if (!usesBitGrid(radix)) return null
+
+  const low = position * width
+  const high = Math.min(low + width - 1, POSITIONS - 1)
   return { low, high }
 }
 
@@ -86,4 +96,12 @@ export function pickTypedChar(raw: string, previous: string) {
 
 export function pageStep(radix: number) {
   return radix <= 10 ? 10n : 16n
+}
+
+// The message a rejection shows is exactly the "too large" notice the parser produces,
+// so the status line reads the same whichever path rejected the input.
+export function errorForParsed(parsed: ParsedDigits, radix: number) {
+  if (parsed.status === 'too-large') return LIMIT_MESSAGE
+  if (parsed.status === 'invalid') return `Enter digits ${digitRange(radix)} for base ${radix}.`
+  return ''
 }

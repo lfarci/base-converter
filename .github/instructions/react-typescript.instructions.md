@@ -42,7 +42,7 @@ rules live in `src.instructions.md`. Adapted from
   relies on referential equality.
 - Keys must be stable and derived from data, never array indices in reorderable lists.
 - `react/only-export-components` warns by default: a module exporting a component should
-  not also export unrelated values. Put shared values in `conversion.ts`.
+  not also export unrelated values. Put shared values in `core/`.
 - `react/rules-of-hooks` is an error — never work around it.
 
 ## Tailwind in components
