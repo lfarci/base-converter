@@ -18,7 +18,10 @@ no API calls, no persistence.
 
 For file-scoped standards, see `.github/instructions/src.instructions.md` (shared rules for
 `src/`), plus `.github/instructions/react-typescript.instructions.md` (`.tsx`) and
-`.github/instructions/typescript.instructions.md` (`.ts`).
+`.github/instructions/typescript.instructions.md` (`.ts`). Each feature folder adds its own
+rules: `core.instructions.md` (value math), `digits.instructions.md` (digit entry),
+`breakdown.instructions.md` (place-value breakdown), and `layout.instructions.md` (page
+furniture and the app shell).
 
 ## Commands
 

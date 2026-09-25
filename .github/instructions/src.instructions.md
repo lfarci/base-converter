@@ -6,8 +6,10 @@ applyTo: 'src/**'
 # src/ standards
 
 Project-wide rules for everything under `src/`. Language-specific guidance lives in
-`react-typescript.instructions.md` (`.tsx`) and `typescript.instructions.md` (`.ts`); this
-file holds what both share so it is stated once. Adapted from
+`react-typescript.instructions.md` (`.tsx`) and `typescript.instructions.md` (`.ts`); each
+feature folder has its own file on top of these — `core.instructions.md`,
+`digits.instructions.md`, `breakdown.instructions.md`, and `layout.instructions.md`. This
+file holds what they share so it is stated once. Adapted from
 [Awesome GitHub Copilot](https://awesome-copilot.github.com/).
 
 ## Principles
@@ -25,7 +27,7 @@ file holds what both share so it is stated once. Adapted from
   `VALUE_LIMIT`, the `rows` base definitions, and pure helpers. It must not import React.
 - Organize `src/` by feature folder: `core/` (pure logic), `digits/`, `breakdown/`, and
   `layout/` (page furniture). A feature imports another feature through that feature's
-  entry component only.
+  entry component only. Each folder's own instruction file states what belongs in it.
 - Presentational pieces live in the feature folder that owns them and hold no domain logic.
 - Add or change a base by editing the `rows` array only; nothing else hard-codes a radix,
   digit set, or accent colour.
