@@ -87,6 +87,11 @@ input {
    ring on every highlighted cell. Text underlines are already part of the label and term
    skins, which is what carries the cue there. */
 @media (forced-colors: active) {
+  /* A forced background colour is dropped to Canvas, which is also what the cell behind
+     the bar becomes, so the bar has to take a system *text* colour to stay visible. */
+  th[scope='row'][data-source] > div {
+    background-color: CanvasText;
+  }
   input[data-editable] {
     border-color: CanvasText !important;
   }

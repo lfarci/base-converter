@@ -21,6 +21,26 @@ const contrast = (a: string, b: string) => {
   return (high + 0.05) / (low + 0.05)
 }
 
+// Under `forced-colors: active` the engine overrides backgrounds, so the source row's
+// margin bar has to be marked with a system colour or it disappears into the cell.
+test('forced colors keeps the source bar and the highlight cues visible', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active' })
+  await page.goto('./')
+
+  const bar = page.locator('th[scope="row"][data-source] > div')
+  const barFill = await bar.evaluate((element) => getComputedStyle(element).backgroundColor)
+  const cellFill = await bar.evaluate((element) => getComputedStyle(element.parentElement!).backgroundColor)
+  expect(contrast(barFill, cellFill), `source bar in forced colors: ${barFill} on ${cellFill}`).toBeGreaterThanOrEqual(3)
+
+  const units = digit(page, 'Decimal', 10, 0)
+  await expect(units).toHaveCSS('border-top-color', barFill)
+
+  const tensDigit = digit(page, 'Decimal', 10, 1)
+  await tensDigit.hover()
+  await expect(tensDigit.locator('xpath=..').locator('.place-value-label')).toHaveCSS('text-decoration-line', 'underline')
+  await expect(tensDigit).toHaveCSS('outline-style', 'solid')
+})
+
 const sample = (locator: Locator) => locator.evaluate((element) => {
   const rising = (from: Element | null) => {
     let node = from

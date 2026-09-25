@@ -10,7 +10,7 @@ type StatusLineProps = {
 export function StatusLine({ children, isError }: StatusLineProps) {
   return (
     <p
-      className={`mt-3 border border-l-[3px] border-rule border-l-ink bg-paper-3 px-3 py-2 font-mono text-[13px] leading-relaxed ${isError ? 'text-danger border-l-danger' : 'text-ink'}`}
+      className={`mt-3 border border-l-[3px] border-rule bg-paper-3 px-3 py-2 font-mono text-[13px] leading-relaxed ${isError ? 'border-l-danger text-danger' : 'border-l-ink text-ink'}`}
       id="edit-status"
       role={isError ? 'alert' : 'status'}
     >
