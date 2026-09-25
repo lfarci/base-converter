@@ -103,11 +103,12 @@ test('highlighting a place carries an underline on its label and breakdown term,
   await expect(tensTerm).toHaveAttribute('data-highlighted', 'true')
   await expect(tensLabel).toHaveCSS('text-decoration-line', 'underline')
   await expect(tensTerm).toHaveCSS('text-decoration-line', 'underline')
-    // The label's highlighted border is a boundary, so it is an accent-ink mix rather than the
-    // raw accent — assert it is actually painted, since a missing border would leave the
-    // contrast check in contrast.spec.ts measuring nothing.
-    await expect(tensLabel).toHaveCSS('border-top-color', /rgb/)
-    await expect(tensDigit).toHaveCSS('box-shadow', /rgb/)
+  // The label's highlighted border is a boundary, so it is an accent-ink mix rather than the
+  // raw accent. It must be asserted as *not transparent*: every label carries
+  // `border-transparent`, which computes to `rgba(0, 0, 0, 0)`, so a loose `/rgb/` match is
+  // satisfied by a border that is not painted at all.
+  await expect(tensLabel).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+  await expect(tensDigit).toHaveCSS('box-shadow', /rgb/)
 
   await page.mouse.move(0, 0)
 

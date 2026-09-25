@@ -116,10 +116,19 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
         await page.mouse.move(0, 0)
         if (state === 'highlighted') await box.hover()
         else if (state === 'focused') await box.focus()
-        else await page.locator('body').click({ position: { x: 0, y: 0 } })
+        // The default state cannot be reached by clicking the body: the app deliberately
+        // returns the caret to the editable surface on pointerup, so the box stays focused and
+        // would keep painting `--color-focus` in all three iterations — which is precisely how
+        // an earlier version of this loop silently never measured decimal's frame. Focusing a
+        // real control (the row's breakdown toggle) is what actually blurs it.
+        else await page.getByRole('button', { name: `Toggle ${base} place-value breakdown` }).focus()
         await page.waitForTimeout(400)
 
         const writable = await sample(box)
+        expect(
+          writable.border,
+          `writable frame should be painted, not transparent (${base}, ${state})`,
+        ).not.toBe('rgba(0, 0, 0, 0)')
         expect(
           contrast(writable.border, writable.around),
           `writable frame outside (${base}, ${state}): ${writable.border} on ${writable.around}`,
@@ -149,6 +158,13 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     await digit(page, 'Decimal', 10, 1).hover()
     await expect(decimalLabel).toHaveAttribute('data-highlighted', 'true')
     const labelBox = await sample(decimalLabel)
+    // A transparent border would sail through the contrast maths below: `rgba(0, 0, 0, 0)` is
+    // read as near-black by the luminance helper and scores ~18.6:1, so a label with no border
+    // at all would look like the strongest boundary on the page. Require it to be painted.
+    expect(
+      labelBox.border,
+      'highlighted label border should be painted, not transparent',
+    ).not.toBe('rgba(0, 0, 0, 0)')
     expect(
       contrast(labelBox.border, labelBox.fill),
       `highlighted label border: ${labelBox.border} on ${labelBox.fill}`,
