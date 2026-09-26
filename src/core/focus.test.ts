@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { rows } from './conversion'
 import {
   breakdownIdFor,
+  tabFromBreakdownControl,
   tabFromBreakdownTerm,
   tabFromToggle,
   tabFromUnits,
@@ -33,8 +34,18 @@ describe('tabFromUnits', () => {
     expect(tabFromUnits(binary, true)).toEqual({ kind: 'toggle', baseKey: 'decimal' })
   })
 
-  it('stops at the top of the page walking backward from the first row', () => {
-    expect(tabFromUnits(decimal, true)).toBeNull()
+  it('walks backward from the first row to the breakdown control', () => {
+    expect(tabFromUnits(decimal, true)).toEqual({ kind: 'breakdown-control' })
+  })
+})
+
+describe('tabFromBreakdownControl', () => {
+  it('walks forward to the first row units cell', () => {
+    expect(tabFromBreakdownControl(false)).toEqual({ kind: 'cell', cellKey: 'decimal:4' })
+  })
+
+  it('leaves backward navigation to the preceding page control', () => {
+    expect(tabFromBreakdownControl(true)).toBeNull()
   })
 })
 

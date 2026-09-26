@@ -5,6 +5,7 @@ import { positionsForBase, rows, type Base } from './conversion'
 export type FocusTarget =
   | { kind: 'cell'; cellKey: string }
   | { kind: 'toggle'; baseKey: string }
+  | { kind: 'breakdown-control' }
   | { kind: 'breakdown-term'; breakdownId: string }
 
 // Digit boxes register themselves as `${base.key}:${index}`, counted from the most
@@ -33,8 +34,16 @@ function rowControlTarget(base: Base, direction: -1 | 1): FocusTarget | null {
 }
 
 export function tabFromUnits(base: Base, shiftKey: boolean): FocusTarget | null {
-  if (shiftKey) return rowControlTarget(base, -1)
+  if (shiftKey) {
+    if (base.key === rows[0].key) return { kind: 'breakdown-control' }
+    return rowControlTarget(base, -1)
+  }
   return { kind: 'toggle', baseKey: base.key }
+}
+
+export function tabFromBreakdownControl(shiftKey: boolean): FocusTarget | null {
+  if (shiftKey) return null
+  return { kind: 'cell', cellKey: unitsCellKey(rows[0]) }
 }
 
 export function tabFromToggle(base: Base, shiftKey: boolean, hasBreakdownTerm: boolean): FocusTarget | null {
