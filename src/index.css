@@ -124,7 +124,8 @@ input {
 
 .digit-box[data-rolling] {
   color: transparent;
-  transition: none;
+  background-color: color-mix(in srgb, var(--digit-accent) 6%, var(--color-well));
+  transition: background-color 140ms ease-out;
 }
 
 .digit-roll {
@@ -215,6 +216,8 @@ input {
   }
   .digit-box[data-rolling] {
     color: FieldText;
+    background-color: Field;
+    transition: none;
   }
 }
 

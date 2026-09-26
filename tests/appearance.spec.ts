@@ -23,27 +23,62 @@ test('changed readout digits roll down while editable boxes stay still', async (
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   const binaryReadout = digit(page, 'Binary', 2, 1)
 
+  await binaryReadout.evaluate((element) => {
+    const observer = new MutationObserver(() => {
+      const animation = element.parentElement?.querySelector('.digit-roll-current')
+      if (!element.hasAttribute('data-rolling') || !animation) return
+
+      const digitStyles = getComputedStyle(element)
+      const rollStyles = getComputedStyle(animation)
+      element.setAttribute('data-roll-test-snapshot', JSON.stringify({
+        transitionProperty: digitStyles.transitionProperty,
+        animationName: rollStyles.animationName,
+        animationDuration: rollStyles.animationDuration,
+        digitTypography: {
+          fontFamily: digitStyles.fontFamily,
+          fontSize: digitStyles.fontSize,
+          fontWeight: digitStyles.fontWeight,
+          letterSpacing: digitStyles.letterSpacing,
+          lineHeight: digitStyles.lineHeight,
+        },
+        rollTypography: {
+          fontFamily: rollStyles.fontFamily,
+          fontSize: rollStyles.fontSize,
+          fontWeight: rollStyles.fontWeight,
+          letterSpacing: rollStyles.letterSpacing,
+          lineHeight: rollStyles.lineHeight,
+        },
+      }))
+      observer.disconnect()
+    })
+    observer.observe(element, { attributes: true, attributeFilter: ['data-rolling'] })
+  })
+
   await decimalUnits.focus()
   await page.keyboard.press('2')
 
   await expect(binaryReadout).toHaveValue('1')
-  await expect(binaryReadout).toHaveAttribute('data-rolling', 'true')
-  await expect(binaryReadout).toHaveCSS('transition-property', 'none')
-  const animation = binaryReadout.locator('xpath=..').locator('.digit-roll-current')
-  await expect(animation).toHaveCSS('animation-name', 'digit-roll-in')
-  await expect(animation).toHaveCSS('animation-duration', '0.28s')
-  const digitTypography = await binaryReadout.evaluate((element) => {
-    const { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight } = getComputedStyle(element)
-    return { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight }
-  })
-  const rollTypography = await animation.evaluate((element) => {
-    const { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight } = getComputedStyle(element)
-    return { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight }
-  })
-  expect(rollTypography).toEqual(digitTypography)
+  await expect(binaryReadout).toHaveAttribute('data-roll-test-snapshot', /.+/)
+  const rollState = JSON.parse((await binaryReadout.getAttribute('data-roll-test-snapshot'))!)
+  expect(rollState.transitionProperty).toBe('background-color')
+  expect(rollState.animationName).toBe('digit-roll-in')
+  expect(rollState.animationDuration).toBe('0.28s')
+  expect(rollState.rollTypography).toEqual(rollState.digitTypography)
   await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
   await expect(binaryReadout).toHaveCSS('color', 'rgb(23, 43, 77)')
   await expect(decimalUnits).not.toHaveAttribute('data-rolling', 'true')
+})
+
+test('rolling readouts receive a brief accent tint', async ({ page }) => {
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+  await page.addStyleTag({ content: '.digit-box { transition: none !important; }' })
+  const restingBackground = await binaryReadout.evaluate((element) => getComputedStyle(element).backgroundColor)
+
+  await binaryReadout.evaluate((element) => element.setAttribute('data-rolling', 'true'))
+  await expect(binaryReadout).not.toHaveCSS('background-color', restingBackground)
+
+  await binaryReadout.evaluate((element) => element.removeAttribute('data-rolling'))
+  await expect(binaryReadout).toHaveCSS('background-color', restingBackground)
 })
 
 test('readout digit rolls are disabled when reduced motion is requested', async ({ page }) => {
