@@ -41,9 +41,9 @@ layout, types, styling, and accessibility rules live in `src.instructions.md`;
 - Hover and focus highlighting is reported upward (`onHoverPosition`, `onFocusPosition`) so
   the matching digit box and position label can highlight with it; do not highlight the
   binary row from inside this folder.
-- Reuse the shared visual language: `.mono-tech` for the numbers, `--color-ink` text on the
-  `--color-well` field surface as a "worked calculation" inset with a `--color-frame` left
-  rule, and the per-base accent from the `base` prop for decoration and tint only. A
+- Reuse the shared visual language: `.mono-tech` for the numbers, `--color-ink` text on
+  the shared `--color-paper-2` row surface, a compact `--color-frame` left rule, and the
+  per-base accent from the `base` prop for decoration and tint only. A
   highlighted term adds a shape cue — an inset accent bar plus `text-decoration: underline` —
   so the state never rests on hue. **The panel's leading padding and `DigitRow`'s cell
   padding add up to 156px (`144 + 12`), the width that keeps the heading lined up with the
