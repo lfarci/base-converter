@@ -128,7 +128,11 @@ input {
    the page uses one ratio. */
 .digit-box[data-padding-zero] {
   color: var(--color-ink-soft);
-  font-weight: 500;
+  font-weight: 400;
+}
+
+.digit-box[data-significant] {
+  font-weight: 700;
 }
 
 .digit-box[data-editable] {

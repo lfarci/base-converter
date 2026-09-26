@@ -67,6 +67,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                 const cellKey = `${base.key}:${index}`
                 const isEditable = index === lastIndex
                 const isPaddingZero = digit === '0' && index < significantStartIndex
+                const isSignificant = digit !== '' && index >= significantStartIndex
                 const isHighlighted = bitWidth === 1 && highlightedBits
                   ? position >= highlightedBits.low && position <= highlightedBits.high
                   : highlightedPosition === position
@@ -87,6 +88,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                       editable={isEditable}
                       highlighted={isHighlighted}
                       isPaddingZero={isPaddingZero}
+                      isSignificant={isSignificant}
                       surfaceRef={registerCell(cellKey)}
                       onKeyDown={(event) => {
                         if (event.key === 'Tab') onTabFromUnits(event, base)

@@ -8,6 +8,7 @@ type DigitBoxProps = {
   editable: boolean
   highlighted: boolean
   isPaddingZero: boolean
+  isSignificant: boolean
   surfaceRef: Ref<HTMLInputElement>
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   onEditDigit: (raw: string) => void
@@ -31,7 +32,7 @@ type DigitBoxProps = {
 // lets one composed box-shadow carry both the recessed bevel and the highlight ring, so a
 // focused writable cell can show its inset, focus frame and outline at the same time —
 // an inline box-shadow would silently win over any class-based one.
-export function DigitBox({ base, position, digit, editable, highlighted, isPaddingZero, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
+export function DigitBox({ base, position, digit, editable, highlighted, isPaddingZero, isSignificant, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
   const bitRange = bitRangeForDigit(base.radix, position)
 
   return (
@@ -43,6 +44,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, isPaddi
       data-position={position}
       data-highlighted={highlighted || undefined}
       data-padding-zero={isPaddingZero || undefined}
+      data-significant={isSignificant || undefined}
       style={{
         '--digit-accent': base.accent,
         '--digit-frame': `color-mix(in srgb, ${base.accent} 55%, #172b4d)`,

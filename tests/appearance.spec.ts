@@ -28,13 +28,15 @@ test('leading padding zeroes recede while significant digits keep full ink', asy
     await expect(paddingZero).toHaveValue('0')
     await expect(paddingZero).toHaveAttribute('data-padding-zero', 'true')
     await expect(paddingZero).toHaveCSS('color', 'rgb(77, 91, 113)')
-    await expect(paddingZero).toHaveCSS('font-weight', '500')
+    await expect(paddingZero).toHaveCSS('font-weight', '400')
   }
 
   for (const position of [2, 1, 0]) {
     const significantDigit = digit(page, 'Decimal', 10, position)
     await expect(significantDigit).not.toHaveAttribute('data-padding-zero', 'true')
+    await expect(significantDigit).toHaveAttribute('data-significant', 'true')
     await expect(significantDigit).toHaveCSS('color', 'rgb(23, 43, 77)')
+    await expect(significantDigit).toHaveCSS('font-weight', '700')
   }
 })
 
@@ -44,7 +46,9 @@ test('zero remains prominent when it is the whole value', async ({ page }) => {
   await page.keyboard.press('0')
 
   await expect(units).not.toHaveAttribute('data-padding-zero', 'true')
+  await expect(units).toHaveAttribute('data-significant', 'true')
   await expect(units).toHaveCSS('color', 'rgb(23, 43, 77)')
+  await expect(units).toHaveCSS('font-weight', '700')
   await expect(digit(page, 'Decimal', 10, 1)).toHaveAttribute('data-padding-zero', 'true')
 })
 
