@@ -23,7 +23,7 @@ export function PlaceValueBreakdown({ base, boxes, value, highlightedPosition, o
   })
 
   return (
-    <section className="border-l-2 border-frame bg-well py-3 pl-[14px] pr-3 text-[13px] text-ink-soft" aria-label={`${base.name} place-value breakdown`}>
+    <section className="border-l-2 border-frame bg-[color-mix(in_srgb,var(--color-well)_55%,var(--color-paper-2))] py-3 pl-[14px] pr-3 text-[13px] text-ink-soft shadow-[2px_2px_0_0_var(--color-rule-soft)]" aria-label={`${base.name} place-value breakdown`}>
       <h3 className="m-0 mono-tech text-[10px] uppercase tracking-[0.12em] text-ink-soft">Breakdown</h3>
       {value === null ? (
         <p className="mb-0 mt-2 leading-relaxed">Enter a valid value to see this row's place-value breakdown.</p>
