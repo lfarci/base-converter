@@ -1,7 +1,17 @@
 export const DIGIT_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 export const POSITIONS = 16
-export const VALUE_LIMIT = 2n ** BigInt(POSITIONS) - 1n
-export const LIMIT_MESSAGE = `That number is too large. ${POSITIONS} positions hold at most ${VALUE_LIMIT}.`
+export const BIT_WIDTHS = [8, 16, 32] as const
+
+export function valueLimitForPositions(positions: number) {
+  return 2n ** BigInt(positions) - 1n
+}
+
+export function limitMessageForPositions(positions: number) {
+  return `That number is too large. ${positions} positions hold at most ${valueLimitForPositions(positions)}.`
+}
+
+export const VALUE_LIMIT = valueLimitForPositions(POSITIONS)
+export const LIMIT_MESSAGE = limitMessageForPositions(POSITIONS)
 
 export type Base = {
   key: string
@@ -48,12 +58,17 @@ export function parseDigits(text: string, radix: number, limit: bigint = VALUE_L
   return value > limit ? { status: 'too-large', value } : { status: 'ok', value }
 }
 
+export function widthsUnableToHold(parsed: ParsedDigits, widths: readonly number[]) {
+  if (parsed.status !== 'ok' && parsed.status !== 'too-large') return []
+  return widths.filter((width) => parsed.value > valueLimitForPositions(width))
+}
+
 export function digitsForValue(value: bigint, radix: number) {
   return Array.from(value.toString(radix).toUpperCase())
 }
 
-export function positionsForBase(radix: number) {
-  return VALUE_LIMIT.toString(radix).length
+export function positionsForBase(radix: number, positions = POSITIONS) {
+  return valueLimitForPositions(positions).toString(radix).length
 }
 
 export function bitsPerDigit(radix: number) {
@@ -66,17 +81,17 @@ export function usesBitGrid(radix: number) {
   return radix > 2 && Number.isInteger(bitsPerDigit(radix))
 }
 
-export function bitSpanForDigit(radix: number, position: number): BitSpan | null {
+export function bitSpanForDigit(radix: number, position: number, positions = POSITIONS): BitSpan | null {
   const width = bitsPerDigit(radix)
   if (!usesBitGrid(radix)) return null
 
   const low = position * width
-  const high = Math.min(low + width - 1, POSITIONS - 1)
+  const high = Math.min(low + width - 1, positions - 1)
   return { low, high }
 }
 
-export function bitRangeForDigit(radix: number, position: number) {
-  const span = bitSpanForDigit(radix, position)
+export function bitRangeForDigit(radix: number, position: number, positions = POSITIONS) {
+  const span = bitSpanForDigit(radix, position, positions)
   if (!span) return null
 
   const { low, high } = span
@@ -100,8 +115,8 @@ export function pageStep(radix: number) {
 
 // The message a rejection shows is exactly the "too large" notice the parser produces,
 // so the status line reads the same whichever path rejected the input.
-export function errorForParsed(parsed: ParsedDigits, radix: number) {
-  if (parsed.status === 'too-large') return LIMIT_MESSAGE
+export function errorForParsed(parsed: ParsedDigits, radix: number, limitMessage = LIMIT_MESSAGE) {
+  if (parsed.status === 'too-large') return limitMessage
   if (parsed.status === 'invalid') return `Enter digits ${digitRange(radix)} for base ${radix}.`
   return ''
 }

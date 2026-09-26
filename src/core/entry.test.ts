@@ -119,6 +119,28 @@ describe('entryForDigit', () => {
     expect(update?.state.sourceDigits).toBe('65535')
   })
 
+  it('uses the selected width for typing beyond its limit', () => {
+    const current = '429496728'
+    const stateWithCurrent = state({ sourceDigits: current, hasStartedDigitEntry: true })
+    const update32 = entryForDigit(stateWithCurrent, decimal, Array.from(current), '6', 32)
+    const tooLarge32 = entryForDigit(
+      state({ sourceDigits: '429496729', hasStartedDigitEntry: true }),
+      decimal,
+      Array.from('429496729'),
+      '6',
+      32,
+    )
+    const update8 = entryForDigit(state({ sourceDigits: '25', hasStartedDigitEntry: true }), decimal, Array.from('25'), '5', 8)
+    const tooLarge8 = entryForDigit(state({ sourceDigits: '25', hasStartedDigitEntry: true }), decimal, Array.from('25'), '6', 8)
+
+    expect(update32?.state.sourceDigits).toBe('4294967286')
+    expect(update32?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:9' })
+    expect(tooLarge32?.state.rejection).toContain('4294967295')
+    expect(update8?.state.sourceDigits).toBe('255')
+    expect(update8?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:2' })
+    expect(tooLarge8?.state.rejection).toContain('255')
+  })
+
   it('rejects a buffer that outgrows the sixteen positions', () => {
     const update = entryForDigit(state({ sourceKey: 'binary', sourceDigits: '1'.repeat(16), hasStartedDigitEntry: true }), binary, boxesFor('1'), '1')
 
@@ -163,6 +185,13 @@ describe('entryForStep', () => {
     expect(update?.state.sourceDigits).toBe('65535')
   })
 
+  it('refuses to step above the selected 32-bit width limit', () => {
+    const update = entryForStep(state({ sourceDigits: '4294967295' }), decimal, 1n, 32)
+
+    expect(update?.state.sourceDigits).toBe('4294967295')
+    expect(update?.state.rejection).toContain('4294967295')
+  })
+
   it('refuses to resurface an old rejection on a step that lands on the limit', () => {
     const update = entryForStep(state({ sourceDigits: '65534', rejection: LIMIT_MESSAGE }), decimal, 1n)
 
@@ -204,6 +233,14 @@ describe('entryForDeletion', () => {
 
     expect(update?.state.sourceKey).toBe('hexadecimal')
     expect(update?.state.sourceDigits).toBe('F')
+  })
+
+  it('deletes from values above the default width', () => {
+    const value = '4294967295'
+    const update = entryForDeletion(state({ sourceKey: 'decimal', sourceDigits: value }), decimal, Array.from(value), 32)
+
+    expect(update?.state.sourceDigits).toBe('429496729')
+    expect(update?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:9' })
   })
 
   it('does nothing while the row is empty', () => {

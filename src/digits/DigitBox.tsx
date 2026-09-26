@@ -6,6 +6,7 @@ const digitTypographyClassName = 'mono-tech text-[clamp(11px,2.5vw,17px)] font-s
 type DigitBoxProps = {
   base: Base
   position: number
+  positions: number
   digit: string
   editable: boolean
   highlighted: boolean
@@ -34,8 +35,8 @@ type DigitBoxProps = {
 // lets one composed box-shadow carry both the recessed bevel and the highlight ring, so a
 // focused writable cell can show its inset, focus frame and outline at the same time —
 // an inline box-shadow would silently win over any class-based one.
-export function DigitBox({ base, position, digit, editable, highlighted, isPaddingZero, isSignificant, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
-  const bitRange = bitRangeForDigit(base.radix, position)
+export function DigitBox({ base, position, positions, digit, editable, highlighted, isPaddingZero, isSignificant, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
+  const bitRange = bitRangeForDigit(base.radix, position, positions)
   const [roll, setRoll] = useState<{ from: string; to: string } | null>(null)
   const previousDigit = useRef(digit)
 

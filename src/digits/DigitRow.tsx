@@ -3,12 +3,15 @@ import { BaseHeaderCell } from './BaseHeaderCell'
 import { DigitBox } from './DigitBox'
 import { PlaceValueBreakdown } from '../breakdown/PlaceValueBreakdown'
 import { PlaceValueLabel } from './PlaceValueLabel'
-import { bitsPerDigit, POSITIONS, usesBitGrid, type Base, type BitSpan } from '../core/conversion'
+import { bitsPerDigit, usesBitGrid, type Base, type BitSpan } from '../core/conversion'
 
 type DigitRowProps = {
   base: Base
   boxes: string[]
+  positions: number
   isSource: boolean
+  isBreakdownOpen: boolean
+  onToggleBreakdown: () => void
   value: bigint | null
   highlightedBits: BitSpan | null
   onHoverPosition: (position: number | null) => void
@@ -22,8 +25,7 @@ type DigitRowProps = {
   onTabFromBreakdownTerm: (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => void
 }
 
-export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
-  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+export function DigitRow({ base, boxes, positions, isSource, isBreakdownOpen, onToggleBreakdown, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
   const [hoveredPosition, setHoveredPosition] = useState<number | null>(null)
   const [focusedPosition, setFocusedPosition] = useState<number | null>(null)
   const lastIndex = boxes.length - 1
@@ -51,13 +53,13 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
           isBreakdownOpen={isBreakdownOpen}
           breakdownId={breakdownId}
           toggleRef={registerToggle}
-          onToggle={() => setIsBreakdownOpen((open) => !open)}
+          onToggle={onToggleBreakdown}
           onToggleKeyDown={(event) => {
             if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
           }}
         />
         <td className="border-b border-dotted border-rule py-3 pl-3 pr-3 align-middle">
-          <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${spansBitGrid ? POSITIONS : boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
+          <ol className="m-0 grid w-full list-none gap-px p-0" style={{ gridTemplateColumns: `repeat(${spansBitGrid ? positions : boxes.length}, minmax(0, 1fr))` }} aria-label={`${base.name} digits, most significant first`}>
               {boxes.map((digit, index) => {
                 const position = boxes.length - 1 - index
                 const cellKey = `${base.key}:${index}`
@@ -71,7 +73,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                   <li
                     className="relative m-0 flex min-w-0 flex-col items-center gap-1"
                     key={cellKey}
-                    style={spansBitGrid ? { gridColumn: `span ${Math.min(bitWidth, POSITIONS - position * bitWidth)}` } : undefined}
+                    style={spansBitGrid ? { gridColumn: `span ${Math.min(bitWidth, positions - position * bitWidth)}` } : undefined}
                     onMouseEnter={() => hoverPosition(position)}
                     onMouseLeave={() => hoverPosition(null)}
                     onFocusCapture={() => focusPosition(position)}
@@ -80,6 +82,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                     <DigitBox
                       base={base}
                       position={position}
+                      positions={positions}
                       digit={digit}
                       editable={isEditable}
                       highlighted={isHighlighted}
@@ -92,7 +95,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                       }}
                       onEditDigit={(raw) => onEditDigit(base, boxes, raw)}
                     />
-                    <PlaceValueLabel base={base} position={position} highlighted={isHighlighted} />
+                    <PlaceValueLabel base={base} position={position} positions={positions} highlighted={isHighlighted} />
                   </li>
                 )
               })}

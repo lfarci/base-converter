@@ -100,6 +100,12 @@ describe('displayedRows', () => {
     expect(displayed.filter(({ isSource }) => isSource).map(({ base }) => base.key)).toEqual(['octal'])
   })
 
+  it('renders the selected 32-bit width across every base', () => {
+    const displayed = displayedRows('decimal', '0', 0n, 32)
+
+    expect(displayed.map(({ boxes }) => boxes.length)).toEqual([10, 32, 11, 8])
+  })
+
   it('keeps the source flag off every other row even when nothing is typed', () => {
     const displayed = displayedRows('binary', '', null)
 
