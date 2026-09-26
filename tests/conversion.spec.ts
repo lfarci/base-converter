@@ -25,6 +25,34 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   await expect(page.getByRole('heading', { name: 'Breakdown' })).toHaveCount(0)
 })
 
+test('the breakdown control shows and hides every row and stays in the keyboard flow', async ({ page }) => {
+  const control = page.getByRole('button', { name: 'Show all breakdowns' })
+  await page.locator('summary').focus()
+  await page.keyboard.press('Tab')
+  await expect(control).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(digit(page, 'Decimal', 10, 0)).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(control).toBeFocused()
+
+  await control.click()
+  for (const base of ['Decimal', 'Binary', 'Octal', 'Hexadecimal']) {
+    await expect(page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toBeVisible()
+  }
+
+  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+  await expect(page.getByRole('button', { name: 'Show all breakdowns' })).toBeVisible()
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
+  await page.getByRole('button', { name: 'Hide all breakdowns' }).click()
+
+  for (const base of ['Decimal', 'Binary', 'Octal', 'Hexadecimal']) {
+    await expect(page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })).toHaveAttribute('aria-expanded', 'false')
+    await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toHaveCount(0)
+  }
+  await expect(page.getByRole('button', { name: 'Show all breakdowns' })).toBeVisible()
+})
+
 test('each base shows only its available places and bit groups', async ({ page }) => {
   const rows = [
     { name: 'Decimal', radix: 10, positions: 5, labelSpans: 1 },

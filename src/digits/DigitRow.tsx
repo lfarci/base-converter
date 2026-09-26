@@ -11,6 +11,8 @@ type DigitRowProps = {
   isSource: boolean
   value: bigint | null
   highlightedBits: BitSpan | null
+  isBreakdownOpen: boolean
+  onToggleBreakdown: () => void
   onHoverPosition: (position: number | null) => void
   onFocusPosition: (position: number | null) => void
   onDigitKeyDown: (event: KeyboardEvent<HTMLInputElement>, base: Base, boxes: string[]) => void
@@ -22,8 +24,7 @@ type DigitRowProps = {
   onTabFromBreakdownTerm: (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => void
 }
 
-export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
-  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+export function DigitRow({ base, boxes, isSource, value, highlightedBits, isBreakdownOpen, onToggleBreakdown, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
   const [hoveredPosition, setHoveredPosition] = useState<number | null>(null)
   const [focusedPosition, setFocusedPosition] = useState<number | null>(null)
   const lastIndex = boxes.length - 1
@@ -51,7 +52,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
           isBreakdownOpen={isBreakdownOpen}
           breakdownId={breakdownId}
           toggleRef={registerToggle}
-          onToggle={() => setIsBreakdownOpen((open) => !open)}
+          onToggle={onToggleBreakdown}
           onToggleKeyDown={(event) => {
             if (event.key === 'Tab') onTabFromToggle(event, base, isBreakdownOpen)
           }}

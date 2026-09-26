@@ -15,7 +15,7 @@ import {
   type EntryState,
   type EntryUpdate,
 } from './core/entry'
-import { breakdownIdFor, tabFromBreakdownTerm, tabFromToggle, tabFromUnits, unitsCellKey, type FocusTarget } from './core/focus'
+import { breakdownIdFor, tabFromBreakdownControl, tabFromBreakdownTerm, tabFromToggle, tabFromUnits, unitsCellKey, type FocusTarget } from './core/focus'
 
 function App() {
   const [entry, setEntry] = useState<EntryState>(initialEntryState)
@@ -31,11 +31,13 @@ function App() {
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
   const breakdownTogglesRef = useRef(new Map<string, HTMLButtonElement>())
+  const breakdownControlRef = useRef<HTMLButtonElement>(null)
   const pendingFocusRef = useRef<FocusTarget | null>(null)
 
   const focusTarget = (target: FocusTarget) => {
     if (target.kind === 'cell') cellsRef.current.get(target.cellKey)?.focus()
     else if (target.kind === 'toggle') breakdownTogglesRef.current.get(target.baseKey)?.focus()
+    else if (target.kind === 'breakdown-control') breakdownControlRef.current?.focus()
     else {
       const breakdown = document.getElementById(target.breakdownId)
       breakdown?.querySelector<HTMLElement>('[data-breakdown-term]')?.focus()
@@ -161,6 +163,8 @@ function App() {
               if (node) breakdownTogglesRef.current.set(key, node)
               else breakdownTogglesRef.current.delete(key)
             }}
+            registerBreakdownControl={(node) => { breakdownControlRef.current = node }}
+            onTabFromBreakdownControl={(event, shiftKey) => onTab(event, tabFromBreakdownControl(shiftKey))}
             onTabFromUnits={(event, base) => onTab(event, tabFromUnits(base, event.shiftKey))}
             onTabFromToggle={(event, base, breakdownOpen) => onTab(
               event,
