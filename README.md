@@ -21,12 +21,13 @@ Octal and hexadecimal digit labels show the bits represented by each place, coun
 
 The page is styled as a 1992 educational computer workbook, reimplemented cleanly for the web. The period supplies the structure, materials, framing, and ornament — heavy and double rules, a framed instrument panel, a ruled ledger, inset fields, a masthead mark — while the modern browser supplies the crisp rendering, contrast, and focus behaviour. It is light-only (`color-scheme: light`), loads nothing from the network at runtime, and adds no dependencies beyond the type stack.
 
-Colour, type, and surface decisions live in one `@theme` block at the top of `src/index.css`, which Tailwind 4 turns into utilities (`bg-paper-3`, `text-ink-soft`, `border-rule`, `font-display`, `outline-focus`, …). Four surface tones carry four distinct roles, so the page reads as layered sheets rather than one flat fill:
+Colour, type, and surface decisions live in one `@theme` block at the top of `src/index.css`, which Tailwind 4 turns into utilities (`bg-paper-3`, `text-ink-soft`, `border-rule`, `font-display`, `outline-focus`, …). Five surface tones carry five distinct roles, so the page reads as layered sheets rather than one flat fill:
 
 | Token | Value | Role |
 | --- | --- | --- |
 | `--color-paper` | `#f5ecd6` | page surface — the desk |
-| `--color-paper-2` | `#fdfaf0` | panel and sheet surface — lighter than the page, so the panel sits *on* it |
+| `--color-panel` | `#e8eae7` | cool grey-cream instrument panel surround |
+| `--color-paper-2` | `#fdfaf0` | sheet surface — row surfaces and selected-cell tints |
 | `--color-paper-3` | `#ded3ac` | band surface — table header, panel title bar, status strip, help control |
 | `--color-well` | `#e9dfbd` | field surface — inset readouts, the instructional callout, the worked calculation |
 | `--color-frame` | `#75683f` | panel and table frame edges |

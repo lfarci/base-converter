@@ -44,7 +44,8 @@ Also covered by this file:
   `index.css` must apply to the whole document. If a rule styles one component, it belongs
   in that component (DRY).
 - **Design tokens live in the `@theme` block in `src/index.css`** — colour, the font stacks,
-  and the four surface tones. Tailwind 4 turns each one into a utility (`bg-paper-3`,
+  and the five surface tones, including the separate `--color-panel` instrument surround and
+  `--color-paper-2` sheet surface. Tailwind 4 turns each one into a utility (`bg-paper-3`,
   `text-ink-soft`, `border-rule`, `font-display`, `outline-focus`, …), so no component needs
   an ad-hoc hex value. The three preference media blocks live there too, unlayered so they
   beat Tailwind utilities; extend them when page furniture gains a new colour or state cue.
