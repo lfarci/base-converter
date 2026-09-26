@@ -75,7 +75,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
   return (
     <div
       id="bit-width-slider"
-      className="group relative h-16 w-[min(274px,25vw)] cursor-pointer touch-pan-y select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-[min(274px,38vw)]"
+      className="group relative h-14 w-[min(274px,25vw)] cursor-pointer touch-pan-y select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-[min(274px,38vw)]"
       role="slider"
       tabIndex={0}
       aria-label="Bit width"
@@ -93,14 +93,14 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
       onLostPointerCapture={onPointerUp}
     >
       <div className="absolute inset-y-0 left-[18px] right-[18px]" ref={trackRef}>
-        <div aria-hidden="true" className="absolute -inset-x-3 top-0 h-10 border-2 border-frame bg-well shadow-[inset_2px_2px_0_rgb(23_43_77_/_0.24),inset_-2px_-2px_0_rgb(255_255_255_/_0.7)]" data-slider-channel="true" />
+        <div aria-hidden="true" className="absolute -inset-x-3 top-0 h-8 border-2 border-frame bg-well shadow-[inset_2px_2px_0_rgb(23_43_77_/_0.24),inset_-2px_-2px_0_rgb(255_255_255_/_0.7)]" data-slider-channel="true" />
         {widths.map((width, index) => {
           const position = `${(index / (widths.length - 1)) * 100}%`
           const unavailable = isUnavailable(width)
           return (
             <span
               aria-hidden="true"
-              className={`absolute top-[17px] h-[7px] w-[2px] -translate-x-1/2 ${unavailable ? 'bg-rule' : 'bg-frame'}`}
+              className={`absolute top-3 h-[7px] w-[2px] -translate-x-1/2 ${unavailable ? 'bg-rule' : 'bg-frame'}`}
               key={width}
               style={{ left: position }}
             />
@@ -111,7 +111,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
           return (
             <span
               aria-hidden="true"
-              className={`absolute top-12 -translate-x-1/2 text-center mono-tech text-[10px] leading-none ${unavailable || value !== width ? 'text-ink-soft' : 'text-ink'}`}
+              className={`absolute top-10 -translate-x-1/2 text-center mono-tech text-[10px] leading-none ${unavailable || value !== width ? 'text-ink-soft' : 'text-ink'}`}
               key={width}
               style={{ left: `${(index / (widths.length - 1)) * 100}%` }}
             >
@@ -131,7 +131,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
           data-slider-thumb="true"
           style={{ transform: `translateX(${(valueIndex / (widths.length - 1)) * 100}%)` }}
         >
-          <span className="absolute left-0 top-[6px] flex h-7 w-7 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_2px_2px_0_rgb(255_255_255_/_0.95),inset_-2px_-2px_0_rgb(23_43_77_/_0.4)] group-hover:bg-paper-2">
+          <span className="absolute left-0 top-0 flex h-8 w-8 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_2px_2px_0_rgb(255_255_255_/_0.95),inset_-2px_-2px_0_rgb(23_43_77_/_0.4)] group-hover:bg-paper-2">
             {isUnavailable(value) ? '!' : ''}
           </span>
         </span>
