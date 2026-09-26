@@ -18,6 +18,30 @@ test('the writable units box reads as a worksheet cell and the readouts do not',
   await expect(readout).toHaveCSS('cursor', 'default')
 })
 
+test('changed readout digits roll down while editable boxes stay still', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+
+  await decimalUnits.focus()
+  await page.keyboard.press('2')
+
+  await expect(binaryReadout).toHaveValue('1')
+  await expect(binaryReadout).toHaveAttribute('data-rolling', 'true')
+  await expect(binaryReadout.locator('xpath=..').locator('.digit-roll-current')).toHaveCSS('animation-name', 'digit-roll-in')
+  await expect(decimalUnits).not.toHaveAttribute('data-rolling', 'true')
+})
+
+test('readout digit rolls are disabled when reduced motion is requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await digit(page, 'Decimal', 10, 0).focus()
+  await page.keyboard.press('2')
+
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+  await expect(binaryReadout).toHaveValue('1')
+  await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
+})
+
 test('the source row carries data-source and a margin bar, and both follow the row you type in', async ({ page }) => {
   const sources = page.locator('th[scope="row"][data-source]')
 

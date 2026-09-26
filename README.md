@@ -44,7 +44,7 @@ Three rules follow from that layer. Faint, low-contrast values are for decorativ
 
 The notation type — digits, positions, bit ranges, radices, equations, and the status strip — is set in **IBM Plex Mono**, self-hosted from `src/assets/fonts/` under the SIL Open Font License 1.1 (licence file included beside it). Nothing is fetched from a CDN; the build fingerprints the three woff2 files into `dist/assets/`. The stack falls back through JetBrains Mono, Roboto Mono, DejaVu Sans Mono, `ui-monospace`, Cascadia Mono, Segoe UI Mono, Consolas, and Menlo. The `.mono-tech` utility also turns on slashed zero and tabular figures, so even a fallback face reads as machine print.
 
-The stylesheet also answers three user preferences: `prefers-reduced-motion: reduce` drops the transitions, `prefers-contrast: more` flattens the tints and bevels to solid rules and ink borders, and `forced-colors: active` keeps the writable box and highlight rings visible with system colours.
+Changed readout digits roll briefly from top to bottom; writable boxes stay still so typing remains steady. The stylesheet also answers three user preferences: `prefers-reduced-motion: reduce` drops the transitions and digit rolls, `prefers-contrast: more` flattens the tints and bevels to solid rules and ink borders, and `forced-colors: active` keeps the writable box and highlight rings visible with system colours.
 
 ## Project layout
 
