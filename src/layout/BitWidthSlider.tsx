@@ -116,7 +116,12 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
               style={{ left: `${(index / (widths.length - 1)) * 100}%` }}
             >
               <span className={value === width ? 'font-bold' : ''}>{width}</span>
-              {unavailable && <span className="mt-1 block text-[9px] uppercase tracking-[-0.04em]">unavailable</span>}
+              {unavailable && (
+                <span className="mt-1 block text-[9px] uppercase tracking-[-0.04em]">
+                  <span className="sm:hidden">!</span>
+                  <span className="hidden sm:inline">unavailable</span>
+                </span>
+              )}
             </span>
           )
         })}

@@ -389,7 +389,15 @@ test('slider marks widths unavailable when the current value cannot fit', async 
   for (const character of '256') await page.keyboard.press(character)
 
   await expect(slider).toHaveAttribute('aria-valuetext', '16 bits; unavailable widths: 8')
-  await expect(page.getByText('unavailable', { exact: true })).toHaveCount(1)
+  const unavailableText = slider.getByText('unavailable', { exact: true })
+  const unavailableMarker = slider.getByText('!', { exact: true })
+  await expect(unavailableText).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(unavailableText).toBeHidden()
+  await expect(unavailableMarker).toBeVisible()
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await expect(unavailableText).toBeVisible()
+  await expect(unavailableMarker).toBeHidden()
 
   await slider.focus()
   await page.keyboard.press('ArrowLeft')
