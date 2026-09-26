@@ -19,6 +19,9 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
     const toggle = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(toggle).toHaveCSS('border-top-width', '1px')
+    await expect(toggle).toHaveCSS('background-color', 'rgb(222, 211, 172)')
+    await expect(toggle.locator(':scope > span[aria-hidden="true"]')).toHaveText('▸')
     await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toHaveCount(0)
   }
   await expect(page.getByText('Show place-value breakdown', { exact: true })).toHaveCount(0)
@@ -58,7 +61,9 @@ test('each base shows only its available places and bit groups', async ({ page }
   const hexadecimalBreakdown = page.getByRole('region', { name: 'Hexadecimal place-value breakdown', exact: true })
   await expect(hexadecimalBreakdown).toContainText('0 = 0')
   await expect(page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })).toHaveAttribute('aria-expanded', 'true')
+  const hexadecimalToggle = page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })
+  await expect(hexadecimalToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(hexadecimalToggle.locator(':scope > span[aria-hidden="true"]')).toHaveText('▾')
 })
 
 test('digit rows share aligned edges and bit groups without overflowing', async ({ page }) => {
