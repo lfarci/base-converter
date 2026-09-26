@@ -32,6 +32,11 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
   const highlightedPosition = hoveredPosition ?? focusedPosition
   const spansBitGrid = usesBitGrid(base.radix)
   const bitWidth = bitsPerDigit(base.radix)
+  const firstSignificantIndex = boxes.findIndex((value) => value !== '' && value !== '0')
+  const firstDisplayedIndex = boxes.findIndex((value) => value !== '')
+  const significantStartIndex = firstSignificantIndex >= 0
+    ? firstSignificantIndex
+    : firstDisplayedIndex >= 0 ? boxes.length - 1 : -1
   const hoverPosition = (position: number | null) => {
     setHoveredPosition(position)
     onHoverPosition(position)
@@ -61,6 +66,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                 const position = boxes.length - 1 - index
                 const cellKey = `${base.key}:${index}`
                 const isEditable = index === lastIndex
+                const isPaddingZero = digit === '0' && index < significantStartIndex
                 const isHighlighted = bitWidth === 1 && highlightedBits
                   ? position >= highlightedBits.low && position <= highlightedBits.high
                   : highlightedPosition === position
@@ -80,6 +86,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                       digit={digit}
                       editable={isEditable}
                       highlighted={isHighlighted}
+                      isPaddingZero={isPaddingZero}
                       surfaceRef={registerCell(cellKey)}
                       onKeyDown={(event) => {
                         if (event.key === 'Tab') onTabFromUnits(event, base)

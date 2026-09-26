@@ -61,6 +61,22 @@ const sample = (locator: Locator) => locator.evaluate((element) => {
   }
 })
 
+test('leading padding zeroes stay above AA text contrast', async ({ page }) => {
+  await page.goto('./')
+  const units = digit(page, 'Decimal', 10, 0)
+  await units.focus()
+  for (const key of '127') await page.keyboard.press(key)
+
+  const paddingZero = await digit(page, 'Decimal', 10, 4).evaluate((element) => ({
+    text: getComputedStyle(element).color,
+    fill: getComputedStyle(element).backgroundColor,
+  }))
+  expect(
+    contrast(paddingZero.text, paddingZero.fill),
+    `padding zero on its field: ${paddingZero.text} on ${paddingZero.fill}`,
+  ).toBeGreaterThanOrEqual(4.5)
+})
+
 test('every documented text pair clears 4.5:1 and every boundary clears 3:1', async ({ page }) => {
   await page.goto('./')
 

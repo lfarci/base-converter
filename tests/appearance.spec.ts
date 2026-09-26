@@ -18,6 +18,36 @@ test('the writable units box reads as a worksheet cell and the readouts do not',
   await expect(readout).toHaveCSS('cursor', 'default')
 })
 
+test('leading padding zeroes recede while significant digits keep full ink', async ({ page }) => {
+  const units = digit(page, 'Decimal', 10, 0)
+  await units.focus()
+  for (const key of '127') await page.keyboard.press(key)
+
+  for (const position of [4, 3]) {
+    const paddingZero = digit(page, 'Decimal', 10, position)
+    await expect(paddingZero).toHaveValue('0')
+    await expect(paddingZero).toHaveAttribute('data-padding-zero', 'true')
+    await expect(paddingZero).toHaveCSS('color', 'rgb(77, 91, 113)')
+    await expect(paddingZero).toHaveCSS('font-weight', '500')
+  }
+
+  for (const position of [2, 1, 0]) {
+    const significantDigit = digit(page, 'Decimal', 10, position)
+    await expect(significantDigit).not.toHaveAttribute('data-padding-zero', 'true')
+    await expect(significantDigit).toHaveCSS('color', 'rgb(23, 43, 77)')
+  }
+})
+
+test('zero remains prominent when it is the whole value', async ({ page }) => {
+  const units = digit(page, 'Decimal', 10, 0)
+  await units.focus()
+  await page.keyboard.press('0')
+
+  await expect(units).not.toHaveAttribute('data-padding-zero', 'true')
+  await expect(units).toHaveCSS('color', 'rgb(23, 43, 77)')
+  await expect(digit(page, 'Decimal', 10, 1)).toHaveAttribute('data-padding-zero', 'true')
+})
+
 test('the source row carries data-source and a margin bar, and both follow the row you type in', async ({ page }) => {
   const sources = page.locator('th[scope="row"][data-source]')
 

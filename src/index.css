@@ -126,6 +126,11 @@ input {
    the lighter panel surface so the frame still clears 3:1 against its own tint. The 55/45
    mix matches the breakdown term bar and the highlight ring, so every accent-ink boundary on
    the page uses one ratio. */
+.digit-box[data-padding-zero] {
+  color: var(--color-ink-soft);
+  font-weight: 500;
+}
+
 .digit-box[data-editable] {
   border-width: 2px;
   border-color: var(--digit-frame);
