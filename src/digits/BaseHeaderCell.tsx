@@ -16,7 +16,7 @@ type BaseHeaderCellProps = {
 // and the next row below.
 export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, toggleRef, onToggle, onToggleKeyDown }: BaseHeaderCellProps) {
   return (
-    <th className="sticky left-0 z-10 w-[144px] border-b border-dotted border-rule bg-inherit py-3 pl-2 pr-2 align-top font-normal" scope="row" aria-label={base.name} data-source={isSource || undefined}>
+    <th className="sticky left-0 z-10 w-[144px] border-b border-dotted border-rule bg-inherit py-3 pl-2 pr-2 align-top font-normal" scope="row" aria-label={`${base.name}${isSource ? ', source' : ''}`} data-source={isSource || undefined}>
       {/* A shape cue, not a hue cue: the source row is marked by a solid ink bar at the
           cell's left edge. It is absolutely positioned and aria-hidden, so it never moves
           the cell's own metrics and never adds an announcement. */}
@@ -26,7 +26,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
       <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
         <span className="size-[7px] shrink-0 border border-frame" style={{ backgroundColor: base.accent }} aria-hidden="true" />
         <button
-          className="group inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[14px] font-bold tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className={`group inline-flex min-h-11 w-full min-w-0 cursor-pointer gap-1 rounded-sm text-left font-display text-[14px] font-bold tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${isSource ? 'flex-col items-start justify-center' : 'flex-row items-center justify-between'}`}
           type="button"
           ref={toggleRef}
           onKeyDown={onToggleKeyDown}
@@ -37,6 +37,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
           onClick={onToggle}
         >
           <span className="whitespace-nowrap">{base.name}</span>
+          {isSource && <span className="source-indicator mono-tech text-[9px] font-bold uppercase tracking-[0.08em] text-ink-soft">SOURCE</span>}
         </button>
         <span className="mono-tech w-5 text-right text-[10px] text-ink-soft">{base.radix}</span>
       </span>

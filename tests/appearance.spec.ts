@@ -22,7 +22,9 @@ test('the source row carries data-source and a margin bar, and both follow the r
   const sources = page.locator('th[scope="row"][data-source]')
 
   await expect(sources).toHaveCount(1)
-  await expect(sources.locator('button')).toHaveText('Decimal')
+  await expect(sources).toHaveAttribute('aria-label', 'Decimal, source')
+  await expect(sources.locator('button > span:first-child')).toHaveText('Decimal')
+  await expect(sources.locator('.source-indicator')).toHaveText('SOURCE')
 
   // A solid ink bar: a shape cue, so it reads in forced-colors where a tint would not.
   const bar = sources.locator(':scope > div')
@@ -33,7 +35,10 @@ test('the source row carries data-source and a margin bar, and both follow the r
   await hexadecimalUnits.focus()
   await page.keyboard.press('A')
 
-  await expect(page.locator('th[scope="row"][data-source] button')).toHaveText('Hexadecimal')
+  const hexadecimalSource = page.locator('th[scope="row"][data-source]')
+  await expect(hexadecimalSource).toHaveAttribute('aria-label', 'Hexadecimal, source')
+  await expect(hexadecimalSource.locator('button > span:first-child')).toHaveText('Hexadecimal')
+  await expect(hexadecimalSource.locator('.source-indicator')).toHaveText('SOURCE')
 })
 
 test('the page reads as layered sheets, not one flat fill', async ({ page }) => {
