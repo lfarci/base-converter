@@ -1,4 +1,4 @@
-﻿# Basewise
+﻿# Base Converter
 
 A simple, live number-base converter for learning how the same whole number is written in different bases.
 

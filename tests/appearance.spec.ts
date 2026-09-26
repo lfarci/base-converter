@@ -51,6 +51,68 @@ test('the page reads as layered sheets, not one flat fill', async ({ page }) => 
   expect(new Set(tones).size, `four distinct surfaces, got ${tones.join(' | ')}`).toBe(4)
 })
 
+test('the masthead uses the utility name and retains its positional-notation tagline', async ({ page }) => {
+  await expect(page).toHaveTitle('Base Converter — One number, four bases')
+  await expect(page.getByRole('link', { name: 'Base Converter', exact: true })).toBeVisible()
+  const tagline = page.locator('header > div > span')
+  await expect(tagline).toHaveText('positional notation, plainly')
+  await expect(tagline).toHaveCSS('text-transform', 'uppercase')
+})
+
+test('the explanatory callout spans the converter panel content width', async ({ page }) => {
+  const panel = page.locator('#result-title').locator('xpath=..')
+  const explanation = panel.locator('#result-title + p')
+  const [panelBox, explanationBox] = await Promise.all([panel.boundingBox(), explanation.boundingBox()])
+
+  expect(panelBox).not.toBeNull()
+  expect(explanationBox).not.toBeNull()
+  expect(explanationBox!.width).toBeGreaterThan(panelBox!.width * 0.95)
+})
+
+test('the worksheet heading, help marker, monitor, and base labels keep their software hierarchy', async ({ page }) => {
+  const rule = page.locator('#page-title + div[aria-hidden="true"]')
+  await expect(rule).toHaveCSS('height', '5px')
+  await expect(rule.locator('span')).toHaveCount(2)
+  await expect(rule.locator('span').first()).toHaveCSS('height', '3px')
+  await expect(rule.locator('span').last()).toHaveCSS('height', '1px')
+
+  const summary = page.locator('details > summary')
+  await expect(summary).toContainText('How to use')
+  const helpMarker = summary.locator('[aria-hidden="true"]')
+  await expect(helpMarker).toHaveText('?')
+  await expect(helpMarker).toHaveCSS('width', '20px')
+  await expect(helpMarker).toHaveCSS('height', '20px')
+  await expect(helpMarker).toHaveCSS('border-top-width', '2px')
+  await expect(helpMarker).toHaveCSS('border-radius', '0px')
+
+  const monitor = page.locator('header svg[aria-hidden="true"]')
+  await expect(monitor).toHaveAttribute('viewBox', '0 0 28 28')
+  await expect(monitor.locator('rect')).toHaveCount(4)
+  await expect(monitor).toHaveCSS('width', '28px')
+  await expect(monitor).toHaveCSS('height', '28px')
+
+  for (const base of ['Decimal', 'Binary', 'Octal', 'Hexadecimal']) {
+    const toggle = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })
+    await expect(toggle).toHaveAttribute('title', `Click to open the ${base.toLowerCase()} place-value breakdown`)
+    const baseName = toggle.locator('span').first()
+    const radix = toggle.locator('xpath=../span[last()]')
+    await expect(radix).toHaveCSS('font-size', '10px')
+    const [nameSize, radixSize] = await Promise.all([
+      baseName.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+      radix.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+    ])
+    expect(nameSize, `${base} name should read larger than its radix`).toBeGreaterThan(radixSize)
+  }
+
+  const baseGrid = page.locator('th[scope="row"] > span').first()
+  await expect(baseGrid).toHaveClass(/grid-cols-\[8px_minmax\(0,1fr\)_20px\]/)
+  const marker = baseGrid.locator(':scope > span').first()
+  await expect(marker).toHaveCSS('width', '7px')
+  await expect(marker).toHaveCSS('height', '7px')
+  await expect(marker).toHaveCSS('border-top-width', '1px')
+  await expect(marker).toHaveCSS('border-radius', '0px')
+})
+
 test('the converter panel is framed with a heavier top edge and a hard offset shadow', async ({ page }) => {
   const panel = page.locator('#result-title').locator('xpath=..')
 

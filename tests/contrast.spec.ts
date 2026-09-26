@@ -140,6 +140,15 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
       }
     }
 
+  // The cooler converter surround is a separate framed surface against the paper desk.
+  const panel = await page.locator('#result-title').locator('xpath=..').evaluate((element) => ({
+    frame: getComputedStyle(element).borderLeftColor,
+    fill: getComputedStyle(element).backgroundColor,
+    desk: getComputedStyle(document.documentElement).backgroundColor,
+  }))
+  expect(contrast(panel.frame, panel.fill), `panel frame: ${panel.frame} on ${panel.fill}`).toBeGreaterThanOrEqual(3)
+  expect(contrast(panel.frame, panel.desk), `panel frame outside: ${panel.frame} on ${panel.desk}`).toBeGreaterThanOrEqual(3)
+
   // The source row's margin bar is a boundary, so it clears 3:1 against the row surface.
   const bar = await sample(page.locator('th[scope="row"][data-source] > div'))
   expect(contrast(bar.fill, bar.around), `source margin bar: ${bar.fill} on ${bar.around}`).toBeGreaterThanOrEqual(3)

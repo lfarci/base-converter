@@ -12,7 +12,7 @@ guidance lives in `react-typescript.instructions.md`.
 
 ## What belongs here
 
-- `PageHeader.tsx` — the skip-level `basewise` link and the tagline.
+- `PageHeader.tsx` — the skip-level `Base Converter` link and the tagline.
 - `HelpDetails.tsx` — the collapsed "How to use" copy.
 - `StatusLine.tsx` — the live region that reports the current reading or an error.
 
@@ -52,11 +52,11 @@ Also covered by this file:
   with a relative `url()` so the build fingerprints the assets against the Pages subpath —
   never a CDN URL.
 - Page furniture is the workbook chrome. The masthead opens with a heavy 3px ink rule, then
-  the `aria-hidden` monitor mark beside the `basewise` wordmark, then a double hairline rule
-  under the wordmark row. Keep the link's `href="#top"` and `tabIndex={-1}`: the icon sits
-  inside the link and is `aria-hidden`, so the link's accessible name stays exactly
-  `basewise`. `HelpDetails` is a self-sized compact control (`w-fit`) — a utility, not a
-  full-width band of prose — and its summary label stays wrapped in its own
+  the `aria-hidden` monitor mark beside the `Base Converter` utility title, then a double
+  hairline rule under the title row. Keep the link's `href="#top"` and `tabIndex={-1}`: the
+  icon sits inside the link and is `aria-hidden`, so the link's accessible name stays
+  exactly `Base Converter`. `HelpDetails` is a self-sized compact control (`w-fit`) — a
+  utility, not a full-width band of prose — and its summary label stays wrapped in its own
   `<span>How to use</span>`, which the specs match exactly. The status strip keeps its inset
   readout on the band surface with its 3px left rule.
 - Keep the ornament disciplined: every decorative mark is `aria-hidden`, never the sole cue
