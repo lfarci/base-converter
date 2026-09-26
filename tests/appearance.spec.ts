@@ -122,7 +122,19 @@ test('the source row carries data-source and a margin bar, and both follow the r
   const sources = page.locator('th[scope="row"][data-source]')
 
   await expect(sources).toHaveCount(1)
-  await expect(sources.locator('button')).toHaveText('Decimal')
+  await expect(sources).toHaveAttribute('aria-label', 'Decimal, source')
+  await expect(sources.locator('button > span:first-child')).toHaveText('Decimal')
+  await expect(sources.locator('.source-indicator')).toHaveText('SOURCE')
+  const sourceNameBox = await sources.locator('button > span:first-child').boundingBox()
+  const sourceButtonBox = await sources.locator('button').boundingBox()
+  const sourceIndicatorBox = await sources.locator('.source-indicator').boundingBox()
+  expect(sourceNameBox).not.toBeNull()
+  expect(sourceButtonBox).not.toBeNull()
+  expect(sourceIndicatorBox).not.toBeNull()
+  expect(Math.abs((sourceNameBox!.y + sourceNameBox!.height / 2) - (sourceButtonBox!.y + sourceButtonBox!.height / 2))).toBeLessThan(1)
+  expect(sourceIndicatorBox!.y).toBeGreaterThanOrEqual(sourceButtonBox!.y)
+  expect(sourceIndicatorBox!.y + sourceIndicatorBox!.height).toBeLessThanOrEqual(sourceNameBox!.y)
+  expect(sourceNameBox!.y + sourceNameBox!.height).toBeLessThanOrEqual(sourceButtonBox!.y + sourceButtonBox!.height)
 
   // A solid ink bar: a shape cue, so it reads in forced-colors where a tint would not.
   const bar = sources.locator(':scope > div')
@@ -133,7 +145,20 @@ test('the source row carries data-source and a margin bar, and both follow the r
   await hexadecimalUnits.focus()
   await page.keyboard.press('A')
 
-  await expect(page.locator('th[scope="row"][data-source] button')).toHaveText('Hexadecimal')
+  const hexadecimalSource = page.locator('th[scope="row"][data-source]')
+  await expect(hexadecimalSource).toHaveAttribute('aria-label', 'Hexadecimal, source')
+  await expect(hexadecimalSource.locator('button > span:first-child')).toHaveText('Hexadecimal')
+  await expect(hexadecimalSource.locator('.source-indicator')).toHaveText('SOURCE')
+  const hexadecimalNameBox = await hexadecimalSource.locator('button > span:first-child').boundingBox()
+  const hexadecimalButtonBox = await hexadecimalSource.locator('button').boundingBox()
+  const hexadecimalIndicatorBox = await hexadecimalSource.locator('.source-indicator').boundingBox()
+  expect(hexadecimalNameBox).not.toBeNull()
+  expect(hexadecimalButtonBox).not.toBeNull()
+  expect(hexadecimalIndicatorBox).not.toBeNull()
+  expect(Math.abs((hexadecimalNameBox!.y + hexadecimalNameBox!.height / 2) - (hexadecimalButtonBox!.y + hexadecimalButtonBox!.height / 2))).toBeLessThan(1)
+  expect(hexadecimalIndicatorBox!.y).toBeGreaterThanOrEqual(hexadecimalButtonBox!.y)
+  expect(hexadecimalIndicatorBox!.y + hexadecimalIndicatorBox!.height).toBeLessThanOrEqual(hexadecimalNameBox!.y)
+  expect(hexadecimalNameBox!.y + hexadecimalNameBox!.height).toBeLessThanOrEqual(hexadecimalButtonBox!.y + hexadecimalButtonBox!.height)
 })
 
 test('the page reads as layered sheets, not one flat fill', async ({ page }) => {
