@@ -284,7 +284,7 @@ test('the converter panel is framed with a heavier top edge and a hard offset sh
   expect(shadow, `panel shadow: ${shadow}`).toMatch(/\d+px \d+px 0px 0px/)
 })
 
-test('a focused row title uses an underline instead of a frame', async ({ page }) => {
+test('a focused row toggle keeps its underline and visible focus outline', async ({ page }) => {
   const title = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
   const restWeight = await title.evaluate((element) => getComputedStyle(element).fontWeight)
   const restDecorationColor = await title.evaluate((element) => getComputedStyle(element).textDecorationColor)
@@ -296,7 +296,9 @@ test('a focused row title uses an underline instead of a frame', async ({ page }
   await expect(title).toHaveCSS('font-weight', restWeight)
   await expect(title).toHaveCSS('text-decoration-line', 'underline')
   await expect.poll(() => title.evaluate((element) => getComputedStyle(element).textDecorationColor)).not.toBe(restDecorationColor)
-  await expect(title).toHaveCSS('outline-style', 'none')
+  await expect(title).toHaveCSS('outline-style', 'solid')
+  await expect(title).toHaveCSS('outline-width', '3px')
+  await expect(title).toHaveCSS('outline-offset', '3px')
 })
 
 test('a focused writable cell keeps its recessed bevel and highlight ring at the same time', async ({ page }) => {

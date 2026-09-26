@@ -26,7 +26,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
       <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
         <span className="size-[7px] shrink-0 border border-frame" style={{ backgroundColor: base.accent }} aria-hidden="true" />
         <button
-          className="group relative inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[14px] font-normal tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:decoration-ink focus-visible:outline-none!"
+          className="group relative inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-0.5 rounded-sm border border-frame bg-paper-3 px-0.5 text-left font-display text-[13px] font-normal tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:bg-paper-2 hover:decoration-current focus:decoration-ink"
           type="button"
           ref={toggleRef}
           onKeyDown={onToggleKeyDown}
@@ -37,6 +37,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
           onClick={onToggle}
         >
           <span className="whitespace-nowrap">{base.name}</span>
+          <span className="mono-tech shrink-0 text-[12px] leading-none" aria-hidden="true">{isBreakdownOpen ? '▾' : '▸'}</span>
           {isSource && <span className="source-indicator absolute left-0 top-0 mono-tech text-[9px] leading-none font-bold uppercase tracking-[0.08em] text-ink-soft">SOURCE</span>}
         </button>
         <span className="mono-tech w-5 text-right text-[10px] text-ink-soft">{base.radix}</span>
