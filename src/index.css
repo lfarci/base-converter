@@ -147,12 +147,12 @@ input {
 }
 
 .digit-roll-current {
-  transform: translateY(100%);
+  transform: translateY(-100%);
   animation: digit-roll-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes digit-roll-out {
-  to { transform: translateY(-100%); }
+  to { transform: translateY(100%); }
 }
 
 @keyframes digit-roll-in {
