@@ -47,7 +47,7 @@ test('width slider snaps with keyboard and pointer, and breakdowns toggle in bul
   await expect(slider).toHaveCSS('height', '64px')
   await expect(thumb.locator('span')).toHaveCSS('width', '24px')
   const channel = slider.locator('[data-slider-channel="true"]')
-  await expect(channel).toHaveCSS('height', '28px')
+  await expect(channel).toHaveCSS('height', '44px')
   const thumbBounds = await thumb.locator('span').boundingBox()
   const channelBounds = await channel.boundingBox()
   const valueLabelBounds = await slider.getByText('16', { exact: true }).boundingBox()
