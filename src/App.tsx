@@ -1,10 +1,11 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { ConversionTable } from './digits/ConversionTable'
+import { BitWidthSlider } from './layout/BitWidthSlider'
 import { HelpDetails } from './layout/HelpDetails'
 import { DoubleRule } from './layout/DoubleRule'
 import { PageHeader } from './layout/PageHeader'
 import { StatusLine } from './layout/StatusLine'
-import { bitSpanForDigit, BIT_WIDTHS, parseDigits, POSITIONS, type Base, type BitSpan, valueLimitForPositions } from './core/conversion'
+import { bitSpanForDigit, BIT_WIDTHS, parseDigits, POSITIONS, rows, type Base, type BitSpan, valueLimitForPositions, widthsUnableToHold } from './core/conversion'
 import { displayedRows, sourceBaseFor, statusFor } from './core/display'
 import {
   entryForDeletion,
@@ -20,6 +21,7 @@ import { breakdownIdFor, tabFromBreakdownTerm, tabFromToggle, tabFromUnits, unit
 function App() {
   const [entry, setEntry] = useState<EntryState>(initialEntryState)
   const [positions, setPositions] = useState<number>(POSITIONS)
+  const [openBreakdowns, setOpenBreakdowns] = useState<Set<string>>(() => new Set())
   const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
   const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
 
@@ -27,6 +29,27 @@ function App() {
   const parsed = parseDigits(entry.sourceDigits, sourceBase.radix, valueLimitForPositions(positions))
   const { error, message, value } = statusFor(parsed, sourceBase, entry.rejection, positions)
   const displayed = displayedRows(entry.sourceKey, entry.sourceDigits, value, positions)
+  const allBreakdownsOpen = rows.every(({ key }) => openBreakdowns.has(key))
+
+  const changeWidth = (width: number) => {
+    setPositions(width)
+    setHoveredBits(null)
+    setFocusedBits(null)
+    setEntry((current) => ({ ...current, rejection: '' }))
+  }
+
+  const toggleBreakdown = (key: string) => {
+    setOpenBreakdowns((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const toggleAllBreakdowns = () => {
+    setOpenBreakdowns(allBreakdownsOpen ? new Set() : new Set(rows.map(({ key }) => key)))
+  }
 
   // Every digit box registers itself here by base and place, so the editable
   // surface can put the caret back without hunting through the DOM.
@@ -72,7 +95,7 @@ function App() {
       if (!(target instanceof Element)) return false
       const digitBox = target.closest('input[data-digit]')
       if (digitBox) return digitBox.hasAttribute('data-editable')
-      return target.closest('input, button, select, textarea, label, a[href], [data-breakdown-term]') !== null
+      return target.closest('input, button, select, textarea, label, a[href], [data-breakdown-term], [role="slider"]') !== null
     }
     const caretIsInSurface = () =>
       document.activeElement instanceof HTMLInputElement && document.activeElement.dataset.digit === 'true'
@@ -143,42 +166,41 @@ function App() {
               this <p> itself rather than on a wrapper. */}
           <p className="m-0 border-b border-rule-soft border-l-[3px] border-l-frame bg-well py-3 pl-5 pr-3 text-[13px] leading-snug text-ink-soft">
             <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
-            Choose a 16-, 32-, or 64-bit width below to set the maximum value. Each position is numbered from zero on the right; open a breakdown to see how each non-zero digit contributes to the same total.
+            Choose an 8-, 16-, or 32-bit width below to set the maximum value. Each position is numbered from zero on the right; open a breakdown to see how each non-zero digit contributes to the same total.
           </p>
 
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-rule-soft bg-paper-2 px-3 py-3">
-            <label className="flex items-center gap-2 mono-tech text-[12px] font-semibold text-ink" htmlFor="bit-width">
-              Bit width
-              <select
-                className="min-h-9 rounded-sm border border-frame bg-paper-3 px-2 text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                id="bit-width"
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="mono-tech text-[12px] font-semibold text-ink" id="bit-width-label">Bit width</span>
+              <BitWidthSlider
+                widths={BIT_WIDTHS}
                 value={positions}
-                onChange={(event) => {
-                  setPositions(Number(event.target.value))
-                  setHoveredBits(null)
-                  setFocusedBits(null)
-                  setEntry((current) => ({ ...current, rejection: '' }))
-                }}
+                disabledWidths={widthsUnableToHold(parsed, BIT_WIDTHS)}
+                onChange={changeWidth}
+              />
+              <output className="inline-flex min-h-8 min-w-11 items-center justify-center border-2 border-frame bg-well px-2 mono-tech text-[12px] font-bold text-ink shadow-[inset_1px_1px_0_rgb(23_43_77_/_0.22),inset_-1px_-1px_0_rgb(255_255_255_/_0.72)]" id="selected-bit-width" aria-label="Selected bit width">
+                {positions}
+              </output>
+              <span className="mono-tech text-[10px] text-ink-soft">bits</span>
+              <button
+                className="min-h-10 border border-frame bg-paper-3 px-2 mono-tech text-[10px] font-semibold uppercase tracking-[0.04em] text-ink underline decoration-transparent underline-offset-2 hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                type="button"
+                aria-pressed={allBreakdownsOpen}
+                onClick={toggleAllBreakdowns}
               >
-                {BIT_WIDTHS.map((width) => (
-                  <option
-                    key={width}
-                    value={width}
-                    disabled={parsed.status === 'ok' && parsed.value > valueLimitForPositions(width)}
-                  >
-                    {width} bits
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span className="mono-tech text-[11px] text-ink-soft">
+                {allBreakdownsOpen ? 'Hide all breakdowns' : 'Show all breakdowns'}
+              </button>
+            </div>
+            <p className="m-0 mono-tech text-[11px] text-ink-soft" id="width-guidance">
               Maximum: {valueLimitForPositions(positions).toString()} · Smaller widths stay unavailable if they cannot hold the current value.
-            </span>
+            </p>
           </div>
 
           <ConversionTable
             positions={positions}
             displayed={displayed}
+            openBreakdowns={openBreakdowns}
+            onToggleBreakdown={toggleBreakdown}
             value={value}
             highlightedBits={hoveredBits ?? focusedBits}
             onHoverPosition={(base, position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position, positions))}

@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 
 test('place-value help stays concise and each row breakdown is collapsed by default', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Digits and place values', exact: true })).toBeVisible()
-  await expect(page.getByText('Choose a 16-, 32-, or 64-bit width below to set the maximum value.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Choose an 8-, 16-, or 32-bit width below to set the maximum value.', { exact: false })).toBeVisible()
 
   const instructions = page.locator('details').filter({ has: page.getByText('How to use', { exact: true }) })
   await expect(instructions).not.toHaveAttribute('open', '')
@@ -23,6 +23,56 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   }
   await expect(page.getByText('Show place-value breakdown', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Breakdown' })).toHaveCount(0)
+})
+
+test('width slider snaps with keyboard and pointer, and breakdowns toggle in bulk', async ({ page }) => {
+  const slider = page.getByRole('slider', { name: 'Bit width' })
+  const readout = page.locator('#selected-bit-width')
+
+  await expect(slider).toHaveAttribute('aria-valuenow', '16')
+  const thumb = slider.locator('[data-slider-thumb="true"]')
+  expect(await thumb.evaluate((element) => getComputedStyle(element).transitionProperty)).toContain('transform')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(thumb).toHaveCSS('transition-property', 'none')
+  await slider.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(slider).toHaveAttribute('aria-valuenow', '32')
+  await expect(readout).toHaveText('32')
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.keyboard.press('ArrowLeft')
+  await expect(slider).toHaveAttribute('aria-valuenow', '16')
+
+  const sliderBounds = await slider.boundingBox()
+  expect(sliderBounds).not.toBeNull()
+  if (!sliderBounds) return
+  const startX = sliderBounds.x + 18
+  const centerY = sliderBounds.y + sliderBounds.height / 2
+  await page.mouse.move(startX, centerY)
+  await page.mouse.down()
+  await page.mouse.move(sliderBounds.x + sliderBounds.width - 18, centerY)
+  await page.mouse.up()
+  await expect(slider).toHaveAttribute('aria-valuenow', '32')
+  await expect(readout).toHaveText('32')
+
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
+  for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
+    await expect(page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toBeVisible()
+  }
+
+  await page.getByRole('button', { name: 'Hide all breakdowns' }).click()
+  for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
+    await expect(page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })).toHaveAttribute('aria-expanded', 'false')
+    await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toHaveCount(0)
+  }
+
+  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+  await expect(page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
+  await expect(page.getByRole('button', { name: 'Hide all breakdowns' })).toBeVisible()
+  for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
+    await expect(page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })).toHaveAttribute('aria-expanded', 'true')
+  }
 })
 
 test('each base shows only its available places and bit groups', async ({ page }) => {
@@ -255,37 +305,71 @@ test('hexadecimal letter digits show their decimal value and symbol in each term
   await expect(breakdown.getByRole('math').last()).toHaveText('160 → 160')
 })
 
-test('bit-width selector expands the cap and keeps the value intact', async ({ page }) => {
-  const selector = page.getByRole('combobox', { name: 'Bit width' })
-  await expect(selector).toHaveValue('16')
+test('slider marks widths unavailable when the current value cannot fit', async ({ page }) => {
+  const slider = page.getByRole('slider', { name: 'Bit width' })
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  await decimalUnits.focus()
+  for (const character of '256') await page.keyboard.press(character)
 
-  await selector.selectOption('32')
+  await expect(slider).toHaveAttribute('aria-valuetext', '16 bits; unavailable widths: 8')
+  await expect(page.getByText('unavailable', { exact: true })).toHaveCount(1)
+
+  await slider.focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect(slider).toHaveAttribute('aria-valuenow', '16')
+  await page.keyboard.press('ArrowRight')
+  await expect(slider).toHaveAttribute('aria-valuenow', '32')
+  await expect(slider).toHaveAttribute('aria-valuetext', '32 bits; unavailable widths: 8')
+  await expect(decimalUnits).toHaveValue('6')
+  await expect(digit(page, 'Decimal', 10, 2)).toHaveValue('2')
+})
+
+test('bit-width slider expands the cap and keeps the value intact', async ({ page }) => {
+  const slider = page.getByRole('slider', { name: 'Bit width' })
+  const readout = page.locator('#selected-bit-width')
+  await expect(slider).toHaveAttribute('aria-valuenow', '16')
+  await expect(readout).toHaveText('16')
+
+  await slider.focus()
+  await page.keyboard.press('Home')
+  await expect(slider).toHaveAttribute('aria-valuenow', '8')
+  await expect(readout).toHaveText('8')
+  const binary8 = page.getByRole('row', { name: /^Binary/ })
+  await expect(binary8.locator('[data-digit="true"]')).toHaveCount(8)
+  await expect(page.getByRole('textbox', { name: 'Binary (base 2) digit at position 7' })).toBeVisible()
+  await expect(page.getByText(/Maximum: 255/)).toBeVisible()
+
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  await decimalUnits.focus()
+  for (const character of '255') await page.keyboard.press(character)
+  await page.keyboard.press('ArrowUp')
+  await expect(page.getByText(/8 positions hold at most 255/)).toBeVisible()
+  await expect(decimalUnits).toHaveValue('5')
+  await expect(digit(page, 'Decimal', 10, 2)).toHaveValue('2')
+
+  await slider.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(slider).toHaveAttribute('aria-valuenow', '16')
+  await expect(readout).toHaveText('16')
+  await expect(page.getByRole('row', { name: /^Binary/ }).locator('[data-digit="true"]')).toHaveCount(16)
+  await expect(decimalUnits).toHaveValue('5')
+  await page.keyboard.press('ArrowRight')
+  await expect(slider).toHaveAttribute('aria-valuenow', '32')
+  await expect(readout).toHaveText('32')
   const binary32 = page.getByRole('row', { name: /^Binary/ })
   await expect(binary32.locator('[data-digit="true"]')).toHaveCount(32)
   await expect(page.getByRole('textbox', { name: 'Binary (base 2) digit at position 31' })).toBeVisible()
 
-  const decimalUnits = digit(page, 'Decimal', 10, 0)
   await decimalUnits.focus()
+  for (let index = 0; index < 3; index += 1) await page.keyboard.press('Backspace')
   for (const character of '4294967295') await page.keyboard.press(character)
   await page.keyboard.press('ArrowUp')
   await expect(page.getByText(/32 positions hold at most 4294967295/)).toBeVisible()
-  await expect(selector.locator('option[value="16"]')).toHaveAttribute('disabled', '')
+  await expect(slider).toHaveAttribute('aria-valuetext', '32 bits; unavailable widths: 8, 16')
+  await expect(page.getByText('unavailable', { exact: true })).toHaveCount(2)
   await expect(digit(page, 'Hexadecimal', 16, 7)).toHaveValue('F')
-
-  await selector.selectOption('64')
-  await expect(page.getByRole('row', { name: /^Binary/ }).locator('[data-digit="true"]')).toHaveCount(64)
-  await expect(selector.locator('option[value="16"]')).toHaveAttribute('disabled', '')
-  await expect(selector.locator('option[value="32"]')).not.toHaveAttribute('disabled')
-  await expect(page.getByText(/Maximum: 18446744073709551615/)).toBeVisible()
-
-  await decimalUnits.focus()
-  await page.keyboard.press('ArrowUp')
-  await expect(selector.locator('option[value="32"]')).toHaveAttribute('disabled', '')
-  await expect(decimalUnits).toHaveValue('6')
-  await expect(digit(page, 'Decimal', 10, 9)).toHaveValue('4')
-  await expect(digit(page, 'Hexadecimal', 16, 8)).toHaveValue('1')
-  await expect(digit(page, 'Binary', 2, 32)).toHaveValue('1')
-  await expect(page.getByRole('textbox', { name: 'Hexadecimal (base 16) digit at position 15, bits 63–60' })).toBeVisible()
+  await expect(digit(page, 'Binary', 2, 31)).toHaveValue('1')
+  await expect(page.getByRole('textbox', { name: 'Hexadecimal (base 16) digit at position 7, bits 31–28' })).toBeVisible()
 })
 
 test('typing in another base makes that row the source', async ({ page }) => {

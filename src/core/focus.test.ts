@@ -17,8 +17,10 @@ describe('row anchors', () => {
     expect(unitsCellKey(decimal)).toBe('decimal:4')
     expect(unitsCellKey(binary)).toBe('binary:15')
     expect(unitsCellKey(hexadecimal)).toBe('hexadecimal:3')
-    expect(unitsCellKey(binary, 64)).toBe('binary:63')
-    expect(unitsCellKey(hexadecimal, 64)).toBe('hexadecimal:15')
+    expect(unitsCellKey(binary, 8)).toBe('binary:7')
+    expect(unitsCellKey(hexadecimal, 8)).toBe('hexadecimal:1')
+    expect(unitsCellKey(binary, 32)).toBe('binary:31')
+    expect(unitsCellKey(hexadecimal, 32)).toBe('hexadecimal:7')
   })
 
   it('names the container a row breakdown renders into', () => {
@@ -54,7 +56,7 @@ describe('tabFromToggle', () => {
 
   it('skips a closed breakdown for the next row units cell', () => {
     expect(tabFromToggle(decimal, false, false)).toEqual({ kind: 'cell', cellKey: 'binary:15' })
-    expect(tabFromToggle(decimal, false, false, 64)).toEqual({ kind: 'cell', cellKey: 'binary:63' })
+    expect(tabFromToggle(decimal, false, false, 32)).toEqual({ kind: 'cell', cellKey: 'binary:31' })
   })
 
   it('wraps forward from the last row to the first row units cell', () => {

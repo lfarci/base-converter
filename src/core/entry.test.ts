@@ -119,13 +119,10 @@ describe('entryForDigit', () => {
     expect(update?.state.sourceDigits).toBe('65535')
   })
 
-  it('uses the selected width for typing beyond the default 16-bit limit', () => {
+  it('uses the selected width for typing beyond its limit', () => {
     const current = '429496728'
     const stateWithCurrent = state({ sourceDigits: current, hasStartedDigitEntry: true })
-    const boxes = Array.from(current)
-
-    const update32 = entryForDigit(stateWithCurrent, decimal, boxes, '6', 32)
-    const update64 = entryForDigit(stateWithCurrent, decimal, boxes, '6', 64)
+    const update32 = entryForDigit(stateWithCurrent, decimal, Array.from(current), '6', 32)
     const tooLarge32 = entryForDigit(
       state({ sourceDigits: '429496729', hasStartedDigitEntry: true }),
       decimal,
@@ -133,12 +130,15 @@ describe('entryForDigit', () => {
       '6',
       32,
     )
+    const update8 = entryForDigit(state({ sourceDigits: '25', hasStartedDigitEntry: true }), decimal, Array.from('25'), '5', 8)
+    const tooLarge8 = entryForDigit(state({ sourceDigits: '25', hasStartedDigitEntry: true }), decimal, Array.from('25'), '6', 8)
 
     expect(update32?.state.sourceDigits).toBe('4294967286')
     expect(update32?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:9' })
-    expect(update64?.state.sourceDigits).toBe('4294967286')
-    expect(update64?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:19' })
     expect(tooLarge32?.state.rejection).toContain('4294967295')
+    expect(update8?.state.sourceDigits).toBe('255')
+    expect(update8?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:2' })
+    expect(tooLarge8?.state.rejection).toContain('255')
   })
 
   it('rejects a buffer that outgrows the sixteen positions', () => {
@@ -185,11 +185,11 @@ describe('entryForStep', () => {
     expect(update?.state.sourceDigits).toBe('65535')
   })
 
-  it('steps up to the larger selected width limit', () => {
-    const update = entryForStep(state({ sourceDigits: '4294967295' }), decimal, 1n, 64)
+  it('refuses to step above the selected 32-bit width limit', () => {
+    const update = entryForStep(state({ sourceDigits: '4294967295' }), decimal, 1n, 32)
 
-    expect(update?.state.sourceDigits).toBe('4294967296')
-    expect(update?.state.rejection).toBe('')
+    expect(update?.state.sourceDigits).toBe('4294967295')
+    expect(update?.state.rejection).toContain('4294967295')
   })
 
   it('refuses to resurface an old rejection on a step that lands on the limit', () => {
@@ -236,11 +236,11 @@ describe('entryForDeletion', () => {
   })
 
   it('deletes from values above the default width', () => {
-    const value = '18446744073709551615'
-    const update = entryForDeletion(state({ sourceKey: 'decimal', sourceDigits: value }), decimal, Array.from(value), 64)
+    const value = '4294967295'
+    const update = entryForDeletion(state({ sourceKey: 'decimal', sourceDigits: value }), decimal, Array.from(value), 32)
 
-    expect(update?.state.sourceDigits).toBe('1844674407370955161')
-    expect(update?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:19' })
+    expect(update?.state.sourceDigits).toBe('429496729')
+    expect(update?.focus).toEqual({ kind: 'cell', cellKey: 'decimal:9' })
   })
 
   it('does nothing while the row is empty', () => {

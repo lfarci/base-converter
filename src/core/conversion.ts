@@ -1,6 +1,6 @@
 export const DIGIT_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 export const POSITIONS = 16
-export const BIT_WIDTHS = [16, 32, 64] as const
+export const BIT_WIDTHS = [8, 16, 32] as const
 
 export function valueLimitForPositions(positions: number) {
   return 2n ** BigInt(positions) - 1n
@@ -56,6 +56,11 @@ export function parseDigits(text: string, radix: number, limit: bigint = VALUE_L
   }
 
   return value > limit ? { status: 'too-large', value } : { status: 'ok', value }
+}
+
+export function widthsUnableToHold(parsed: ParsedDigits, widths: readonly number[]) {
+  if (parsed.status !== 'ok' && parsed.status !== 'too-large') return []
+  return widths.filter((width) => parsed.value > valueLimitForPositions(width))
 }
 
 export function digitsForValue(value: bigint, radix: number) {

@@ -12,6 +12,7 @@ import {
   positionsForBase,
   valueLimitForPositions,
   VALUE_LIMIT,
+  widthsUnableToHold,
 } from './conversion'
 
 describe('parseDigits', () => {
@@ -26,14 +27,24 @@ describe('parseDigits', () => {
     expect(parseDigits('ff', 16)).toEqual({ status: 'ok', value: 255n })
   })
 
-  it('supports width-specific limits up to unsigned 64-bit values', () => {
+  it('supports width-specific limits at 8, 16, and 32 bits', () => {
+    const limit8 = valueLimitForPositions(8)
     const limit32 = valueLimitForPositions(32)
-    const limit64 = valueLimitForPositions(64)
 
+    expect(parseDigits('255', 10, limit8)).toEqual({ status: 'ok', value: limit8 })
+    expect(parseDigits('256', 10, limit8).status).toBe('too-large')
+    expect(limitMessageForPositions(8)).toContain('255')
     expect(parseDigits('4294967295', 10, limit32)).toEqual({ status: 'ok', value: limit32 })
     expect(parseDigits('4294967296', 10, limit32).status).toBe('too-large')
-    expect(parseDigits('18446744073709551615', 10, limit64)).toEqual({ status: 'ok', value: limit64 })
-    expect(limitMessageForPositions(64)).toContain('18446744073709551615')
+  })
+})
+
+describe('width availability', () => {
+  it('marks every width that cannot hold an ok or too-large parsed value', () => {
+    expect(widthsUnableToHold({ status: 'ok', value: 256n }, [8, 16, 32])).toEqual([8])
+    expect(widthsUnableToHold({ status: 'too-large', value: 2n ** 32n }, [8, 16, 32])).toEqual([8, 16, 32])
+    expect(widthsUnableToHold({ status: 'empty' }, [8, 16, 32])).toEqual([])
+    expect(widthsUnableToHold({ status: 'invalid', char: '?' }, [8, 16, 32])).toEqual([])
   })
 })
 
@@ -52,14 +63,14 @@ describe('digit rendering', () => {
     expect(positionsForBase(2)).toBe(16)
     expect(positionsForBase(8)).toBe(6)
     expect(positionsForBase(16)).toBe(4)
+    expect(positionsForBase(10, 8)).toBe(3)
+    expect(positionsForBase(2, 8)).toBe(8)
+    expect(positionsForBase(8, 8)).toBe(3)
+    expect(positionsForBase(16, 8)).toBe(2)
     expect(positionsForBase(10, 32)).toBe(10)
     expect(positionsForBase(2, 32)).toBe(32)
     expect(positionsForBase(8, 32)).toBe(11)
     expect(positionsForBase(16, 32)).toBe(8)
-    expect(positionsForBase(10, 64)).toBe(20)
-    expect(positionsForBase(2, 64)).toBe(64)
-    expect(positionsForBase(8, 64)).toBe(22)
-    expect(positionsForBase(16, 64)).toBe(16)
   })
 
   it('clips a padded value rather than growing past its places', () => {
@@ -87,8 +98,8 @@ describe('bit spans', () => {
     expect(bitSpanForDigit(8, 0)).toEqual({ low: 0, high: 2 })
     expect(bitSpanForDigit(8, 5)).toEqual({ low: 15, high: 15 })
     expect(bitSpanForDigit(16, 2)).toEqual({ low: 8, high: 11 })
-    expect(bitSpanForDigit(8, 21, 64)).toEqual({ low: 63, high: 63 })
-    expect(bitSpanForDigit(16, 15, 64)).toEqual({ low: 60, high: 63 })
+    expect(bitSpanForDigit(8, 10, 32)).toEqual({ low: 30, high: 31 })
+    expect(bitSpanForDigit(16, 7, 32)).toEqual({ low: 28, high: 31 })
     expect(bitSpanForDigit(10, 0)).toBeNull()
   })
 })
