@@ -98,6 +98,8 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     ['ink on paper (title)', page.locator('h1#page-title')],
     ['ink-soft on paper (intro)', page.locator('section[aria-labelledby="page-title"] > p').first()],
     ['ink-soft on paper (footer note)', page.locator('section > p').last()],
+    ['ink-soft on paper (author credit)', page.getByText(/© .* Logan Farci/)],
+    ['ink on paper (repository link)', page.getByRole('link', { name: 'Source code on GitHub' })],
     ['ink on paper-3 (section header)', page.locator('#result-title')],
         ['ink-soft on well (panel guidance)', page.locator('#result-title + p')],
     ['ink on paper-3 (status strip)', page.locator('#edit-status')],

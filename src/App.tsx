@@ -3,6 +3,7 @@ import { ConversionTable } from './digits/ConversionTable'
 import { BitWidthSlider } from './layout/BitWidthSlider'
 import { HelpDetails } from './layout/HelpDetails'
 import { DoubleRule } from './layout/DoubleRule'
+import { PageFooter } from './layout/PageFooter'
 import { PageHeader } from './layout/PageHeader'
 import { StatusLine } from './layout/StatusLine'
 import { bitSpanForDigit, BIT_WIDTHS, parseDigits, POSITIONS, rows, type Base, type BitSpan, valueLimitForPositions, widthsUnableToHold } from './core/conversion'
@@ -73,15 +74,17 @@ function App() {
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
   const breakdownTogglesRef = useRef(new Map<string, HTMLButtonElement>())
+  const footerLinkRef = useRef<HTMLAnchorElement>(null)
   const pendingFocusRef = useRef<FocusTarget | null>(null)
 
   const focusTarget = (target: FocusTarget) => {
     if (target.kind === 'cell') cellsRef.current.get(target.cellKey)?.focus()
     else if (target.kind === 'toggle') breakdownTogglesRef.current.get(target.baseKey)?.focus()
-    else {
+    else if (target.kind === 'breakdown-term') {
       const breakdown = document.getElementById(target.breakdownId)
       breakdown?.querySelector<HTMLElement>('[data-breakdown-term]')?.focus()
     }
+    else if (target.kind === 'footer-link') footerLinkRef.current?.focus()
   }
 
   // Focus the units place on the active row. Every other box is a read-only readout
@@ -156,7 +159,8 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full px-4 pb-16 text-ink sm:px-6 lg:max-w-[920px]" id="top">
+    <>
+    <main className="mx-auto w-full px-4 pb-8 text-ink sm:px-6 lg:max-w-[920px]" id="top">
       <PageHeader />
 
       <section aria-labelledby="page-title">
@@ -254,6 +258,8 @@ function App() {
         </p>
       </section>
     </main>
+    <PageFooter sourceLinkRef={footerLinkRef} />
+    </>
   )
 }
 

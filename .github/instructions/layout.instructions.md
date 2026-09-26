@@ -6,7 +6,7 @@ applyTo: 'src/layout/**, src/main.tsx, src/index.css'
 # layout/ — page furniture
 
 The parts of the page that are not the converter and not a breakdown: the header, the
-"how to use" details, and the status line. Shared principles and repo-wide layout, types,
+"how to use" details, the status line, and the author/repository footer. Shared principles and repo-wide layout, types,
 styling, and accessibility rules live in `src.instructions.md`; `.tsx`-specific component
 guidance lives in `react-typescript.instructions.md`.
 
@@ -15,6 +15,7 @@ guidance lives in `react-typescript.instructions.md`.
 - `PageHeader.tsx` — the skip-level `Base Converter` link and the tagline.
 - `HelpDetails.tsx` — the collapsed "How to use" copy.
 - `StatusLine.tsx` — the live region that reports the current reading or an error.
+- `PageFooter.tsx` — the author credit and repository link.
 
 Also covered by this file:
 
