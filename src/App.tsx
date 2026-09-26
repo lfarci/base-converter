@@ -169,30 +169,30 @@ function App() {
             Choose an 8-, 16-, or 32-bit width below to set the maximum value. Each position is numbered from zero on the right; open a breakdown to see how each non-zero digit contributes to the same total.
           </p>
 
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-rule-soft bg-paper-2 px-3 py-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="mono-tech text-[12px] font-semibold text-ink" id="bit-width-label">Bit width</span>
-              <BitWidthSlider
-                widths={BIT_WIDTHS}
-                value={positions}
-                disabledWidths={widthsUnableToHold(parsed, BIT_WIDTHS)}
-                onChange={changeWidth}
-              />
-              <output className="inline-flex min-h-8 min-w-11 items-center justify-center border-2 border-frame bg-well px-2 mono-tech text-[12px] font-bold text-ink shadow-[inset_1px_1px_0_rgb(23_43_77_/_0.22),inset_-1px_-1px_0_rgb(255_255_255_/_0.72)]" id="selected-bit-width" aria-label="Selected bit width">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-rule-soft bg-paper-2 px-3 py-3">
+            <span className="basis-full mono-tech text-[12px] font-semibold text-ink sm:basis-auto" id="bit-width-label">Bit width</span>
+            <BitWidthSlider
+              widths={BIT_WIDTHS}
+              value={positions}
+              disabledWidths={widthsUnableToHold(parsed, BIT_WIDTHS)}
+              onChange={changeWidth}
+            />
+            <span className="inline-flex items-center gap-1">
+              <output className="inline-flex min-h-8 min-w-9 items-center justify-center border-2 border-frame bg-well px-1.5 mono-tech text-[12px] font-bold text-ink shadow-[inset_1px_1px_0_rgb(23_43_77_/_0.22),inset_-1px_-1px_0_rgb(255_255_255_/_0.72)]" id="selected-bit-width" aria-label="Selected bit width">
                 {positions}
               </output>
               <span className="mono-tech text-[10px] text-ink-soft">bits</span>
-              <button
-                className="min-h-10 border border-frame bg-paper-3 px-2 mono-tech text-[10px] font-semibold uppercase tracking-[0.04em] text-ink underline decoration-transparent underline-offset-2 hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                type="button"
-                aria-pressed={allBreakdownsOpen}
-                onClick={toggleAllBreakdowns}
-              >
-                {allBreakdownsOpen ? 'Hide all breakdowns' : 'Show all breakdowns'}
-              </button>
-            </div>
-            <p className="m-0 mono-tech text-[11px] text-ink-soft" id="width-guidance">
-              Maximum: {valueLimitForPositions(positions).toString()} · Smaller widths stay unavailable if they cannot hold the current value.
+            </span>
+            <button
+              className="min-h-11 shrink-0 border-2 border-frame bg-paper-3 px-3 mono-tech text-[10px] font-semibold uppercase tracking-[0.04em] text-ink shadow-[2px_2px_0_var(--color-rule),inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] hover:bg-paper-2 hover:shadow-[1px_1px_0_var(--color-rule),inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] active:translate-x-px active:translate-y-px active:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              type="button"
+              aria-pressed={allBreakdownsOpen}
+              onClick={toggleAllBreakdowns}
+            >
+              {allBreakdownsOpen ? 'Hide all breakdowns' : 'Show all breakdowns'}
+            </button>
+            <p className="basis-full m-0 text-left mono-tech text-[11px] text-ink-soft" id="width-guidance">
+              Maximum: {valueLimitForPositions(positions).toLocaleString('en-US')} · Smaller widths stay unavailable if they cannot hold the current value.
             </p>
           </div>
 

@@ -81,11 +81,6 @@ body {
   margin: 0;
 }
 
-button,
-input {
-  font: inherit;
-}
-
 ::selection {
   color: var(--color-ink);
   background: color-mix(in srgb, var(--color-focus) 20%, var(--color-paper-2));
