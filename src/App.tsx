@@ -184,7 +184,7 @@ function App() {
               <span className="mono-tech text-[10px] text-ink-soft">bits</span>
             </span>
             <button
-              className="min-h-11 shrink-0 border-2 border-frame bg-paper-3 px-3 mono-tech text-[10px] font-semibold uppercase tracking-[0.04em] text-ink shadow-[2px_2px_0_var(--color-rule),inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] hover:bg-paper-2 hover:shadow-[1px_1px_0_var(--color-rule),inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] active:translate-x-px active:translate-y-px active:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              className="ml-auto min-h-11 shrink-0 border-2 border-frame bg-paper-3 px-3 mono-tech text-[10px] font-semibold uppercase tracking-[0.04em] text-ink shadow-[2px_2px_0_var(--color-rule),inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] hover:bg-paper-2 hover:shadow-[1px_1px_0_var(--color-rule),inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] active:translate-x-px active:translate-y-px active:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               type="button"
               aria-pressed={allBreakdownsOpen}
               onClick={toggleAllBreakdowns}
