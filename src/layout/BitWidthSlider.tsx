@@ -5,9 +5,10 @@ type BitWidthSliderProps = {
   value: number
   disabledWidths: readonly number[]
   onChange: (width: number) => void
+  onUnavailableWidthAttempt: () => void
 }
 
-export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitWidthSliderProps) {
+export function BitWidthSlider({ widths, value, disabledWidths, onChange, onUnavailableWidthAttempt }: BitWidthSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -28,16 +29,21 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
       const nearestDistance = nearestWidth === undefined ? Infinity : Math.abs(widths.indexOf(nearestWidth) - index)
       if (currentDistance <= nearestDistance) nearestWidth = width
     }
-    if (nearestWidth !== undefined) onChange(nearestWidth)
+    if (nearestWidth !== undefined && nearestWidth !== value) onChange(nearestWidth)
+    onUnavailableWidthAttempt()
   }
   const moveToNextAvailableWidth = (direction: -1 | 1) => {
+    const targetWidth = widths[valueIndex + direction]
+    const attemptedUnavailableWidth = targetWidth !== undefined && isUnavailable(targetWidth)
     for (let index = valueIndex + direction; index >= 0 && index < widths.length; index += direction) {
       const width = widths[index]
       if (width !== undefined && !isUnavailable(width)) {
         onChange(width)
+        if (attemptedUnavailableWidth) onUnavailableWidthAttempt()
         return
       }
     }
+    if (attemptedUnavailableWidth) onUnavailableWidthAttempt()
   }
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowRight' || event.key === 'ArrowUp') moveToNextAvailableWidth(1)

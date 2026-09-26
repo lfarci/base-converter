@@ -37,7 +37,7 @@ test('width slider snaps with keyboard and pointer, and breakdowns toggle in bul
   await expect(selectedWidthLabel).toHaveCSS('font-weight', '700')
   await expect(selectedWidthLabel).toHaveCSS('text-decoration-line', 'none')
   await expect(slider.getByText('8', { exact: true })).toHaveCSS('color', 'rgb(77, 91, 113)')
-  await expect(page.locator('#width-guidance')).toContainText('Maximum: 65,535')
+  await expect(page.locator('#width-guidance')).toHaveText('Maximum: 65,535 · Smaller widths are disabled when the current value does not fit.')
   await expect(page.getByText('Bit width', { exact: true })).toHaveCount(0)
   await expect(readout).toHaveCSS('min-width', '36px')
   await expect(readout).toHaveCSS('height', '32px')
@@ -424,6 +424,7 @@ test('slider marks widths unavailable when the current value cannot fit', async 
   for (const character of '256') await page.keyboard.press(character)
 
   await expect(slider).toHaveAttribute('aria-valuetext', '16 bits; unavailable widths: 8')
+  const guidance = page.locator('#width-guidance')
   const unavailableWidth = slider.getByText('8', { exact: true })
   await expect(unavailableWidth).toHaveCSS('color', 'rgb(77, 91, 113)')
   await expect(slider.getByText('unavailable', { exact: true })).toHaveCount(0)
@@ -437,6 +438,16 @@ test('slider marks widths unavailable when the current value cannot fit', async 
   await slider.focus()
   await page.keyboard.press('ArrowLeft')
   await expect(slider).toHaveAttribute('aria-valuenow', '16')
+  await expect(guidance).toHaveCSS('color', 'rgb(165, 39, 54)')
+  await expect(guidance).toHaveCSS('color', 'rgb(77, 91, 113)', { timeout: 1500 })
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(guidance).toHaveCSS('transition-property', 'none')
+  await slider.click({ position: { x: 1, y: 16 } })
+  await expect(guidance).toHaveCSS('color', 'rgb(165, 39, 54)')
+  await expect(guidance).toHaveCSS('color', 'rgb(77, 91, 113)', { timeout: 1500 })
+
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.keyboard.press('ArrowRight')
   await expect(slider).toHaveAttribute('aria-valuenow', '32')
   await expect(slider).toHaveAttribute('aria-valuetext', '32 bits; unavailable widths: 8')

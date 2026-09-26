@@ -24,6 +24,8 @@ function App() {
   const [openBreakdowns, setOpenBreakdowns] = useState<Set<string>>(() => new Set())
   const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
   const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
+  const [widthFeedback, setWidthFeedback] = useState(false)
+  const widthFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const sourceBase = sourceBaseFor(entry.sourceKey)
   const parsed = parseDigits(entry.sourceDigits, sourceBase.radix, valueLimitForPositions(positions))
@@ -32,11 +34,27 @@ function App() {
   const allBreakdownsOpen = rows.every(({ key }) => openBreakdowns.has(key))
 
   const changeWidth = (width: number) => {
+    if (widthFeedbackTimerRef.current) clearTimeout(widthFeedbackTimerRef.current)
+    widthFeedbackTimerRef.current = null
+    setWidthFeedback(false)
     setPositions(width)
     setHoveredBits(null)
     setFocusedBits(null)
     setEntry((current) => ({ ...current, rejection: '' }))
   }
+
+  const showWidthFeedback = () => {
+    if (widthFeedbackTimerRef.current) clearTimeout(widthFeedbackTimerRef.current)
+    setWidthFeedback(true)
+    widthFeedbackTimerRef.current = setTimeout(() => {
+      widthFeedbackTimerRef.current = null
+      setWidthFeedback(false)
+    }, 750)
+  }
+
+  useEffect(() => () => {
+    if (widthFeedbackTimerRef.current) clearTimeout(widthFeedbackTimerRef.current)
+  }, [])
 
   const toggleBreakdown = (key: string) => {
     setOpenBreakdowns((current) => {
@@ -176,6 +194,7 @@ function App() {
                 value={positions}
                 disabledWidths={widthsUnableToHold(parsed, BIT_WIDTHS)}
                 onChange={changeWidth}
+                onUnavailableWidthAttempt={showWidthFeedback}
               />
               <span className="relative -top-3 inline-flex items-center gap-0.5">
                 <output className="inline-flex h-8 min-w-9 items-center justify-center border-2 border-frame bg-well px-1.5 mono-tech text-[12px] font-bold text-ink shadow-[inset_1px_1px_0_rgb(23_43_77_/_0.22),inset_-1px_-1px_0_rgb(255_255_255_/_0.72)]" id="selected-bit-width" aria-label="Selected bit width">
@@ -192,8 +211,8 @@ function App() {
             >
               {allBreakdownsOpen ? 'Hide all breakdowns' : 'Show all breakdowns'}
             </button>
-            <p className="basis-full m-0 text-left mono-tech text-[11px] text-ink-soft" id="width-guidance">
-              Maximum: {valueLimitForPositions(positions).toLocaleString('en-US')} · Smaller widths stay unavailable if they cannot hold the current value.
+            <p className={`basis-full m-0 text-left mono-tech text-[11px] transition-colors duration-150 motion-reduce:transition-none ${widthFeedback ? 'text-danger' : 'text-ink-soft'}`} id="width-guidance">
+              Maximum: {valueLimitForPositions(positions).toLocaleString('en-US')} · Smaller widths are disabled when the current value does not fit.
             </p>
           </div>
 
