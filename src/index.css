@@ -117,20 +117,69 @@ input {
   border-radius: 2px;
   border: 1px solid var(--color-rule);
   background-color: var(--color-well);
+  transition-property: background-color, border-color, box-shadow;
   /* Recessed: dark top-left, light bottom-right — a field cut into the sheet. */
   box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.24), inset -1px -1px 0 rgb(255 255 255 / 0.65);
+}
+
+.digit-box[data-rolling] {
+  color: transparent;
+  background-color: color-mix(in srgb, var(--digit-accent) 6%, var(--color-well));
+  transition: background-color 140ms ease-out;
+}
+
+.digit-roll {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2.5rem;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--color-ink);
+}
+
+.digit-roll-previous,
+.digit-roll-current {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.digit-roll-previous {
+  animation: digit-roll-out 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.digit-roll-current {
+  transform: translateY(-100%);
+  animation: digit-roll-in 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes digit-roll-out {
+  to { transform: translateY(100%); }
+}
+
+@keyframes digit-roll-in {
+  to { transform: translateY(0); }
 }
 
 /* The writable box is the most raised/selected cell: a deeper recess, the accent-derived
    2px frame (raw accent fails 3:1 as a boundary), and an accent tint. The tint stays on
    the lighter panel surface so the frame still clears 3:1 against its own tint. The 55/45
    mix matches the breakdown term bar and the highlight ring, so every accent-ink boundary on
-   the page uses one ratio. */
+   the page uses one ratio.
+
+   It also carries a persistent *write line*: a heavier rule along the bottom edge, the way
+   a worksheet blank is ruled. That is what separates "this is a field you fill in" from
+   "this is a printed readout" — a frame and a tint alone still read as a printed cell,
+   because every box in the row is framed. It is drawn as a bottom inset shadow rather than
+   a heavier bottom border so the box geometry and the 2px border width stay exactly as the
+   table relies on them. It reuses `--digit-frame`, the one boundary colour already
+   measured at >=3:1 against this tint, so no new contrast pair is introduced. */
 .digit-box[data-editable] {
   border-width: 2px;
   border-color: var(--digit-frame);
   background-color: color-mix(in srgb, var(--digit-accent) 8%, var(--color-paper-2));
-  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.22), inset -1px -1px 0 rgb(255 255 255 / 0.7), inset 0 3px 0 rgb(23 43 77 / 0.06);
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.22), inset -1px -1px 0 rgb(255 255 255 / 0.7), inset 0 3px 0 rgb(23 43 77 / 0.06), inset 0 -3px 0 var(--digit-frame);
 }
 
 /* The highlight ring composes with whichever bevel is underneath instead of replacing it. */
@@ -149,8 +198,15 @@ input {
   outline-offset: 1px;
 }
 
+/* A writable cell that is also highlighted still has to show its write line: the
+   `[data-highlighted]` skin above replaces the whole composed shadow, so the line is
+   restated here. Both variants keep the single composed shadow the skin contract requires. */
+.digit-box[data-editable][data-highlighted] {
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.16), inset -1px -1px 0 rgb(255 255 255 / 0.65), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink)), inset 0 -3px 0 var(--digit-frame);
+}
+
 .digit-box[data-editable][data-highlighted]:focus-visible {
-  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.28), inset -1px -1px 0 rgb(255 255 255 / 0.7), inset 0 3px 0 rgb(23 43 77 / 0.08), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink));
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.28), inset -1px -1px 0 rgb(255 255 255 / 0.7), inset 0 3px 0 rgb(23 43 77 / 0.08), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink)), inset 0 -3px 0 var(--digit-frame);
 }
 
 /* Preference support. Each block restates component appearance for a user setting, which
@@ -160,6 +216,23 @@ input {
 @media (prefers-reduced-motion: reduce) {
   input[data-digit],
   th[scope='row'] button {
+    transition: none;
+  }
+  .digit-roll {
+    display: none;
+  }
+  .digit-box[data-rolling] {
+    color: var(--color-ink);
+  }
+}
+
+@media (forced-colors: active) {
+  .digit-roll {
+    display: none;
+  }
+  .digit-box[data-rolling] {
+    color: FieldText;
+    background-color: Field;
     transition: none;
   }
 }
@@ -176,8 +249,10 @@ input {
   input[data-editable] {
     background-color: var(--color-paper-2) !important;
     border-color: var(--color-ink) !important;
-    box-shadow: none !important;
-  }
+      /* The user's own contrast preference flattens the bevels, so the persistent shape cue
+         that marks a box as writeable is restated as a single ink rule rather than dropped. */
+      box-shadow: inset 0 -3px 0 var(--color-ink) !important;
+    }
   input[data-highlighted],
   .place-value-label[data-highlighted],
   [data-breakdown-term][data-highlighted] {
@@ -198,7 +273,12 @@ input {
   }
   input[data-editable] {
     border-color: CanvasText !important;
-  }
+      /* In forced colors every box-shadow is forced to `none`, so the write line cannot be a
+         shadow there. It becomes a heavier bottom edge instead: still a shape/weight cue,
+         still system-coloured, and still the thing that separates the writeable cell from the
+         readouts that keep a single 1px BorderColor frame. */
+      border-bottom-width: 4px !important;
+    }
   input[data-highlighted],
   .place-value-label[data-highlighted],
   [data-breakdown-term][data-highlighted] {
