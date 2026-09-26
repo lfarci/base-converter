@@ -1,6 +1,15 @@
 import { expect, test, type Locator } from '@playwright/test'
 import { digit } from './helpers'
 
+const luminanceOf = (colour: string) => {
+  const channels = colour.match(/[\d.]+/g)!.slice(0, 3).map(Number)
+  const [r, g, b] = channels.map((channel) => {
+    const value = colour.startsWith('color(') ? channel : channel / 255
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
 // The revamp has to keep every state readable without relying on hue: the source row, the
 // writable cell, and the three highlight relationships each carry a shape or weight cue.
 
@@ -204,6 +213,23 @@ test('the page reads as layered sheets, not one flat fill', async ({ page }) => 
   // the same colour the layered-sheet cue is gone, which is the whole point of the change.
   const tones = [pageTone, panel, band, field]
   expect(new Set(tones).size, `four distinct surfaces, got ${tones.join(' | ')}`).toBe(4)
+})
+
+test('the breakdown uses a lighter inset surface with restrained elevation', async ({ page }) => {
+  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+
+  const section = page.locator('#decimal-place-value-breakdown section')
+  const field = digit(page, 'Decimal', 10, 4)
+  const [sectionStyle, fieldBackground] = await Promise.all([
+    section.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return { background: style.backgroundColor, shadow: style.boxShadow }
+    }),
+    field.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ])
+
+  expect(luminanceOf(sectionStyle.background)).toBeGreaterThan(luminanceOf(fieldBackground))
+  expect(sectionStyle.shadow).toMatch(/2px 2px 0px 0px/)
 })
 
 test('the masthead uses the utility name and retains its positional-notation tagline', async ({ page }) => {
