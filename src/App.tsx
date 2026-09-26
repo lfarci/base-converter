@@ -56,15 +56,17 @@ function App() {
   // surface can put the caret back without hunting through the DOM.
   const cellsRef = useRef(new Map<string, HTMLInputElement>())
   const breakdownTogglesRef = useRef(new Map<string, HTMLButtonElement>())
+  const footerLinkRef = useRef<HTMLAnchorElement>(null)
   const pendingFocusRef = useRef<FocusTarget | null>(null)
 
   const focusTarget = (target: FocusTarget) => {
     if (target.kind === 'cell') cellsRef.current.get(target.cellKey)?.focus()
     else if (target.kind === 'toggle') breakdownTogglesRef.current.get(target.baseKey)?.focus()
-    else {
+    else if (target.kind === 'breakdown-term') {
       const breakdown = document.getElementById(target.breakdownId)
       breakdown?.querySelector<HTMLElement>('[data-breakdown-term]')?.focus()
     }
+    else if (target.kind === 'footer-link') footerLinkRef.current?.focus()
   }
 
   // Focus the units place on the active row. Every other box is a read-only readout
@@ -237,7 +239,7 @@ function App() {
         </p>
       </section>
     </main>
-    <PageFooter />
+    <PageFooter sourceLinkRef={footerLinkRef} />
     </>
   )
 }

@@ -18,7 +18,7 @@ test('arrow and page keys step the value in the active base', async ({ page }) =
   await expect(decimalUnits).toBeFocused()
 })
 
-test('Tab reaches each base title between the units digits in row order', async ({ page }) => {
+test('Tab reaches each base title and then continues to the footer link', async ({ page }) => {
   const rows = [
     { name: 'Decimal', radix: 10 },
     { name: 'Binary', radix: 2 },
@@ -38,9 +38,22 @@ test('Tab reaches each base title between the units digits in row order', async 
       await expect(digit(page, nextRow.name, nextRow.radix, 0)).toBeFocused()
     } else {
       await page.keyboard.press('Tab')
-      await expect(digit(page, rows[0].name, rows[0].radix, 0)).toBeFocused()
+      await expect(page.getByRole('link', { name: 'Source code on GitHub' })).toBeFocused()
     }
   }
+})
+
+test('Tab reaches the footer link after the last open breakdown term', async ({ page }) => {
+  const hexadecimalUnits = digit(page, 'Hexadecimal', 16, 0)
+  await hexadecimalUnits.focus()
+  await page.keyboard.press('A')
+  await page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' }).click()
+
+  const lastTerm = page.locator('#hexadecimal-place-value-breakdown [data-breakdown-term]').last()
+  await page.keyboard.press('Tab')
+  await expect(lastTerm).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: 'Source code on GitHub' })).toBeFocused()
 })
 
 test('Shift+Tab moves backward from units digits to the previous row base title', async ({ page }) => {

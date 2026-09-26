@@ -1,3 +1,9 @@
+import type { Ref } from 'react'
+
+type PageFooterProps = {
+  sourceLinkRef: Ref<HTMLAnchorElement>
+}
+
 function GitHubMark() {
   return (
     <svg aria-hidden="true" className="shrink-0" fill="currentColor" height="16" viewBox="0 0 24 24" width="16">
@@ -6,7 +12,7 @@ function GitHubMark() {
   )
 }
 
-export function PageFooter() {
+export function PageFooter({ sourceLinkRef }: PageFooterProps) {
   return (
     <footer
       aria-label="Site information"
@@ -16,6 +22,7 @@ export function PageFooter() {
       <a
         className="inline-flex min-h-11 w-fit items-center gap-2 text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
         href="https://github.com/lfarci/base-converter"
+        ref={sourceLinkRef}
       >
         <GitHubMark />
         Source code on GitHub

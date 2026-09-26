@@ -6,6 +6,7 @@ export type FocusTarget =
   | { kind: 'cell'; cellKey: string }
   | { kind: 'toggle'; baseKey: string }
   | { kind: 'breakdown-term'; breakdownId: string }
+  | { kind: 'footer-link' }
 
 // Digit boxes register themselves as `${base.key}:${index}`, counted from the most
 // significant place, so a row's units box is its last cell.
@@ -20,12 +21,12 @@ export function breakdownIdFor(base: Base) {
 }
 
 // Tab walks down the page: a row's units box, then its toggle, then any open breakdown
-// terms, then the next row's units box. Forward navigation wraps from the last row to the
-// first; Shift+Tab still leaves the table when moving backward from the first row.
+// terms, then the next row's units box. Forward navigation continues to the footer after
+// the last row.
 function rowControlTarget(base: Base, direction: -1 | 1, positions: number): FocusTarget | null {
   const index = rows.findIndex((row) => row.key === base.key)
-  const targetRow = rows[index + direction] ?? (direction === 1 ? rows[0] : undefined)
-  if (!targetRow) return null
+  const targetRow = rows[index + direction]
+  if (!targetRow) return direction === 1 ? { kind: 'footer-link' } : null
 
   return direction === 1
     ? { kind: 'cell', cellKey: unitsCellKey(targetRow, positions) }
