@@ -129,13 +129,18 @@ test('the converter panel is framed with a heavier top edge and a hard offset sh
   expect(shadow, `panel shadow: ${shadow}`).toMatch(/\d+px \d+px 0px 0px/)
 })
 
-test('a focused row title uses weight instead of a frame', async ({ page }) => {
+test('a focused row title uses an underline instead of a frame', async ({ page }) => {
   const title = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  const restWeight = await title.evaluate((element) => getComputedStyle(element).fontWeight)
+  const restDecorationColor = await title.evaluate((element) => getComputedStyle(element).textDecorationColor)
 
-  await expect(title).toHaveCSS('font-weight', '400')
-  await title.focus()
+  await digit(page, 'Decimal', 10, 0).focus()
+  await page.keyboard.press('Tab')
   await expect(title).toBeFocused()
-  await expect(title).toHaveCSS('font-weight', '700')
+
+  await expect(title).toHaveCSS('font-weight', restWeight)
+  await expect(title).toHaveCSS('text-decoration-line', 'underline')
+  await expect.poll(() => title.evaluate((element) => getComputedStyle(element).textDecorationColor)).not.toBe(restDecorationColor)
   await expect(title).toHaveCSS('outline-style', 'none')
 })
 

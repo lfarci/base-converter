@@ -20,10 +20,11 @@ export function breakdownIdFor(base: Base) {
 }
 
 // Tab walks down the page: a row's units box, then its toggle, then any open breakdown
-// terms, then the next row's units box. Shift reverses it, so leaving a row backwards lands
-// on the previous row's toggle.
+// terms, then the next row's units box. Forward navigation wraps from the last row to the
+// first; Shift+Tab still leaves the table when moving backward from the first row.
 function rowControlTarget(base: Base, direction: -1 | 1): FocusTarget | null {
-  const targetRow = rows[rows.findIndex((row) => row.key === base.key) + direction]
+  const index = rows.findIndex((row) => row.key === base.key)
+  const targetRow = rows[index + direction] ?? (direction === 1 ? rows[0] : undefined)
   if (!targetRow) return null
 
   return direction === 1

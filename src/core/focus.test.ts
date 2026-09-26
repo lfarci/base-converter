@@ -54,8 +54,8 @@ describe('tabFromToggle', () => {
     expect(tabFromToggle(decimal, false, false)).toEqual({ kind: 'cell', cellKey: 'binary:15' })
   })
 
-  it('stops at the bottom of the page walking forward from the last row', () => {
-    expect(tabFromToggle(hexadecimal, false, false)).toBeNull()
+  it('wraps forward from the last row to the first row units cell', () => {
+    expect(tabFromToggle(hexadecimal, false, false)).toEqual({ kind: 'cell', cellKey: 'decimal:4' })
   })
 })
 
@@ -71,5 +71,9 @@ describe('tabFromBreakdownTerm', () => {
 
   it('walks forward from the last term to the next row units cell', () => {
     expect(tabFromBreakdownTerm(decimal, false, false, true)).toEqual({ kind: 'cell', cellKey: 'binary:15' })
+  })
+
+  it('wraps forward from the last row breakdown to the first row units cell', () => {
+    expect(tabFromBreakdownTerm(hexadecimal, false, false, true)).toEqual({ kind: 'cell', cellKey: 'decimal:4' })
   })
 })
