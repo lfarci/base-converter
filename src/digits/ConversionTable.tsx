@@ -34,7 +34,7 @@ export function ConversionTable({ displayed, value, highlightedBits, onHoverPosi
     <div className="border border-frame">
       <div className="flex min-h-11 items-center justify-end border-b border-rule-soft bg-paper-3 px-3">
         <button
-          className="min-h-11 cursor-pointer rounded-sm px-1 mono-tech text-[10px] font-bold uppercase tracking-[0.12em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="min-h-11 cursor-pointer rounded-sm px-1 text-xs text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           type="button"
           ref={registerBreakdownControl}
           onClick={toggleAllBreakdowns}
