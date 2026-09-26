@@ -32,8 +32,10 @@ test('forced colors keeps the source bar and the highlight cues visible', async 
   const cellFill = await bar.evaluate((element) => getComputedStyle(element.parentElement!).backgroundColor)
   expect(contrast(barFill, cellFill), `source bar in forced colors: ${barFill} on ${cellFill}`).toBeGreaterThanOrEqual(3)
 
-  const units = digit(page, 'Decimal', 10, 0)
-  await expect(units).toHaveCSS('border-top-color', barFill)
+  // Chromium drops `box-shadow` entirely under forced colors, so the write line becomes a border
+    // weight cue there. It is checked on the writable box only; the readout is asserted below.
+    const units = digit(page, 'Decimal', 10, 0)
+    await expect(units).toHaveCSS('border-bottom-width', '4px')
 
   const tensDigit = digit(page, 'Decimal', 10, 1)
   await tensDigit.hover()
@@ -52,14 +54,18 @@ const sample = (locator: Locator) => locator.evaluate((element) => {
     return colour
   }
   const style = getComputedStyle(element)
-  return {
-    text: style.color,
-    border: style.borderTopColor,
-    outline: style.outlineColor,
-    fill: rising(element),
-    around: rising(element.parentElement),
-  }
-})
+    // The write line is the *last* colour on the composed shadow; the ring and bevel precede it.
+    const colours = style.boxShadow.match(/color\([^)]+\)|rgba?\([^)]+\)/g)
+    return {
+      text: style.color,
+      border: style.borderTopColor,
+      outline: style.outlineColor,
+      shadow: style.boxShadow,
+      writeLine: style.boxShadow.includes('-3px') ? colours?.[colours.length - 1] ?? null : null,
+      fill: rising(element),
+      around: rising(element.parentElement),
+    }
+  })
 
 test('every documented text pair clears 4.5:1 and every boundary clears 3:1', async ({ page }) => {
   await page.goto('./')
@@ -87,6 +93,7 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     // The digits sit on the inset field surface, which is the darkest tone any digit glyph
       // lands on, so it is measured directly rather than inferred from the label above it.
       const readout = digit(page, 'Decimal', 10, 4)
+      await expect(readout).not.toHaveCSS('border-bottom-width', '4px')
       const readoutInk = await readout.evaluate((element) => ({
         text: getComputedStyle(element).color,
         fill: getComputedStyle(element).backgroundColor,
@@ -137,8 +144,21 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
           contrast(writable.border, writable.fill),
           `writable frame inside (${base}, ${state}): ${writable.border} on ${writable.fill}`,
         ).toBeGreaterThanOrEqual(3)
-      }
-    }
+                // The write line is the persistent cue that this cell is the writable one, so it is
+                        // held to the same 3:1 boundary it is drawn against its own tint. It is painted as an
+                        // inset shadow, which `borderTopColor` above cannot see, so it is read out of the
+                        // composed shadow and asserted to actually be there — a missing rule would otherwise
+                        // silently skip the measurement.
+                        expect(
+                          writable.writeLine,
+                          `writable write line should be painted, but box-shadow was: ${writable.shadow}`,
+                        ).not.toBeNull()
+                        expect(
+                          contrast(writable.writeLine!, writable.fill),
+                          `writable write line (${base}, ${state}): ${writable.writeLine} on ${writable.fill}`,
+                        ).toBeGreaterThanOrEqual(3)
+                      }
+                    }
 
   // The cooler converter surround is a separate framed surface against the paper desk.
   const panel = await page.locator('#result-title').locator('xpath=..').evaluate((element) => ({
