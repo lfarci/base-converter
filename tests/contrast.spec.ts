@@ -41,6 +41,14 @@ test('forced colors keeps the source bar and the highlight cues visible', async 
   await tensDigit.hover()
   await expect(tensDigit.locator('xpath=..').locator('.place-value-label')).toHaveCSS('text-decoration-line', 'underline')
   await expect(tensDigit).toHaveCSS('outline-style', 'solid')
+
+  for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
+    const marker = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` }).locator('svg')
+    const { fill } = await sample(marker)
+    const stroke = await marker.evaluate((element) => getComputedStyle(element).stroke)
+    expect(stroke, `${base} disclosure marker should remain visible in forced colors`).not.toBe('none')
+    expect(contrast(stroke, fill), `${base} forced-color outline: ${stroke} on ${fill}`).toBeGreaterThanOrEqual(3)
+  }
 })
 
 const sample = (locator: Locator) => locator.evaluate((element) => {
@@ -97,7 +105,7 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     ['ink-soft on paper-3 (help copy)', page.locator('details p')],
     ['ink-soft on paper-3 (column headers)', page.locator('th[scope="col"]').first()],
     ['ink on paper-2 (base name)', page.locator('th[scope="row"] button span').first()],
-    ['ink-soft on paper-2 (radix)', page.locator('th[scope="row"] span > span').last()],
+    ['ink-soft on paper-2 (radix)', page.getByRole('row', { name: /^Decimal/ }).locator('th[scope="row"] button > span:nth-child(2)')],
     ['ink-soft on paper-2 (place-value label)', page.locator('.place-value-label').first()],
   ]
 
@@ -106,7 +114,15 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     expect(contrast(colour, fill), `${name}: ${colour} on ${fill}`).toBeGreaterThanOrEqual(4.5)
   }
 
-    // The digits sit on the inset field surface, which is the darkest tone any digit glyph
+  for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
+    const marker = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` }).locator('svg')
+    const { fill } = await sample(marker)
+    const stroke = await marker.evaluate((element) => getComputedStyle(element).stroke)
+    expect(stroke, `${base} disclosure marker should have an outline`).not.toBe('none')
+    expect(contrast(stroke, fill), `${base} disclosure marker outline: ${stroke} on ${fill}`).toBeGreaterThanOrEqual(3)
+  }
+
+  // The digits sit on the inset field surface, which is the darkest tone any digit glyph
       // lands on, so it is measured directly rather than inferred from the label above it.
       const readout = digit(page, 'Decimal', 10, 4)
       await expect(readout).not.toHaveCSS('border-bottom-width', '4px')

@@ -106,6 +106,17 @@ input {
   font-feature-settings: "zero" 1, "tnum" 1;
 }
 
+/* The disclosure rotates toward the breakdown to make its state change legible. */
+.base-disclosure {
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.base-disclosure[data-expanded] {
+  transform: rotate(90deg);
+}
+
 /* Digit-box skins.
    These are classes rather than inline styles because a highlighted cell and a focused
    cell can both apply at once: the accent-derived colours come in as inline custom
@@ -222,6 +233,9 @@ input {
    and these rules stay unlayered so they beat Tailwind's utility layer and any inline
    colour a component computes from a per-base accent. */
 @media (prefers-reduced-motion: reduce) {
+  .base-disclosure {
+    transition: none;
+  }
   input[data-digit],
   th[scope='row'] button {
     transition: none;
@@ -274,6 +288,11 @@ input {
    ring on every highlighted cell. Text underlines are already part of the label and term
    skins, which is what carries the cue there. */
 @media (forced-colors: active) {
+  .base-disclosure {
+    color: CanvasText !important;
+    fill: CanvasText !important;
+    stroke: CanvasText !important;
+  }
   /* A forced background colour is dropped to Canvas, which is also what the cell behind
      the bar becomes, so the bar has to take a system *text* colour to stay visible. */
   th[scope='row'][data-source] > div {

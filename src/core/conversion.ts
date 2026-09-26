@@ -21,10 +21,10 @@ export type Base = {
 }
 
 export const rows: Base[] = [
-  { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e8aa42' },
-  { key: 'binary', name: 'Binary', radix: 2, accent: '#4381e6' },
-  { key: 'octal', name: 'Octal', radix: 8, accent: '#37a88d' },
-  { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#9170d7' },
+  { key: 'decimal', name: 'Decimal', radix: 10, accent: '#e69f00' },
+  { key: 'binary', name: 'Binary', radix: 2, accent: '#0072b2' },
+  { key: 'octal', name: 'Octal', radix: 8, accent: '#009e73' },
+  { key: 'hexadecimal', name: 'Hexadecimal', radix: 16, accent: '#cc79a7' },
 ]
 
 export type ParsedDigits =
