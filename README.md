@@ -55,7 +55,7 @@ Changed readout digits roll briefly from top to bottom with a subtle accent tint
 | `src/core/` | The rules, in plain TypeScript. `conversion.ts` — the value math, digit alphabet, and base definitions. `entry.ts` — the entry state machine. `display.ts` — the derived page data. `focus.ts` — where Tab goes next. No React, no DOM. |
 | `src/digits/` | The digit-entry feature: the scrolling table, one row per base, one box per place, and the base header. |
 | `src/breakdown/` | The place-value breakdown shown under an expanded row. |
-| `src/layout/` | Page furniture: the header, the "how to use" details, and the status line. |
+| `src/layout/` | Page furniture: the header, the "how to use" details, the status line, and the site footer with author credit and GitHub link. |
 | `src/App.tsx` | Page structure: it holds the state, wires the features together, and turns a focus target into a real node. |
 
 ## Checks

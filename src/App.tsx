@@ -3,6 +3,7 @@ import { ConversionTable } from './digits/ConversionTable'
 import { BitWidthSlider } from './layout/BitWidthSlider'
 import { HelpDetails } from './layout/HelpDetails'
 import { DoubleRule } from './layout/DoubleRule'
+import { PageFooter } from './layout/PageFooter'
 import { PageHeader } from './layout/PageHeader'
 import { StatusLine } from './layout/StatusLine'
 import { bitSpanForDigit, BIT_WIDTHS, parseDigits, POSITIONS, rows, type Base, type BitSpan, valueLimitForPositions, widthsUnableToHold } from './core/conversion'
@@ -138,7 +139,8 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full px-4 pb-16 text-ink sm:px-6 lg:max-w-[920px]" id="top">
+    <>
+    <main className="mx-auto w-full px-4 pb-8 text-ink sm:px-6 lg:max-w-[920px]" id="top">
       <PageHeader />
 
       <section aria-labelledby="page-title">
@@ -235,6 +237,8 @@ function App() {
         </p>
       </section>
     </main>
+    <PageFooter />
+    </>
   )
 }
 

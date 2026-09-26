@@ -8,6 +8,16 @@ test.beforeEach(async ({ page }) => {
   await page.goto('./')
 })
 
+test('the site footer credits the author and links to the source repository', async ({ page }) => {
+  const footer = page.getByRole('contentinfo', { name: 'Site information' })
+
+  await expect(footer.getByText(`© ${new Date().getFullYear()} Logan Farci`)).toBeVisible()
+  await expect(footer.getByRole('link', { name: 'Source code on GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/lfarci/base-converter',
+  )
+})
+
 test('the writable units box reads as a worksheet cell and the readouts do not', async ({ page }) => {
   const units = digit(page, 'Decimal', 10, 0)
   await expect(units).toHaveCSS('border-top-width', '2px')
