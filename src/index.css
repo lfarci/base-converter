@@ -143,12 +143,12 @@ input {
 }
 
 .digit-roll-previous {
-  animation: digit-roll-out 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: digit-roll-out 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .digit-roll-current {
   transform: translateY(-100%);
-  animation: digit-roll-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: digit-roll-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes digit-roll-out {

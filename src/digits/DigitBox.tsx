@@ -52,7 +52,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
     }
     motionPreference.addEventListener('change', clearForReducedMotion)
 
-    const timeout = window.setTimeout(() => setRoll(null), 180)
+    const timeout = window.setTimeout(() => setRoll(null), 280)
     return () => {
       motionPreference.removeEventListener('change', clearForReducedMotion)
       window.clearTimeout(timeout)
@@ -87,7 +87,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
         aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}`}
       />
       {roll && (
-        <span className="digit-roll" aria-hidden="true">
+        <span className="digit-roll mono-tech text-base font-normal leading-[1.5] tracking-[0.02em]" aria-hidden="true">
           <span className="digit-roll-previous">{roll.from}</span>
           <span className="digit-roll-current">{roll.to}</span>
         </span>
