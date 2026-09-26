@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { ConversionTable } from './digits/ConversionTable'
 import { HelpDetails } from './layout/HelpDetails'
+import { DoubleRule } from './layout/DoubleRule'
 import { PageHeader } from './layout/PageHeader'
 import { StatusLine } from './layout/StatusLine'
 import { bitSpanForDigit, parseDigits, type Base, type BitSpan } from './core/conversion'
@@ -117,33 +118,32 @@ function App() {
       <PageHeader />
 
       <section aria-labelledby="page-title">
-              <p className="mono-tech mt-6 text-[11px] uppercase tracking-[0.14em] text-ink-soft">
+        <p className="mono-tech mt-6 text-[11px] uppercase tracking-[0.14em] text-ink-soft">
           Positional notation worksheet
         </p>
-              <h1 className="m-0 mt-2 font-display text-[clamp(28px,4.4vw,40px)] leading-[1.06] font-bold tracking-[-0.01em]" id="page-title">
+        <h1 className="m-0 mt-2 font-display text-[clamp(28px,4.4vw,40px)] leading-[1.06] font-bold tracking-[-0.01em]" id="page-title">
           One number, any base
         </h1>
-              {/* The heavy rule that closes a chapter heading. A div, not a <p>: P2 binds the
-                  first and last direct-child <p> of this section to the eyebrow and the footer. */}
-              <div aria-hidden="true" className="mt-3 h-[3px] w-[56px] bg-ink" />
-              <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-ink-soft">
-                Type into a row's units box. That row becomes the base you are writing in, and every other row rewrites itself as you go.
-              </p>
+        {/* P2 binds the first and last direct-child <p> of this section to the eyebrow and the footer. */}
+        <DoubleRule className="mt-3 w-14" />
+        <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-ink-soft">
+          Type into a row's units box. That row becomes the base you are writing in, and every other row rewrites itself as you go.
+        </p>
 
-              <HelpDetails />
+        <HelpDetails />
 
-              {/* The framed instrument: a darker frame all round, a heavier top edge, and a hard
-                  offset shadow with zero blur — a printed frame cue, never a modern soft shadow. */}
-              <div className="mt-4 rounded-[3px] border border-frame border-t-[3px] border-t-frame bg-paper-2 shadow-[2px_2px_0_var(--color-rule)]">
-                <h2 className="m-0 border-b-2 border-frame bg-paper-3 px-3 py-2 mono-tech text-[11px] font-bold uppercase tracking-[0.14em] text-ink" id="result-title">
-                  The same value, written out
-                </h2>
-                {/* Stays the immediate next sibling of the h2 (P1), so the callout skin lives on
-                    this <p> itself rather than on a wrapper. */}
-                <p className="m-0 max-w-[60ch] border-b border-rule-soft border-l-[3px] border-l-frame bg-well px-3 py-3 text-[13px] leading-relaxed text-ink-soft">
-                  <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
-                  Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
-                </p>
+        {/* The framed instrument: a darker frame all round, a heavier top edge, and a hard
+            offset shadow with zero blur — a printed frame cue, never a modern soft shadow. */}
+        <div className="mt-4 rounded-[3px] border border-frame border-t-[3px] border-t-frame bg-panel shadow-[2px_2px_0_var(--color-rule)]">
+          <h2 className="m-0 border-b-2 border-frame bg-paper-3 px-3 py-2 mono-tech text-[11px] font-bold uppercase tracking-[0.14em] text-ink" id="result-title">
+            The same value, written out
+          </h2>
+          {/* Stays the immediate next sibling of the h2 (P1), so the callout skin lives on
+              this <p> itself rather than on a wrapper. */}
+          <p className="m-0 border-b border-rule-soft border-l-[3px] border-l-frame bg-well py-3 pl-5 pr-3 text-[13px] leading-snug text-ink-soft">
+            <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
+            Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
+          </p>
 
           <ConversionTable
             displayed={displayed}

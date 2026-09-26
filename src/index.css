@@ -29,19 +29,21 @@
 }
 
 /* The design tokens. Tailwind 4 is CSS-first, so every token here is also a utility:
-   `bg-paper`, `text-ink-soft`, `border-rule-soft`, `font-mono`, `outline-focus`, …
+   `bg-paper`, `bg-panel`, `text-ink-soft`, `border-rule-soft`, `font-mono`, …
 
-   Four surfaces, each with one role, spaced along a single warm cream axis so they read as
-   layered sheets rather than one flat fill. Measured lightness (L*) and the tightest text
-   pair on each:
-     --color-paper-2  L*98.3  panel/sheet (lighter than the page, so the panel sits on it)
+   The worksheet stays warm, while the converter's surrounding instrument panel shifts cooler.
+   Inside it, the page, sheet, field and band retain their separate roles:
      --color-paper    L*93.6  page (the desk)
+     --color-panel    L*92.5  cool grey-cream instrument surround
+     --color-paper-2  L*98.3  sheet (row surfaces and selected-cell tints)
      --color-well     L*88.8  field/inset (readouts, callouts, worked calculations)
      --color-paper-3  L*84.5  band (table header, title bar, status strip, help control)
-   Every adjacent pair differs by >=4.3 L* and every documented text pair clears 4.5:1 —
-   the tightest is ink-soft on --color-paper-3 at 4.60, so the band may not go darker. */
+   Every documented text pair clears 4.5:1; the panel has no text directly on it, and its
+   structural frame clears 3:1. The tightest documented pair is ink-soft on --color-paper-3
+   at 4.60, so the band may not go darker. */
 @theme {
   --color-paper: #f5ecd6;
+  --color-panel: #e8eae7;
   --color-paper-2: #fdfaf0;
   --color-paper-3: #ded3ac;
   --color-well: #e9dfbd;
@@ -113,10 +115,10 @@ input {
    Unlayered, so they beat Tailwind's utility layer. */
 .digit-box {
   border-radius: 2px;
-  border: 1px solid var(--color-rule-soft);
+  border: 1px solid var(--color-rule);
   background-color: var(--color-well);
   /* Recessed: dark top-left, light bottom-right — a field cut into the sheet. */
-  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.16), inset -1px -1px 0 rgb(255 255 255 / 0.65);
+  box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.24), inset -1px -1px 0 rgb(255 255 255 / 0.65);
 }
 
 /* The writable box is the most raised/selected cell: a deeper recess, the accent-derived

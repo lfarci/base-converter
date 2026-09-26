@@ -12,9 +12,9 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   const instructions = page.locator('details').filter({ has: page.getByText('How to use', { exact: true }) })
   await expect(instructions).not.toHaveAttribute('open', '')
   await instructions.locator('summary').click()
-  await expect(instructions).toContainText('Tab moves from each row\'s units digit to its base-name toggle, which opens or closes that row\'s breakdown')
-  await expect(instructions).toContainText('Backspace and Delete remove the newest digit')
-  await expect(instructions).toContainText('16-bit limit')
+  await expect(instructions).toContainText('Type in the rightmost box of any row to use that base. The other rows update automatically.')
+  await expect(instructions).toContainText('Open a row’s breakdown to see how each digit contributes to the value.')
+  await expect(instructions).toContainText('Keyboard: ↑ / ↓ change the value by one. Backspace/Delete remove a digit.')
 
   for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
     const toggle = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })

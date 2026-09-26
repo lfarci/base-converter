@@ -24,9 +24,9 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
         <div className="absolute left-0 top-0 h-full w-[3px] bg-ink" aria-hidden="true" />
       )}
       <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
-        <span className="size-2 shrink-0 rounded-[1px]" style={{ backgroundColor: base.accent }} aria-hidden="true" />
+        <span className="size-[7px] shrink-0 border border-frame" style={{ backgroundColor: base.accent }} aria-hidden="true" />
         <button
-          className="group inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[13px] font-bold text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="group inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[14px] font-bold tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           type="button"
           ref={toggleRef}
           onKeyDown={onToggleKeyDown}
@@ -38,7 +38,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
         >
           <span className="whitespace-nowrap">{base.name}</span>
         </button>
-        <span className="mono-tech w-5 text-right text-[11px] text-ink-soft">{base.radix}</span>
+        <span className="mono-tech w-5 text-right text-[10px] text-ink-soft">{base.radix}</span>
       </span>
     </th>
   )

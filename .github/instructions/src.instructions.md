@@ -53,17 +53,17 @@ file holds what they share so it is stated once. Adapted from
   the web. The period supplies the structure, materials, framing, and ornament; the modern
   browser supplies the crisp rendering, contrast, and focus behaviour. Never reproduce a
   dated usability limitation.
-- Four surface tones carry four distinct roles, so the page reads as layered sheets rather
-  than one flat fill: `--color-paper` (page — the desk), `--color-paper-2` (panel and sheet —
-  lighter than the page, so the panel sits on it), `--color-paper-3` (band — table header,
-  panel title bar, status strip, help control), and `--color-well` (field — inset readouts,
-  the instructional callout, the worked calculation). Frames use `--color-frame`; text uses
-  `--color-ink` and `--color-ink-soft`; rules use `--color-rule` and `--color-rule-soft`;
-  `--color-focus` is the focus ring and `--color-danger` is errors. Serif display type is for
-  prose and base names; `.mono-tech` is for digits, positions, bit ranges, radices,
-  equations, and the status strip. Reuse those values instead of inventing near duplicates
-  (DRY). Every colour lives in the `@theme` block in `index.css`; do not write ad-hoc hex
-  values in components.
+- Five surface tones carry five distinct roles, so the page reads as layered sheets rather
+  than one flat fill: `--color-paper` (page — the desk), `--color-panel` (cool grey-cream
+  instrument surround), `--color-paper-2` (sheet — row surfaces and selected-cell tints),
+  `--color-paper-3` (band — table header, panel title bar, status strip, help control), and
+  `--color-well` (field — inset readouts, the instructional callout, the worked calculation).
+  Frames use `--color-frame`; text uses `--color-ink` and `--color-ink-soft`; rules use
+  `--color-rule` and `--color-rule-soft`; `--color-focus` is the focus ring and
+  `--color-danger` is errors. Serif display type is for prose and base names; `.mono-tech` is
+  for digits, positions, bit ranges, radices, equations, and the status strip. Reuse those
+  values instead of inventing near duplicates (DRY). Every colour lives in the `@theme`
+  block in `index.css`; do not write ad-hoc hex values in components.
 - Faint values are for decorative rules only. Every text pair is normal size and must clear
   4.5:1 against its actual surface; boundaries, focus rings, and the source-row margin bar
   must clear 3:1. Per-base accents are decoration and tint, never the sole boundary or state

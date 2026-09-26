@@ -7,16 +7,17 @@ function MonitorMark() {
       aria-hidden="true"
       className="shrink-0"
       fill="none"
-      height="20"
+      height="28"
       shapeRendering="crispEdges"
       stroke="currentColor"
-      strokeWidth="1.25"
-      viewBox="0 0 20 20"
-      width="20"
+      strokeWidth="2"
+      viewBox="0 0 28 28"
+      width="28"
     >
-      <rect height="12" rx="1" width="18" x="1" y="2.5" />
-      <rect height="7" width="14" x="3" y="5" />
-      <rect height="3" rx="0.5" width="18" x="1" y="15.5" />
+      <rect height="17" width="24" x="2" y="2" />
+      <rect height="11" width="18" x="5" y="5" />
+      <rect height="3" width="8" x="10" y="19" />
+      <rect height="3" width="16" x="6" y="23" />
     </svg>
   )
 }
@@ -27,7 +28,7 @@ export function PageHeader() {
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <a className="flex items-center gap-2 font-display text-[21px] leading-none font-bold tracking-[-0.4px] text-ink no-underline" href="#top" tabIndex={-1}>
           <MonitorMark />
-          basewise
+          Base Converter
         </a>
         <span className="mono-tech text-[11px] uppercase tracking-[0.12em] text-ink-soft">positional notation, plainly</span>
       </div>
