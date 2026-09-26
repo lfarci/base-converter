@@ -8,7 +8,7 @@ export function HelpDetails() {
         <span className="mono-tech text-[11px] uppercase tracking-[0.12em] text-ink">How to use</span>
       </summary>
       <p className="mb-0 max-w-[65ch] border-t border-rule-soft px-3 py-3 leading-relaxed">
-        Type in the rightmost box of any row to use that base. The other rows update automatically. Open a row’s breakdown to see how each digit contributes to the value. Keyboard: ↑ / ↓ change the value by one. Backspace/Delete remove a digit.
+        Type in the rightmost box of any row to use that base. The other rows update automatically. Choose a 16-, 32-, or 64-bit width above the table to change the maximum value. Smaller widths are unavailable when they would truncate the current value. Open a row’s breakdown to see how each digit contributes to the value. Keyboard: ↑ / ↓ change the value by one. Backspace/Delete remove a digit.
       </p>
     </details>
   )

@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 
 test('place-value help stays concise and each row breakdown is collapsed by default', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Digits and place values', exact: true })).toBeVisible()
-  await expect(page.getByText('Each position is numbered from zero on the right and labeled under its box.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Choose a 16-, 32-, or 64-bit width below to set the maximum value.', { exact: false })).toBeVisible()
 
   const instructions = page.locator('details').filter({ has: page.getByText('How to use', { exact: true }) })
   await expect(instructions).not.toHaveAttribute('open', '')
@@ -253,6 +253,39 @@ test('hexadecimal letter digits show their decimal value and symbol in each term
   await expect(term.first()).toHaveAttribute('aria-label', '16 to the power of 1 times 10 (A) equals 160')
   await expect(term.first()).toHaveText('161 × 10 (A) = 160')
   await expect(breakdown.getByRole('math').last()).toHaveText('160 → 160')
+})
+
+test('bit-width selector expands the cap and keeps the value intact', async ({ page }) => {
+  const selector = page.getByRole('combobox', { name: 'Bit width' })
+  await expect(selector).toHaveValue('16')
+
+  await selector.selectOption('32')
+  const binary32 = page.getByRole('row', { name: /^Binary/ })
+  await expect(binary32.locator('[data-digit="true"]')).toHaveCount(32)
+  await expect(page.getByRole('textbox', { name: 'Binary (base 2) digit at position 31' })).toBeVisible()
+
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  await decimalUnits.focus()
+  for (const character of '4294967295') await page.keyboard.press(character)
+  await page.keyboard.press('ArrowUp')
+  await expect(page.getByText(/32 positions hold at most 4294967295/)).toBeVisible()
+  await expect(selector.locator('option[value="16"]')).toHaveAttribute('disabled', '')
+  await expect(digit(page, 'Hexadecimal', 16, 7)).toHaveValue('F')
+
+  await selector.selectOption('64')
+  await expect(page.getByRole('row', { name: /^Binary/ }).locator('[data-digit="true"]')).toHaveCount(64)
+  await expect(selector.locator('option[value="16"]')).toHaveAttribute('disabled', '')
+  await expect(selector.locator('option[value="32"]')).not.toHaveAttribute('disabled')
+  await expect(page.getByText(/Maximum: 18446744073709551615/)).toBeVisible()
+
+  await decimalUnits.focus()
+  await page.keyboard.press('ArrowUp')
+  await expect(selector.locator('option[value="32"]')).toHaveAttribute('disabled', '')
+  await expect(decimalUnits).toHaveValue('6')
+  await expect(digit(page, 'Decimal', 10, 9)).toHaveValue('4')
+  await expect(digit(page, 'Hexadecimal', 16, 8)).toHaveValue('1')
+  await expect(digit(page, 'Binary', 2, 32)).toHaveValue('1')
+  await expect(page.getByRole('textbox', { name: 'Hexadecimal (base 16) digit at position 15, bits 63–60' })).toBeVisible()
 })
 
 test('typing in another base makes that row the source', async ({ page }) => {

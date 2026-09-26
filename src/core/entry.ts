@@ -2,13 +2,13 @@ import {
   digitRange,
   digitValue,
   digitsForValue,
-  LIMIT_MESSAGE,
+  limitMessageForPositions,
   pageStep,
   parseDigits,
   pickTypedChar,
   POSITIONS,
   rows,
-  VALUE_LIMIT,
+  valueLimitForPositions,
   type Base,
 } from './conversion'
 import { unitsCellKey, type FocusTarget } from './focus'
@@ -71,7 +71,7 @@ function reject(state: EntryState, rejection: string): EntryUpdate {
 
 // Only the units box is writable, so an edit appends the newest digit to the active value
 // rather than replacing the place the caret happens to sit in.
-export function entryForDigit(state: EntryState, base: Base, boxes: string[], raw: string): EntryUpdate | null {
+export function entryForDigit(state: EntryState, base: Base, boxes: string[], raw: string, positions = POSITIONS): EntryUpdate | null {
   if (raw.length === 0) return null
 
   const char = pickTypedChar(raw, boxes[boxes.length - 1])
@@ -80,7 +80,8 @@ export function entryForDigit(state: EntryState, base: Base, boxes: string[], ra
     return reject(state, `Enter digits ${digitRange(base.radix)} for base ${base.radix}.`)
   }
 
-  const current = parseDigits(boxes.join(''), base.radix)
+  const limit = valueLimitForPositions(positions)
+  const current = parseDigits(boxes.join(''), base.radix, limit)
   const currentDigits = !state.hasStartedDigitEntry
     ? ''
     : base.key === state.sourceKey
@@ -89,14 +90,14 @@ export function entryForDigit(state: EntryState, base: Base, boxes: string[], ra
         ? digitsForValue(current.value, base.radix).join('')
         : ''
   const nextDigits = `${currentDigits}${char}`
-  const nextValue = parseDigits(nextDigits, base.radix)
-  if (nextDigits.length > POSITIONS || nextValue.status === 'too-large') {
-    return reject(state, LIMIT_MESSAGE)
+  const nextValue = parseDigits(nextDigits, base.radix, limit)
+  if (nextDigits.length > positions || nextValue.status === 'too-large') {
+    return reject(state, limitMessageForPositions(positions))
   }
 
   return {
     state: { sourceKey: base.key, sourceDigits: nextDigits, hasStartedDigitEntry: true, rejection: '' },
-    focus: { kind: 'cell', cellKey: unitsCellKey(base) },
+    focus: { kind: 'cell', cellKey: unitsCellKey(base, positions) },
   }
 }
 
@@ -104,8 +105,9 @@ export function entryForDigit(state: EntryState, base: Base, boxes: string[], ra
 // counts as zero, so the first step up starts at 1 and the first step down has nothing to
 // give. Stepping up past the limit leaves the value alone and raises the same message the
 // row would raise on its own.
-export function entryForStep(state: EntryState, base: Base, delta: bigint): EntryUpdate | null {
-  const parsed = parseDigits(state.sourceDigits, base.radix)
+export function entryForStep(state: EntryState, base: Base, delta: bigint, positions = POSITIONS): EntryUpdate | null {
+  const limit = valueLimitForPositions(positions)
+  const parsed = parseDigits(state.sourceDigits, base.radix, limit)
   if (delta === 0n || parsed.status === 'invalid') return null
 
   const current = parsed.status === 'empty' ? 0n : parsed.value
@@ -113,7 +115,7 @@ export function entryForStep(state: EntryState, base: Base, delta: bigint): Entr
   if (target < 0n) {
     return { state: { ...state, rejection: '', sourceDigits: '0', hasStartedDigitEntry: false }, focus: null }
   }
-  if (target > VALUE_LIMIT) return reject(state, LIMIT_MESSAGE)
+  if (target > limit) return reject(state, limitMessageForPositions(positions))
 
   return {
     state: { ...state, rejection: '', sourceDigits: target.toString(base.radix), hasStartedDigitEntry: false },
@@ -124,8 +126,8 @@ export function entryForStep(state: EntryState, base: Base, delta: bigint): Entr
 // Delete and Backspace drop the newest digit. While digits are still being typed they drop
 // the last one typed; once a value has been stepped or formatted they drop the last place
 // of the number itself, which is a division rather than a truncation of the text.
-export function entryForDeletion(state: EntryState, base: Base, boxes: string[]): EntryUpdate | null {
-  const current = parseDigits(boxes.join(''), base.radix)
+export function entryForDeletion(state: EntryState, base: Base, boxes: string[], positions = POSITIONS): EntryUpdate | null {
+  const current = parseDigits(boxes.join(''), base.radix, valueLimitForPositions(positions))
   if (current.status === 'invalid' || current.status === 'too-large') return null
 
   const nextValue = current.status === 'empty' ? 0n : current.value / BigInt(base.radix)
@@ -133,7 +135,7 @@ export function entryForDeletion(state: EntryState, base: Base, boxes: string[])
   const nextDigits = isTypedEntryBuffer
     ? state.sourceDigits.slice(0, -1)
     : digitsForValue(nextValue, base.radix).join('')
-  const nextDigitsValue = parseDigits(nextDigits, base.radix)
+  const nextDigitsValue = parseDigits(nextDigits, base.radix, valueLimitForPositions(positions))
   const isEmpty = nextDigitsValue.status !== 'ok' || nextDigitsValue.value === 0n
 
   return {
@@ -143,6 +145,6 @@ export function entryForDeletion(state: EntryState, base: Base, boxes: string[])
       hasStartedDigitEntry: isTypedEntryBuffer && !isEmpty,
       rejection: '',
     },
-    focus: { kind: 'cell', cellKey: unitsCellKey(base) },
+    focus: { kind: 'cell', cellKey: unitsCellKey(base, positions) },
   }
 }

@@ -3,13 +3,14 @@ import { bitRangeForDigit, type Base } from '../core/conversion'
 type PlaceValueLabelProps = {
   base: Base
   position: number
+  positions: number
   highlighted: boolean
 }
 
 // The caption under a digit box: its place number, plus the bits the digit represents in
 // the bases whose digits are whole groups of binary bits.
-export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabelProps) {
-  const bitRange = bitRangeForDigit(base.radix, position)
+export function PlaceValueLabel({ base, position, positions, highlighted }: PlaceValueLabelProps) {
+  const bitRange = bitRangeForDigit(base.radix, position, positions)
 
   return (
     <span

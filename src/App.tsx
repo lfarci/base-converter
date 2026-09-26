@@ -4,7 +4,7 @@ import { HelpDetails } from './layout/HelpDetails'
 import { DoubleRule } from './layout/DoubleRule'
 import { PageHeader } from './layout/PageHeader'
 import { StatusLine } from './layout/StatusLine'
-import { bitSpanForDigit, parseDigits, type Base, type BitSpan } from './core/conversion'
+import { bitSpanForDigit, BIT_WIDTHS, parseDigits, POSITIONS, type Base, type BitSpan, valueLimitForPositions } from './core/conversion'
 import { displayedRows, sourceBaseFor, statusFor } from './core/display'
 import {
   entryForDeletion,
@@ -19,13 +19,14 @@ import { breakdownIdFor, tabFromBreakdownTerm, tabFromToggle, tabFromUnits, unit
 
 function App() {
   const [entry, setEntry] = useState<EntryState>(initialEntryState)
+  const [positions, setPositions] = useState<number>(POSITIONS)
   const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
   const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
 
   const sourceBase = sourceBaseFor(entry.sourceKey)
-  const parsed = parseDigits(entry.sourceDigits, sourceBase.radix)
-  const { error, message, value } = statusFor(parsed, sourceBase, entry.rejection)
-  const displayed = displayedRows(entry.sourceKey, entry.sourceDigits, value)
+  const parsed = parseDigits(entry.sourceDigits, sourceBase.radix, valueLimitForPositions(positions))
+  const { error, message, value } = statusFor(parsed, sourceBase, entry.rejection, positions)
+  const displayed = displayedRows(entry.sourceKey, entry.sourceDigits, value, positions)
 
   // Every digit box registers itself here by base and place, so the editable
   // surface can put the caret back without hunting through the DOM.
@@ -45,7 +46,7 @@ function App() {
   // Focus the units place on the active row. Every other box is a read-only readout
   // that never takes the caret — not by mouse, not by Tab, not by typing — so each
   // row still exposes exactly one editable stop.
-  const focusEditable = () => focusTarget({ kind: 'cell', cellKey: unitsCellKey(sourceBase) })
+  const focusEditable = () => focusTarget({ kind: 'cell', cellKey: unitsCellKey(sourceBase, positions) })
 
   const focusEditableRef = useRef(focusEditable)
   useEffect(() => {
@@ -102,9 +103,9 @@ function App() {
     if (!action) return
 
     event.preventDefault()
-    if (action.kind === 'digit') apply(entryForDigit(entry, base, boxes, action.raw))
-    else if (action.kind === 'delete') apply(entryForDeletion(entry, base, boxes))
-    else apply(entryForStep(entry, sourceBase, action.delta))
+    if (action.kind === 'digit') apply(entryForDigit(entry, base, boxes, action.raw, positions))
+    else if (action.kind === 'delete') apply(entryForDeletion(entry, base, boxes, positions))
+    else apply(entryForStep(entry, sourceBase, action.delta, positions))
   }
 
   const onTab = (event: KeyboardEvent, target: FocusTarget | null) => {
@@ -142,17 +143,48 @@ function App() {
               this <p> itself rather than on a wrapper. */}
           <p className="m-0 border-b border-rule-soft border-l-[3px] border-l-frame bg-well py-3 pl-5 pr-3 text-[13px] leading-snug text-ink-soft">
             <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
-            Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
+            Choose a 16-, 32-, or 64-bit width below to set the maximum value. Each position is numbered from zero on the right; open a breakdown to see how each non-zero digit contributes to the same total.
           </p>
 
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-rule-soft bg-paper-2 px-3 py-3">
+            <label className="flex items-center gap-2 mono-tech text-[12px] font-semibold text-ink" htmlFor="bit-width">
+              Bit width
+              <select
+                className="min-h-9 rounded-sm border border-frame bg-paper-3 px-2 text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                id="bit-width"
+                value={positions}
+                onChange={(event) => {
+                  setPositions(Number(event.target.value))
+                  setHoveredBits(null)
+                  setFocusedBits(null)
+                  setEntry((current) => ({ ...current, rejection: '' }))
+                }}
+              >
+                {BIT_WIDTHS.map((width) => (
+                  <option
+                    key={width}
+                    value={width}
+                    disabled={parsed.status === 'ok' && parsed.value > valueLimitForPositions(width)}
+                  >
+                    {width} bits
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="mono-tech text-[11px] text-ink-soft">
+              Maximum: {valueLimitForPositions(positions).toString()} · Smaller widths stay unavailable if they cannot hold the current value.
+            </span>
+          </div>
+
           <ConversionTable
+            positions={positions}
             displayed={displayed}
             value={value}
             highlightedBits={hoveredBits ?? focusedBits}
-            onHoverPosition={(base, position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position))}
-            onFocusPosition={(base, position) => setFocusedBits(position === null ? null : bitSpanForDigit(base.radix, position))}
+            onHoverPosition={(base, position) => setHoveredBits(position === null ? null : bitSpanForDigit(base.radix, position, positions))}
+            onFocusPosition={(base, position) => setFocusedBits(position === null ? null : bitSpanForDigit(base.radix, position, positions))}
             onDigitKeyDown={onCellKeyDown}
-            onEditDigit={(base, boxes, raw) => apply(entryForDigit(entry, base, boxes, raw))}
+            onEditDigit={(base, boxes, raw) => apply(entryForDigit(entry, base, boxes, raw, positions))}
             registerCell={(cellKey) => (node) => {
               if (node) cellsRef.current.set(cellKey, node)
               else cellsRef.current.delete(cellKey)
@@ -161,14 +193,14 @@ function App() {
               if (node) breakdownTogglesRef.current.set(key, node)
               else breakdownTogglesRef.current.delete(key)
             }}
-            onTabFromUnits={(event, base) => onTab(event, tabFromUnits(base, event.shiftKey))}
+            onTabFromUnits={(event, base) => onTab(event, tabFromUnits(base, event.shiftKey, positions))}
             onTabFromToggle={(event, base, breakdownOpen) => onTab(
               event,
-              tabFromToggle(base, event.shiftKey, breakdownOpen && hasBreakdownTerm(base)),
+              tabFromToggle(base, event.shiftKey, breakdownOpen && hasBreakdownTerm(base), positions),
             )}
             onTabFromBreakdownTerm={(event, base, isFirst, isLast) => onTab(
               event,
-              tabFromBreakdownTerm(base, event.shiftKey, isFirst, isLast),
+              tabFromBreakdownTerm(base, event.shiftKey, isFirst, isLast, positions),
             )}
           />
 
