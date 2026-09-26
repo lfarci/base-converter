@@ -175,6 +175,14 @@ input {
    a heavier bottom border so the box geometry and the 2px border width stay exactly as the
    table relies on them. It reuses `--digit-frame`, the one boundary colour already
    measured at >=3:1 against this tint, so no new contrast pair is introduced. */
+.digit-box[data-padding-zero] {
+  color: var(--color-ink-soft);
+  font-weight: 400;
+}
+
+.digit-box[data-significant] {
+  font-weight: 700;
+}
 .digit-box[data-editable] {
   border-width: 2px;
   border-color: var(--digit-frame);
