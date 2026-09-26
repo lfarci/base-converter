@@ -93,7 +93,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
       onLostPointerCapture={onPointerUp}
     >
       <div className="absolute inset-y-0 left-[18px] right-[18px]" ref={trackRef}>
-        <div aria-hidden="true" className="absolute -inset-x-3 top-0 h-11 border-2 border-frame bg-well shadow-[inset_2px_2px_0_rgb(23_43_77_/_0.24),inset_-2px_-2px_0_rgb(255_255_255_/_0.7)]" data-slider-channel="true" />
+        <div aria-hidden="true" className="absolute -inset-x-3 top-0 h-10 border-2 border-frame bg-well shadow-[inset_2px_2px_0_rgb(23_43_77_/_0.24),inset_-2px_-2px_0_rgb(255_255_255_/_0.7)]" data-slider-channel="true" />
         {widths.map((width, index) => {
           const position = `${(index / (widths.length - 1)) * 100}%`
           const unavailable = isUnavailable(width)
@@ -131,7 +131,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
           data-slider-thumb="true"
           style={{ transform: `translateX(${(valueIndex / (widths.length - 1)) * 100}%)` }}
         >
-          <span className="absolute left-0 top-[10px] flex h-6 w-6 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_2px_2px_0_rgb(255_255_255_/_0.95),inset_-2px_-2px_0_rgb(23_43_77_/_0.4)] group-hover:bg-paper-2">
+          <span className="absolute left-0 top-[6px] flex h-7 w-7 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_2px_2px_0_rgb(255_255_255_/_0.95),inset_-2px_-2px_0_rgb(23_43_77_/_0.4)] group-hover:bg-paper-2">
             {isUnavailable(value) ? '!' : ''}
           </span>
         </span>
