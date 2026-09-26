@@ -1,4 +1,4 @@
-import { bitRangeForDigit, type Base } from '../core/conversion'
+import { bitRangeForDigit, bitsPerDigit, type Base } from '../core/conversion'
 
 type PlaceValueLabelProps = {
   base: Base
@@ -11,6 +11,7 @@ type PlaceValueLabelProps = {
 // the bases whose digits are whole groups of binary bits.
 export function PlaceValueLabel({ base, position, positions, highlighted }: PlaceValueLabelProps) {
   const bitRange = bitRangeForDigit(base.radix, position, positions)
+  const compactBitRange = positions > 16 && bitsPerDigit(base.radix) < 4
 
   return (
     <span
@@ -33,7 +34,11 @@ export function PlaceValueLabel({ base, position, positions, highlighted }: Plac
         : undefined}
     >
       <span className="text-[11px] font-semibold text-ink">{position}</span>
-      {bitRange && <span className="mono-tech text-[9px] font-normal text-ink-soft">{bitRange}</span>}
+      {bitRange && (
+        <span aria-label={bitRange} className="mono-tech text-[9px] font-normal text-ink-soft">
+          {compactBitRange ? bitRange.replace(/^bits? /, '') : bitRange}
+        </span>
+      )}
     </span>
   )
 }

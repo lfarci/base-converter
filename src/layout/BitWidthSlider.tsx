@@ -75,10 +75,10 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
   return (
     <div
       id="bit-width-slider"
-      className="group relative h-16 w-[min(220px,18vw)] cursor-pointer touch-pan-y select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-[min(220px,45vw)]"
+      className="group relative h-16 w-[min(274px,25vw)] cursor-pointer touch-pan-y select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-[min(274px,38vw)]"
       role="slider"
       tabIndex={0}
-      aria-labelledby="bit-width-label"
+      aria-label="Bit width"
       aria-orientation="horizontal"
       aria-valuemin={widths[0]}
       aria-valuemax={widths[widths.length - 1]}
