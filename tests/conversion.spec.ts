@@ -62,6 +62,7 @@ test('width slider snaps with keyboard and pointer, and breakdowns toggle in bul
   expect(channelBounds.x).toBeLessThanOrEqual(thumbBounds.x)
   expect(channelBounds.x + channelBounds.width).toBeGreaterThanOrEqual(thumbBounds.x + thumbBounds.width)
   const bulkButton = page.getByRole('button', { name: 'Show all breakdowns' })
+  await expect(bulkButton).toHaveCSS('cursor', 'pointer')
   const guidanceBounds = await page.locator('#width-guidance').boundingBox()
   const buttonBounds = await bulkButton.boundingBox()
   const widthControlBounds = await slider.boundingBox()
