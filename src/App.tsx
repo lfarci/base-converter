@@ -141,8 +141,13 @@ function App() {
           {/* Stays the immediate next sibling of the h2 (P1), so the callout skin lives on
               this <p> itself rather than on a wrapper. */}
           <p className="m-0 border-b border-rule-soft border-l-[3px] border-l-frame bg-well py-3 pl-5 pr-3 text-[13px] leading-snug text-ink-soft">
-            <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
-            Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
+            <span role="math" aria-label="27 in base 10 equals 11011 in base 2 equals 33 in base 8 equals 1B in base 16" className="mono-tech block text-[13px] leading-relaxed text-ink">
+              27₁₀ = 11011₂ = 33₈ = 1B₁₆
+            </span>
+            <span className="mt-2 block">
+              <span aria-hidden="true" className="mono-tech mr-1.5 text-ink">▸</span>
+              Each position is numbered from zero on the right and labeled under its box. Open the breakdown below to see how each non-zero digit contributes to the same total.
+            </span>
           </p>
 
           <ConversionTable
