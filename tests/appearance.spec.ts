@@ -42,6 +42,19 @@ test('readout digit rolls are disabled when reduced motion is requested', async 
   await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
 })
 
+test('an active readout roll cancels when reduced motion is enabled', async ({ page }) => {
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+
+  await decimalUnits.focus()
+  await page.keyboard.press('2')
+  await expect(binaryReadout).toHaveAttribute('data-rolling', 'true')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await expect(binaryReadout).toHaveValue('1')
+})
+
 test('the source row carries data-source and a margin bar, and both follow the row you type in', async ({ page }) => {
   const sources = page.locator('th[scope="row"][data-source]')
 

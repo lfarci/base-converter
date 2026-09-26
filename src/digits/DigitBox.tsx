@@ -46,8 +46,17 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
   useEffect(() => {
     if (!roll) return
 
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const clearForReducedMotion = (event: MediaQueryListEvent) => {
+      if (event.matches) setRoll(null)
+    }
+    motionPreference.addEventListener('change', clearForReducedMotion)
+
     const timeout = window.setTimeout(() => setRoll(null), 180)
-    return () => window.clearTimeout(timeout)
+    return () => {
+      motionPreference.removeEventListener('change', clearForReducedMotion)
+      window.clearTimeout(timeout)
+    }
   }, [roll])
 
   return (
