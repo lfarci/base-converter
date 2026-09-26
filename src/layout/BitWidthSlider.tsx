@@ -116,12 +116,6 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
               style={{ left: `${(index / (widths.length - 1)) * 100}%` }}
             >
               <span className={value === width ? 'font-bold' : ''}>{width}</span>
-              {unavailable && (
-                <span className="mt-1 block text-[9px] uppercase tracking-[-0.04em]">
-                  <span className="sm:hidden">!</span>
-                  <span className="hidden sm:inline">unavailable</span>
-                </span>
-              )}
             </span>
           )
         })}
@@ -131,9 +125,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
           data-slider-thumb="true"
           style={{ transform: `translateX(${(valueIndex / (widths.length - 1)) * 100}%)` }}
         >
-          <span className="absolute left-0 top-0 flex h-8 w-8 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_2px_2px_0_rgb(255_255_255_/_0.95),inset_-2px_-2px_0_rgb(23_43_77_/_0.4)] group-hover:bg-paper-2">
-            {isUnavailable(value) ? '!' : ''}
-          </span>
+          <span className="absolute left-0 top-0 flex h-8 w-8 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_2px_2px_0_rgb(255_255_255_/_0.95),inset_-2px_-2px_0_rgb(23_43_77_/_0.4)] group-hover:bg-paper-2" />
         </span>
       </div>
     </div>
