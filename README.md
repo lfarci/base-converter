@@ -11,4 +11,4 @@ npm install
 npm run dev
 ```
 
-See [DESIGN.md](DESIGN.md) for design details, behavior, and project notes. The project is licensed under the [MIT License](LICENSE); bundled fonts retain their own license.
+See [DESIGN.md](DESIGN.md) for design details, behavior, and project notes. The project is licensed under the [MIT License](LICENSE); bundled fonts retain their own license. Trying a bit width that cannot hold the current value briefly highlights the maximum-width guidance in red.
