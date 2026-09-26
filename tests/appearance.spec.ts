@@ -28,6 +28,7 @@ test('changed readout digits roll down while editable boxes stay still', async (
 
   await expect(binaryReadout).toHaveValue('1')
   await expect(binaryReadout).toHaveAttribute('data-rolling', 'true')
+  await expect(binaryReadout).toHaveCSS('transition-property', 'none')
   const animation = binaryReadout.locator('xpath=..').locator('.digit-roll-current')
   await expect(animation).toHaveCSS('animation-name', 'digit-roll-in')
   await expect(animation).toHaveCSS('animation-duration', '0.28s')
@@ -40,6 +41,8 @@ test('changed readout digits roll down while editable boxes stay still', async (
     return { fontFamily, fontSize, fontWeight, letterSpacing, lineHeight }
   })
   expect(rollTypography).toEqual(digitTypography)
+  await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
+  await expect(binaryReadout).toHaveCSS('color', 'rgb(23, 43, 77)')
   await expect(decimalUnits).not.toHaveAttribute('data-rolling', 'true')
 })
 
