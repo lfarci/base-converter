@@ -59,6 +59,14 @@ test('the masthead uses the utility name and retains its positional-notation tag
   await expect(tagline).toHaveCSS('text-transform', 'uppercase')
 })
 
+test('the instructional callout shows an equivalent-value example and keeps the position guidance', async ({ page }) => {
+  const example = page.getByRole('math', {
+    name: '27 in base 10 equals 11011 in base 2 equals 33 in base 8 equals 1B in base 16',
+  })
+  await expect(example).toHaveText('27₁₀ = 11011₂ = 33₈ = 1B₁₆')
+  await expect(page.locator('#result-title + p')).toContainText('Each position is numbered from zero on the right')
+})
+
 test('the explanatory callout spans the converter panel content width', async ({ page }) => {
   const panel = page.locator('#result-title').locator('xpath=..')
   const explanation = panel.locator('#result-title + p')
