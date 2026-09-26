@@ -19,13 +19,29 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
     const toggle = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    await expect(toggle).toHaveCSS('border-top-width', '1px')
-    await expect(toggle).toHaveCSS('background-color', 'rgb(222, 211, 172)')
-    await expect(toggle.locator(':scope > span[aria-hidden="true"]')).toHaveText('▸')
+    await expect(toggle).toHaveCSS('border-top-width', '0px')
+    await expect(toggle).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await expect(toggle.locator(':scope > span:first-child > svg path')).toHaveAttribute('d', 'M3 1.5 10.5 6 3 10.5Z')
     await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toHaveCount(0)
   }
   await expect(page.getByText('Show place-value breakdown', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Breakdown' })).toHaveCount(0)
+})
+
+test('breakdown disclosure rotates to show state and respects reduced motion', async ({ page }) => {
+  const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  const marker = toggle.locator('svg')
+  await expect(marker).toHaveCSS('transition-duration', '0.24s')
+
+  await toggle.click()
+  await expect(marker).toHaveAttribute('data-expanded', 'true')
+  await expect(marker).toHaveCSS('transform', 'matrix(0, 1, -1, 0, 0, 0)')
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(marker).toHaveCSS('transition-duration', '0s')
+  await toggle.click()
+  await expect(marker).not.toHaveAttribute('data-expanded')
+  await expect(marker).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)')
 })
 
 test('each base shows only its available places and bit groups', async ({ page }) => {
@@ -63,7 +79,10 @@ test('each base shows only its available places and bit groups', async ({ page }
   await expect(page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })).toHaveCount(0)
   const hexadecimalToggle = page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })
   await expect(hexadecimalToggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(hexadecimalToggle.locator(':scope > span[aria-hidden="true"]')).toHaveText('▾')
+  const marker = hexadecimalToggle.locator(':scope > span:first-child > svg')
+  await expect(marker).toHaveAttribute('data-expanded', 'true')
+  await expect(marker.locator('path')).toHaveAttribute('d', 'M3 1.5 10.5 6 3 10.5Z')
+  await expect(marker).toHaveCSS('transform', 'matrix(0, 1, -1, 0, 0, 0)')
 })
 
 test('digit rows share aligned edges and bit groups without overflowing', async ({ page }) => {
@@ -124,9 +143,13 @@ test('base row toggles and radix labels align across rows', async ({ page }) => 
     for (const name of rows) {
       const row = page.getByRole('row', { name: new RegExp(`^${name}`) })
       const toggle = await row.getByRole('button').boundingBox()
-      const radix = await row.locator('th > span > span').last().boundingBox()
+      const baseToggle = row.getByRole('button')
+      const radix = await baseToggle.locator(':scope > span').nth(1).boundingBox()
+      const disclosure = await baseToggle.locator('[aria-hidden="true"]').boundingBox()
       expect(toggle).not.toBeNull()
       expect(radix).not.toBeNull()
+      expect(disclosure).not.toBeNull()
+      expect(disclosure!.x + disclosure!.width + 4).toBeLessThan(radix!.x)
       headers.push({ toggle: toggle!, radix: radix! })
     }
 
