@@ -153,9 +153,9 @@ test('the source row carries data-source and a margin bar, and both follow the r
 
   await expect(sources).toHaveCount(1)
   await expect(sources).toHaveAttribute('aria-label', 'Decimal, source')
-  await expect(sources.locator('button > span:first-child')).toHaveText('Decimal')
+  await expect(sources.locator('button > span:first-child > span:nth-child(2)')).toHaveText('Decimal')
   await expect(sources.locator('.source-indicator')).toHaveText('SOURCE')
-  const sourceNameBox = await sources.locator('button > span:first-child').boundingBox()
+  const sourceNameBox = await sources.locator('button > span:first-child > span:nth-child(2)').boundingBox()
   const sourceButtonBox = await sources.locator('button').boundingBox()
   const sourceIndicatorBox = await sources.locator('.source-indicator').boundingBox()
   expect(sourceNameBox).not.toBeNull()
@@ -177,9 +177,9 @@ test('the source row carries data-source and a margin bar, and both follow the r
 
   const hexadecimalSource = page.locator('th[scope="row"][data-source]')
   await expect(hexadecimalSource).toHaveAttribute('aria-label', 'Hexadecimal, source')
-  await expect(hexadecimalSource.locator('button > span:first-child')).toHaveText('Hexadecimal')
+  await expect(hexadecimalSource.locator('button > span:first-child > span:nth-child(2)')).toHaveText('Hexadecimal')
   await expect(hexadecimalSource.locator('.source-indicator')).toHaveText('SOURCE')
-  const hexadecimalNameBox = await hexadecimalSource.locator('button > span:first-child').boundingBox()
+  const hexadecimalNameBox = await hexadecimalSource.locator('button > span:first-child > span:nth-child(2)').boundingBox()
   const hexadecimalButtonBox = await hexadecimalSource.locator('button').boundingBox()
   const hexadecimalIndicatorBox = await hexadecimalSource.locator('.source-indicator').boundingBox()
   expect(hexadecimalNameBox).not.toBeNull()
@@ -246,12 +246,25 @@ test('the worksheet heading, help marker, monitor, and base labels keep their so
   await expect(monitor).toHaveCSS('width', '28px')
   await expect(monitor).toHaveCSS('height', '28px')
 
-  for (const base of ['Decimal', 'Binary', 'Octal', 'Hexadecimal']) {
+  const accents = {
+    Decimal: 'rgb(230, 159, 0)',
+    Binary: 'rgb(0, 114, 178)',
+    Octal: 'rgb(0, 158, 115)',
+    Hexadecimal: 'rgb(204, 121, 167)',
+  }
+  for (const base of ['Decimal', 'Binary', 'Octal', 'Hexadecimal'] as const) {
     const toggle = page.getByRole('button', { name: `Toggle ${base} place-value breakdown` })
     await expect(toggle).toHaveAttribute('title', `Click to open the ${base.toLowerCase()} place-value breakdown`)
-    const baseName = toggle.locator('span').first()
-    const radix = toggle.locator('xpath=../span[last()]')
+    const marker = toggle.locator(':scope > span:first-child > svg')
+    const baseName = toggle.locator(':scope > span:first-child > span:nth-child(2)')
+    const radix = toggle.locator(':scope > span').nth(1)
     await expect(radix).toHaveCSS('font-size', '10px')
+    await toggle.hover()
+    await expect(baseName).toHaveCSS('text-decoration-line', 'underline')
+    await expect(baseName).toHaveCSS('text-decoration-color', 'rgb(23, 43, 77)')
+    await expect(marker).toHaveCSS('text-decoration-line', 'none')
+    await expect(marker).toHaveCSS('color', accents[base])
+    await expect(radix).toHaveCSS('text-decoration-line', 'none')
     const [nameSize, radixSize] = await Promise.all([
       baseName.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
       radix.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
@@ -259,13 +272,12 @@ test('the worksheet heading, help marker, monitor, and base labels keep their so
     expect(nameSize, `${base} name should read larger than its radix`).toBeGreaterThan(radixSize)
   }
 
-  const baseGrid = page.locator('th[scope="row"] > span').first()
-  await expect(baseGrid).toHaveClass(/grid-cols-\[8px_minmax\(0,1fr\)_20px\]/)
-  const marker = baseGrid.locator(':scope > span').first()
-  await expect(marker).toHaveCSS('width', '7px')
-  await expect(marker).toHaveCSS('height', '7px')
-  await expect(marker).toHaveCSS('border-top-width', '1px')
-  await expect(marker).toHaveCSS('border-radius', '0px')
+  const marker = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).locator(':scope > span:first-child > svg')
+  await expect(marker).toHaveAttribute('viewBox', '0 0 12 12')
+  await expect(marker).toHaveAttribute('aria-hidden', 'true')
+  await expect(marker).toHaveAttribute('fill', 'currentColor')
+  await expect(marker).toHaveAttribute('stroke-width', '1')
+  await expect(marker).toHaveAttribute('stroke', 'color-mix(in srgb, currentColor 55%, var(--color-ink))')
 })
 
 test('the converter panel is framed with a heavier top edge and a hard offset shadow', async ({ page }) => {
@@ -286,16 +298,17 @@ test('the converter panel is framed with a heavier top edge and a hard offset sh
 
 test('a focused row toggle keeps its underline and visible focus outline', async ({ page }) => {
   const title = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
-  const restWeight = await title.evaluate((element) => getComputedStyle(element).fontWeight)
-  const restDecorationColor = await title.evaluate((element) => getComputedStyle(element).textDecorationColor)
+  const baseName = title.locator(':scope > span:first-child > span:nth-child(2)')
+  const restWeight = await baseName.evaluate((element) => getComputedStyle(element).fontWeight)
+  const restDecorationColor = await baseName.evaluate((element) => getComputedStyle(element).textDecorationColor)
 
   await digit(page, 'Decimal', 10, 0).focus()
   await page.keyboard.press('Tab')
   await expect(title).toBeFocused()
 
-  await expect(title).toHaveCSS('font-weight', restWeight)
-  await expect(title).toHaveCSS('text-decoration-line', 'underline')
-  await expect.poll(() => title.evaluate((element) => getComputedStyle(element).textDecorationColor)).not.toBe(restDecorationColor)
+  await expect(baseName).toHaveCSS('font-weight', restWeight)
+  await expect(baseName).toHaveCSS('text-decoration-line', 'underline')
+  await expect.poll(() => baseName.evaluate((element) => getComputedStyle(element).textDecorationColor)).not.toBe(restDecorationColor)
   await expect(title).toHaveCSS('outline-style', 'solid')
   await expect(title).toHaveCSS('outline-width', '3px')
   await expect(title).toHaveCSS('outline-offset', '3px')
