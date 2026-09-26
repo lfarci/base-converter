@@ -284,12 +284,17 @@ test('highlighting a place carries an underline on its label and breakdown term,
   const tensDigit = digit(page, 'Decimal', 10, 1)
   const tensLabel = tensDigit.locator('xpath=..').locator('.place-value-label')
   const tensTerm = page.locator('#decimal-place-value-breakdown [data-breakdown-term][data-position="1"]')
+  const restingTermBackground = await tensTerm.evaluate((element) => getComputedStyle(element).backgroundColor)
 
   await tensDigit.hover()
   await expect(tensLabel).toHaveAttribute('data-highlighted', 'true')
   await expect(tensTerm).toHaveAttribute('data-highlighted', 'true')
   await expect(tensLabel).toHaveCSS('text-decoration-line', 'underline')
   await expect(tensTerm).toHaveCSS('text-decoration-line', 'underline')
+  await expect(tensTerm).not.toHaveCSS('background-color', restingTermBackground)
+  await expect(tensTerm).toHaveCSS('box-shadow', 'none')
+  const labelBorder = await tensLabel.evaluate((element) => getComputedStyle(element).borderTopColor)
+  await expect(tensTerm).toHaveCSS('border-top-color', labelBorder)
   // The label's highlighted border is a boundary, so it is an accent-ink mix rather than the
   // raw accent. It must be asserted as *not transparent*: every label carries
   // `border-transparent`, which computes to `rgba(0, 0, 0, 0)`, so a loose `/rgb/` match is

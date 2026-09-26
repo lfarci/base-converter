@@ -18,7 +18,7 @@ export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabel
       data-highlighted={highlighted || undefined}
       style={highlighted
         ? {
-            // 55/45 accent-to-ink, matching the breakdown term bar and the highlight ring: the
+            // 55/45 accent-to-ink, matching the breakdown term border and highlight ring: the
             // border is a boundary, so it must clear 3:1 against its own tint. At 70/30
             // decimal measured only 3.06:1 — passing, but with no margin for colour rounding.
             // At 55/45 the worst accent sits at 4.11:1.
