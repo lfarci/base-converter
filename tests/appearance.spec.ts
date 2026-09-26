@@ -34,13 +34,6 @@ test('changed readout digits roll down while editable boxes stay still', async (
         transitionProperty: digitStyles.transitionProperty,
         animationName: rollStyles.animationName,
         animationDuration: rollStyles.animationDuration,
-        digitTypography: {
-          fontFamily: digitStyles.fontFamily,
-          fontSize: digitStyles.fontSize,
-          fontWeight: digitStyles.fontWeight,
-          letterSpacing: digitStyles.letterSpacing,
-          lineHeight: digitStyles.lineHeight,
-        },
         rollTypography: {
           fontFamily: rollStyles.fontFamily,
           fontSize: rollStyles.fontSize,
@@ -63,7 +56,17 @@ test('changed readout digits roll down while editable boxes stay still', async (
   expect(rollState.transitionProperty).toBe('background-color')
   expect(rollState.animationName).toBe('digit-roll-in')
   expect(rollState.animationDuration).toBe('0.28s')
-  expect(rollState.rollTypography).toEqual(rollState.digitTypography)
+  expect(rollState.rollTypography).toEqual({
+    fontFamily: '"IBM Plex Mono", "JetBrains Mono", "Roboto Mono", "DejaVu Sans Mono", ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, Menlo, monospace',
+    fontSize: '17px',
+    fontWeight: '600',
+    letterSpacing: '0.34px',
+    lineHeight: '17px',
+  })
+  await expect(binaryReadout).toHaveClass(/mono-tech/)
+  await expect(binaryReadout).toHaveClass(/font-semibold/)
+  await expect(binaryReadout).toHaveClass(/leading-none/)
+  await expect(binaryReadout).toHaveClass(/tracking-\[0\.02em\]/)
   await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
   await expect(binaryReadout).toHaveCSS('color', 'rgb(23, 43, 77)')
   await expect(decimalUnits).not.toHaveAttribute('data-rolling', 'true')

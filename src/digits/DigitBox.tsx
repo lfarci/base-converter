@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type Ref } from 'react'
 import { bitRangeForDigit, type Base } from '../core/conversion'
 
+const digitTypographyClassName = 'mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em]'
+
 type DigitBoxProps = {
   base: Base
   position: number
@@ -62,7 +64,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
   return (
     <>
       <input
-        className={`digit-box min-h-10 w-full min-w-0 p-0 text-center mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em] text-ink transition ${editable ? 'font-bold focus-visible:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus' : 'cursor-default'}`}
+        className={`digit-box min-h-10 w-full min-w-0 p-0 text-center ${digitTypographyClassName} text-ink transition ${editable ? 'font-bold focus-visible:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus' : 'cursor-default'}`}
         type="text"
         data-digit="true"
         data-editable={editable || undefined}
@@ -87,7 +89,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
         aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}`}
       />
       {roll && (
-        <span className="digit-roll mono-tech text-base font-normal leading-[1.5] tracking-[0.02em]" aria-hidden="true">
+        <span className={`digit-roll ${digitTypographyClassName}`} aria-hidden="true">
           <span className="digit-roll-previous">{roll.from}</span>
           <span className="digit-roll-current" onAnimationEnd={() => setRoll(null)}>{roll.to}</span>
         </span>
