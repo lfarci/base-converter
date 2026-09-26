@@ -140,16 +140,12 @@ test('leading padding zeroes recede while significant digits keep full ink', asy
   }
 })
 
-test('zero remains prominent when it is the whole value', async ({ page }) => {
-  const units = digit(page, 'Decimal', 10, 0)
-  await units.focus()
-  await page.keyboard.press('0')
-
-  await expect(units).not.toHaveAttribute('data-padding-zero', 'true')
-  await expect(units).toHaveAttribute('data-significant', 'true')
-  await expect(units).toHaveCSS('color', 'rgb(23, 43, 77)')
-  await expect(units).toHaveCSS('font-weight', '700')
-  await expect(digit(page, 'Decimal', 10, 1)).toHaveAttribute('data-padding-zero', 'true')
+test('zero is not marked significant on the initial page', async ({ page }) => {
+  for (const [base, radix] of [['Decimal', 10], ['Binary', 2]] as const) {
+    const units = digit(page, base, radix, 0)
+    await expect(units).toHaveValue('0')
+    await expect(units).not.toHaveAttribute('data-significant', 'true')
+  }
 })
 
 test('the source row carries data-source and a margin bar, and both follow the row you type in', async ({ page }) => {
