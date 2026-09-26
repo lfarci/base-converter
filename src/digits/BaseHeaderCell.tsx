@@ -26,7 +26,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
       <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
         <span className="size-[7px] shrink-0 border border-frame" style={{ backgroundColor: base.accent }} aria-hidden="true" />
         <button
-          className={`group inline-flex min-h-11 w-full min-w-0 cursor-pointer gap-1 rounded-sm text-left font-display text-[14px] font-bold tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${isSource ? 'flex-col items-start justify-center' : 'flex-row items-center justify-between'}`}
+          className="group relative inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[14px] font-bold tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           type="button"
           ref={toggleRef}
           onKeyDown={onToggleKeyDown}
@@ -37,7 +37,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
           onClick={onToggle}
         >
           <span className="whitespace-nowrap">{base.name}</span>
-          {isSource && <span className="source-indicator mono-tech text-[9px] font-bold uppercase tracking-[0.08em] text-ink-soft">SOURCE</span>}
+          {isSource && <span className="source-indicator absolute left-0 top-0 mono-tech text-[9px] leading-none font-bold uppercase tracking-[0.08em] text-ink-soft">SOURCE</span>}
         </button>
         <span className="mono-tech w-5 text-right text-[10px] text-ink-soft">{base.radix}</span>
       </span>
