@@ -34,6 +34,7 @@ test('changed readout digits roll down while editable boxes stay still', async (
         transitionProperty: digitStyles.transitionProperty,
         animationName: rollStyles.animationName,
         animationDuration: rollStyles.animationDuration,
+        animationTimingFunction: rollStyles.animationTimingFunction,
         rollTypography: {
           fontFamily: rollStyles.fontFamily,
           fontSize: rollStyles.fontSize,
@@ -56,6 +57,7 @@ test('changed readout digits roll down while editable boxes stay still', async (
   expect(rollState.transitionProperty).toBe('background-color')
   expect(rollState.animationName).toBe('digit-roll-in')
   expect(rollState.animationDuration).toBe('0.28s')
+  expect(rollState.animationTimingFunction).toBe('cubic-bezier(0.4, 0, 0.2, 1)')
   expect(rollState.rollTypography).toEqual({
     fontFamily: '"IBM Plex Mono", "JetBrains Mono", "Roboto Mono", "DejaVu Sans Mono", ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, Menlo, monospace',
     fontSize: '17px',
