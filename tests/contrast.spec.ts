@@ -233,12 +233,23 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     // decorative hairline.
     const rule = await breakdown.evaluate((element) => {
       const style = getComputedStyle(element)
-      return { colour: style.borderLeftColor, fill: style.backgroundColor }
-    })
-    expect(
-      contrast(rule.colour, rule.fill),
-      `breakdown inset rule: ${rule.colour} on ${rule.fill}`,
-    ).toBeGreaterThanOrEqual(3)
+          return {
+            colour: style.borderLeftColor,
+            width: style.borderLeftWidth,
+            lineStyle: style.borderLeftStyle,
+            fill: style.backgroundColor,
+          }
+        })
+        // The colour alone is not enough: `borderLeftColor` keeps computing to a colour even when
+        // no border is painted, and this element's text colour (`--color-ink-soft`) is itself a
+        // non-transparent colour that clears 3:1. Deleting `border-l-2 border-frame` would leave
+        // the ratio assertion passing on a boundary that is not there.
+        expect(rule.width, 'breakdown inset rule should be painted at its 2px width').toBe('2px')
+        expect(rule.lineStyle, 'breakdown inset rule should be a solid line').toBe('solid')
+        expect(
+          contrast(rule.colour, rule.fill),
+          `breakdown inset rule: ${rule.colour} on ${rule.fill}`,
+        ).toBeGreaterThanOrEqual(3)
 
         // Each equation carries its own accent bar, painted as an inset `box-shadow` rather than
             // a border. That is invisible to `borderLeftColor`, so the block above would not have
