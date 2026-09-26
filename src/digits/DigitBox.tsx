@@ -35,7 +35,7 @@ export function DigitBox({ base, position, digit, editable, highlighted, surface
 
   return (
     <input
-      className={`digit-box min-h-10 w-full min-w-0 p-0 text-center mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em] text-ink transition ${editable ? 'font-bold focus-visible:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus' : 'cursor-default'}`}
+      className={`digit-box min-h-10 w-full min-w-0 p-0 text-center mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em] text-ink transition ${editable ? 'font-bold' : 'cursor-default'}`}
       type="text"
       data-digit="true"
       data-editable={editable || undefined}
