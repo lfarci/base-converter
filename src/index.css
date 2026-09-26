@@ -197,12 +197,13 @@ input {
   box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.16), inset -1px -1px 0 rgb(255 255 255 / 0.65), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink));
 }
 
-/* An old-software selection: the field recesses further and takes the focus frame, while
-   still showing its highlight ring. */
+/* Keyboard focus keeps the accent-ink frame and deeper recess. The outline is muted
+   toward the workbook's ink-soft tone and sits close to the box's physical edge. */
 .digit-box[data-editable]:focus-visible {
-  border-color: var(--color-focus);
+  border-color: var(--digit-frame);
   background-color: color-mix(in srgb, var(--digit-accent) 14%, var(--color-paper-2));
-  outline-offset: 2px;
+  outline: 2px solid color-mix(in srgb, var(--color-focus) 20%, var(--color-ink-soft));
+  outline-offset: 1px;
 }
 
 /* A writable cell that is also highlighted still has to show its write line: the
@@ -291,7 +292,7 @@ input {
   [data-breakdown-term][data-highlighted] {
     outline: 2px solid CanvasText;
   }
-  input[data-highlighted]:focus-visible {
+  input[data-editable]:focus-visible {
     outline: 3px solid Highlight;
   }
 }

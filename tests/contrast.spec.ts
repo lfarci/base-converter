@@ -126,11 +126,9 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
     //
     // All three skins are covered because each is a different border colour. The default and
     // highlighted states both paint `--digit-frame` over an 8% / 12% accent tint, so those two
-    // are what actually pin the 55/45 mix. The focused state is *not* a frame measurement:
-    // `.digit-box[data-editable]:focus-visible` sets `border-color: var(--color-focus)`, which
-    // replaces `--digit-frame` outright, so what is asserted there is the focus token against
-    // the 14% tint. It is kept in this loop deliberately — a focused cell still has to clear
-    // 3:1 against its own background — but it must not be read as evidence about the accent mix.
+    // are what actually pin the 55/45 mix. Focus keeps that frame against a 14% tint, so it
+    // remains part of the boundary check along with the accessible outline contrast measured
+    // below.
     const bases: Array<[string, number]> = [['Decimal', 10], ['Binary', 2], ['Octal', 8], ['Hexadecimal', 16]]
     for (const [base, radix] of bases) {
       for (const state of ['default', 'highlighted', 'focused'] as const) {

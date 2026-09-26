@@ -36,6 +36,9 @@ test('Tab reaches each base title between the units digits in row order', async 
     if (nextRow) {
       await page.keyboard.press('Tab')
       await expect(digit(page, nextRow.name, nextRow.radix, 0)).toBeFocused()
+    } else {
+      await page.keyboard.press('Tab')
+      await expect(digit(page, rows[0].name, rows[0].radix, 0)).toBeFocused()
     }
   }
 })

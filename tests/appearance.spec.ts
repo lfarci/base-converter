@@ -284,6 +284,21 @@ test('the converter panel is framed with a heavier top edge and a hard offset sh
   expect(shadow, `panel shadow: ${shadow}`).toMatch(/\d+px \d+px 0px 0px/)
 })
 
+test('a focused row title uses an underline instead of a frame', async ({ page }) => {
+  const title = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  const restWeight = await title.evaluate((element) => getComputedStyle(element).fontWeight)
+  const restDecorationColor = await title.evaluate((element) => getComputedStyle(element).textDecorationColor)
+
+  await digit(page, 'Decimal', 10, 0).focus()
+  await page.keyboard.press('Tab')
+  await expect(title).toBeFocused()
+
+  await expect(title).toHaveCSS('font-weight', restWeight)
+  await expect(title).toHaveCSS('text-decoration-line', 'underline')
+  await expect.poll(() => title.evaluate((element) => getComputedStyle(element).textDecorationColor)).not.toBe(restDecorationColor)
+  await expect(title).toHaveCSS('outline-style', 'none')
+})
+
 test('a focused writable cell keeps its recessed bevel and highlight ring at the same time', async ({ page }) => {
   const units = digit(page, 'Decimal', 10, 0)
   await units.focus()
@@ -299,9 +314,13 @@ test('a focused writable cell keeps its recessed bevel and highlight ring at the
   // be both highlighted and focused — an inline shadow would have hidden the bevel.
   await expect(units).toHaveCSS('box-shadow', /inset/)
   await expect(units).toHaveCSS('box-shadow', /inset[\s\S]*0px 0px 0px 2px/)
-  await expect(units).toHaveCSS('border-top-color', 'rgb(36, 88, 211)')
+  const focusBorder = await units.evaluate((element) => getComputedStyle(element).borderTopColor)
+  const focusOutline = await units.evaluate((element) => getComputedStyle(element).outlineColor)
+  expect(focusBorder).not.toBe('rgb(36, 88, 211)')
+  expect(focusOutline).toBe('color(srgb 0.269804 0.35451 0.52)')
   await expect(units).toHaveCSS('outline-style', 'solid')
-  await expect(units).toHaveCSS('outline-width', '3px')
+  await expect(units).toHaveCSS('outline-width', '2px')
+  await expect(units).toHaveCSS('outline-offset', '1px')
   await expect(units).toHaveCSS('border-top-left-radius', '2px')
 })
 

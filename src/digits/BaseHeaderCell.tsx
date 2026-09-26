@@ -26,7 +26,7 @@ export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, t
       <span className="grid grid-cols-[8px_minmax(0,1fr)_20px] items-center gap-1.5">
         <span className="size-[7px] shrink-0 border border-frame" style={{ backgroundColor: base.accent }} aria-hidden="true" />
         <button
-          className="group relative inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[14px] font-bold tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="group relative inline-flex min-h-11 w-full min-w-0 cursor-pointer items-center justify-between gap-1 rounded-sm text-left font-display text-[14px] font-normal tracking-[-0.04em] text-ink underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:decoration-ink focus-visible:outline-none!"
           type="button"
           ref={toggleRef}
           onKeyDown={onToggleKeyDown}
