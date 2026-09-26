@@ -31,8 +31,8 @@ export function PlaceValueLabel({ base, position, highlighted }: PlaceValueLabel
           }
         : undefined}
     >
-      <span>{position}</span>
-      {bitRange && <span className="mono-tech text-[9px] text-ink-soft">{bitRange}</span>}
+      <span className="text-[11px] font-semibold text-ink">{position}</span>
+      {bitRange && <span className="mono-tech text-[9px] font-normal text-ink-soft">{bitRange}</span>}
     </span>
   )
 }
