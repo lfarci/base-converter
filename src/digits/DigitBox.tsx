@@ -1,5 +1,7 @@
-import type { CSSProperties, KeyboardEvent, Ref } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type Ref } from 'react'
 import { bitRangeForDigit, type Base } from '../core/conversion'
+
+const digitTypographyClassName = 'mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em]'
 
 type DigitBoxProps = {
   base: Base
@@ -34,33 +36,68 @@ type DigitBoxProps = {
 // an inline box-shadow would silently win over any class-based one.
 export function DigitBox({ base, position, digit, editable, highlighted, isPaddingZero, isSignificant, surfaceRef, onKeyDown, onEditDigit }: DigitBoxProps) {
   const bitRange = bitRangeForDigit(base.radix, position)
+  const [roll, setRoll] = useState<{ from: string; to: string } | null>(null)
+  const previousDigit = useRef(digit)
+
+  useLayoutEffect(() => {
+    if (previousDigit.current === digit) return
+
+    const from = previousDigit.current
+    previousDigit.current = digit
+    setRoll(!editable && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? { from, to: digit } : null)
+  }, [digit, editable])
+
+  useEffect(() => {
+    if (!roll) return
+
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const clearForReducedMotion = (event: MediaQueryListEvent) => {
+      if (event.matches) setRoll(null)
+    }
+    motionPreference.addEventListener('change', clearForReducedMotion)
+
+    const timeout = window.setTimeout(() => setRoll(null), 400)
+    return () => {
+      motionPreference.removeEventListener('change', clearForReducedMotion)
+      window.clearTimeout(timeout)
+    }
+  }, [roll])
 
   return (
-    <input
-      className={`digit-box min-h-10 w-full min-w-0 p-0 text-center mono-tech text-[clamp(11px,2.5vw,17px)] font-semibold leading-none tracking-[0.02em] text-ink transition ${editable ? 'font-bold focus-visible:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus' : 'cursor-default'}`}
-      type="text"
-      data-digit="true"
-      data-editable={editable || undefined}
-      data-position={position}
-      data-highlighted={highlighted || undefined}
-      data-padding-zero={isPaddingZero || undefined}
-      data-significant={isSignificant || undefined}
-      style={{
-        '--digit-accent': base.accent,
-        '--digit-frame': `color-mix(in srgb, ${base.accent} 55%, #172b4d)`,
-      } as CSSProperties}
-      ref={surfaceRef}
-      inputMode={base.radix <= 10 ? 'numeric' : 'text'}
-      autoComplete="off"
-      spellCheck={false}
-      readOnly={!editable}
-      value={digit}
-      tabIndex={editable ? 0 : -1}
-      onMouseDown={editable ? undefined : (event) => event.preventDefault()}
-      onFocus={editable ? (event) => event.target.select() : undefined}
-      onKeyDown={editable ? onKeyDown : undefined}
-      onChange={editable ? (event) => onEditDigit(event.target.value) : undefined}
-      aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}`}
-    />
+    <>
+      <input
+        className={`digit-box min-h-10 w-full min-w-0 p-0 text-center ${digitTypographyClassName} text-ink transition ${editable ? 'font-bold focus-visible:border-focus focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus' : 'cursor-default'}`}
+        type="text"
+        data-digit="true"
+        data-editable={editable || undefined}
+        data-position={position}
+        data-highlighted={highlighted || undefined}
+        data-padding-zero={isPaddingZero || undefined}
+        data-significant={isSignificant || undefined}
+        data-rolling={roll ? true : undefined}
+        style={{
+          '--digit-accent': base.accent,
+          '--digit-frame': `color-mix(in srgb, ${base.accent} 55%, #172b4d)`,
+        } as CSSProperties}
+        ref={surfaceRef}
+        inputMode={base.radix <= 10 ? 'numeric' : 'text'}
+        autoComplete="off"
+        spellCheck={false}
+        readOnly={!editable}
+        value={digit}
+        tabIndex={editable ? 0 : -1}
+        onMouseDown={editable ? undefined : (event) => event.preventDefault()}
+        onFocus={editable ? (event) => event.target.select() : undefined}
+        onKeyDown={editable ? onKeyDown : undefined}
+        onChange={editable ? (event) => onEditDigit(event.target.value) : undefined}
+        aria-label={`${base.name} (base ${base.radix}) digit at position ${position}${bitRange ? `, ${bitRange}` : ''}`}
+      />
+      {roll && (
+        <span className={`digit-roll ${digitTypographyClassName}`} aria-hidden="true">
+          <span className="digit-roll-previous">{roll.from}</span>
+          <span className="digit-roll-current" onAnimationEnd={() => setRoll(null)}>{roll.to}</span>
+        </span>
+      )}
+    </>
   )
 }

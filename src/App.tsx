@@ -176,7 +176,7 @@ function App() {
         </div>
 
         <p className="mt-10 border-t-[3px] border-ink pt-5 text-[13px] leading-relaxed text-ink-soft">
-          The number itself never changes — only the symbols that hold it. Each row shows all of its available places, and octal and hexadecimal show which bits combine to make each digit.
+          The number itself never changes — only the symbols that hold it.
         </p>
       </section>
     </main>

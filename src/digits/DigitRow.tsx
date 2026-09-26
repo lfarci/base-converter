@@ -73,7 +73,7 @@ export function DigitRow({ base, boxes, isSource, value, highlightedBits, onHove
                   : highlightedPosition === position
                 return (
                   <li
-                    className="m-0 flex min-w-0 flex-col items-center gap-1"
+                    className="relative m-0 flex min-w-0 flex-col items-center gap-1"
                     key={cellKey}
                     style={spansBitGrid ? { gridColumn: `span ${Math.min(bitWidth, POSITIONS - position * bitWidth)}` } : undefined}
                     onMouseEnter={() => hoverPosition(position)}

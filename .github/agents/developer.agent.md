@@ -29,10 +29,16 @@ If the request is ambiguous, state the assumption you chose and continue.
 Implement only what the plan covers. Match existing patterns in `src/` and keep the change
 surgical — do not refactor or reformat unrelated code.
 
-Run the planned checks as you go. If a check fails for a reason your change caused, fix it
-and rerun the failed check plus the full planned set. Make at most two repair cycles; if a
-check is still red after that, stop and report the blocker with the command output instead
-of opening a pull request.
+Run the planned checks as you go. Use one shared budget of at most two corrective
+iterations for the whole task, counting both check failures caused by your changes and
+actionable review findings. An iteration is a focused fix followed by the necessary checks;
+include the full planned set before opening a pull request. The initial check run and initial
+independent review do not count toward this budget. Avoid rerunning passing checks unless a
+change could affect them or the full planned set is required.
+
+If a check remains red or an actionable finding remains after the two iterations, stop and
+report the blocker with the relevant command output or review finding; do not start another
+fix-and-check or fix-and-review loop, and do not open a pull request.
 
 Commit the finished change locally.
 
@@ -43,9 +49,12 @@ Before publishing, get an independent review. Use the `agent` tool to start a su
 of the affected code), and give it the plan, the diff, and the checks you ran.
 
 - If the subagent reports no actionable findings, continue to step 4.
-- If it reports real, actionable findings, fix them, rerun the planned checks, and commit.
-  Then review once more. A second round of unsatisfiable findings ends the run with a
-  blocked result — do not open a pull request.
+- If it reports real, actionable findings, address them within the shared corrective-
+  iteration budget, rerun the planned checks, commit, and request another review. Each
+  corrective iteration includes one follow-up review of its resulting commit; the follow-up
+  after the second iteration is verification only. If that review finds any remaining or new
+  actionable issue, stop with a blocked result—do not begin another fix cycle or open a pull
+  request.
 
 Skip the subagent only for trivial changes such as a typo or comment edit, and say so.
 
