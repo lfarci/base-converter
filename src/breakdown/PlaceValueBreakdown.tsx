@@ -23,15 +23,12 @@ export function PlaceValueBreakdown({ base, boxes, value, highlightedPosition, o
   })
 
   return (
-    /* The worked calculation, inset onto the field surface. The 2px left rule plus pl-[14px]
-           stays exactly as it was so the heading still lines up with the digit grid (P6):
-           140px (cell) + 2px (rule) + 14px = 156px = 144 + 12. */
-        <section className="border-l-2 border-frame bg-well py-3 pl-[14px] pr-3 text-[13px] text-ink-soft" aria-label={`${base.name} place-value breakdown`}>
-          <h3 className="m-0 mono-tech text-[10px] uppercase tracking-[0.12em] text-ink-soft">Breakdown</h3>
-          {value === null ? (
-            <p className="mb-0 mt-2 leading-relaxed">Enter a valid value to see this row's place-value breakdown.</p>
-          ) : (
-            <div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1 mono-tech text-[13px] text-ink">
+    <section className="border-l-2 border-frame bg-well py-3 pl-[14px] pr-3 text-[13px] text-ink-soft" aria-label={`${base.name} place-value breakdown`}>
+      <h3 className="m-0 mono-tech text-[10px] uppercase tracking-[0.12em] text-ink-soft">Breakdown</h3>
+      {value === null ? (
+        <p className="mb-0 mt-2 leading-relaxed">Enter a valid value to see this row's place-value breakdown.</p>
+      ) : (
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1 mono-tech text-[13px] text-ink">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {terms.length === 0 ? (
               <span role="math" aria-label="Zero equals zero">0 = 0</span>

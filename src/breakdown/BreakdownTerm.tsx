@@ -28,15 +28,12 @@ export function BreakdownTerm({ base, digit, digitValue: value, position, contri
       data-highlighted={highlighted || undefined}
       style={highlighted
         ? {
-                    backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-well))`,
-            // 55/45 accent-to-ink, not 70/30: this bar sits on the well surface, darker than
-            // paper, so decimal — the lightest accent — measured only 2.46:1 against its own
-            // 12% tint at 70/30. At 55/45 the worst accent clears 3:1 (decimal 3.31, binary
-            // 4.50, octal 3.95, hexadecimal 4.58) and each still reads as its base's hue.
-            boxShadow: `inset 3px 0 0 0 color-mix(in srgb, ${base.accent} 55%, var(--color-ink))`,
+            backgroundColor: `color-mix(in srgb, ${base.accent} 12%, var(--color-well))`,
+            borderColor: `color-mix(in srgb, ${base.accent} 55%, var(--color-ink))`,
             color: 'var(--color-ink)',
             fontWeight: 600,
             textDecoration: 'underline',
+            textUnderlineOffset: '2px',
           }
         : undefined}
       aria-label={`${base.radix} to the power of ${position} times ${displayedDigit} equals ${contribution}`}

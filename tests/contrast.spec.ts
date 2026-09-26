@@ -264,31 +264,26 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
       `breakdown inset rule: ${rule.colour} on ${rule.fill}`,
     ).toBeGreaterThanOrEqual(3)
 
-        // Each equation carries its own accent bar, painted as an inset `box-shadow` rather than
-            // a border. That is invisible to `borderLeftColor`, so the block above would not have
-            // caught a failing accent mix on it — which is exactly the gap that hid a 2.46:1 decimal
-            // bar. The bar only exists while the term is highlighted (focusing it sets the state, as
-            // hovering the matching digit would), so the term is focused first and the assertion
-            // demands the shadow colour actually be there rather than silently skipping.
-            const term = breakdown.locator('[data-breakdown-term]').first()
-            await term.focus()
-            await page.waitForTimeout(400)
-            const termBar = await term.evaluate((element) => {
-              const style = getComputedStyle(element)
-              // `inset 3px 0 0 0 <colour>`; match `color(srgb …)` first so the leading `rgb(` inside
-              // it is not mistaken for plain `rgb()` and divided by 255 by the luminance helper.
-              return {
-                colour: style.boxShadow.match(/color\([^)]+\)|rgba?\([^)]+\)/)?.[0] ?? null,
-                fill: style.backgroundColor,
-                shadow: style.boxShadow,
-              }
-            })
-            expect(
-              termBar.colour,
-              `highlighted term should paint an accent bar, but box-shadow was: ${termBar.shadow}`,
-            ).not.toBeNull()
-            expect(
-              contrast(termBar.colour!, termBar.fill),
-              `breakdown term accent bar: ${termBar.colour} on ${termBar.fill}`,
-            ).toBeGreaterThanOrEqual(3)
+    // The matching term uses a restrained accent-ink border instead of a heavy inset bar.
+    // Focus sets the highlight too, so measure the real active state and both adjacent surfaces.
+    const term = breakdown.locator('[data-breakdown-term]').first()
+    await term.focus()
+    await page.waitForTimeout(400)
+    const highlightedTerm = await sample(term)
+    expect(
+      highlightedTerm.border,
+      'highlighted term border should be painted, not transparent',
+    ).not.toBe('rgba(0, 0, 0, 0)')
+    expect(
+      contrast(highlightedTerm.border, highlightedTerm.fill),
+      `breakdown term border against tint: ${highlightedTerm.border} on ${highlightedTerm.fill}`,
+    ).toBeGreaterThanOrEqual(3)
+    expect(
+      contrast(highlightedTerm.border, highlightedTerm.around),
+      `breakdown term border outside: ${highlightedTerm.border} on ${highlightedTerm.around}`,
+    ).toBeGreaterThanOrEqual(3)
+    expect(
+      contrast(highlightedTerm.text, highlightedTerm.fill),
+      `breakdown term text: ${highlightedTerm.text} on ${highlightedTerm.fill}`,
+    ).toBeGreaterThanOrEqual(4.5)
           })
