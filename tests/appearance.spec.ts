@@ -13,9 +13,18 @@ test('the writable units box reads as a worksheet cell and the readouts do not',
   await expect(units).toHaveCSS('border-top-width', '2px')
   await expect(units).not.toHaveCSS('background-color', 'rgb(255, 255, 255)')
 
-  const readout = digit(page, 'Decimal', 10, 4)
-  await expect(readout).not.toHaveCSS('border-top-width', '2px')
-  await expect(readout).toHaveCSS('cursor', 'default')
+  // The persistent "write here" cue: a ruled bottom edge, drawn as an inset shadow so the
+  // 2px frame and the box geometry the grid relies on are untouched. It is a shape/weight
+  // cue, not a tint, and it is present without focus or hover.
+    // Engines serialise the composed shadow's colours differently (`rgb()` in Chromium,
+    // `color(srgb …)` in Firefox), so the offset is asserted rather than the colour.
+    await expect(units).toHaveCSS('box-shadow', /0px -3px 0px 0px inset|(?:^|[\s,])-3px 0 0 inset/)
+
+    const readout = digit(page, 'Decimal', 10, 4)
+    await expect(readout).not.toHaveCSS('border-top-width', '2px')
+    await expect(readout).toHaveCSS('cursor', 'default')
+    // A readout is only a recessed field: no write line.
+    await expect(readout).not.toHaveCSS('box-shadow', /0px -3px 0px 0px inset|(?:^|[\s,])-3px 0 0 inset/)
 })
 
 test('the source row carries data-source and a margin bar, and both follow the row you type in', async ({ page }) => {
