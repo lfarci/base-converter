@@ -33,7 +33,22 @@ test('forced colors keeps the source bar and the highlight cues visible', async 
   expect(contrast(barFill, cellFill), `source bar in forced colors: ${barFill} on ${cellFill}`).toBeGreaterThanOrEqual(3)
 
   const units = digit(page, 'Decimal', 10, 0)
-  await expect(units).toHaveCSS('border-top-color', barFill)
+    // `barFill` cannot be reused here: it is `CanvasText`, and Chromium forces border colours to
+    // CanvasText by itself, so comparing against it would pass with the author rule deleted. The
+    // rule is genuinely load-bearing in Firefox, where an unstyled border computes to
+    // `rgb(143, 143, 157)` instead, so the check resolves CanvasText live and compares to that.
+    const unitsFrame = await units.evaluate((element) => {
+      const probe = document.createElement('div')
+      probe.style.color = 'CanvasText'
+      document.body.appendChild(probe)
+      const canvasText = getComputedStyle(probe).color
+      probe.remove()
+      const style = getComputedStyle(element)
+      return { border: style.borderTopColor, width: style.borderTopWidth, canvasText }
+    })
+    expect(unitsFrame.border, 'forced-colors writable frame should be painted').not.toBe('rgba(0, 0, 0, 0)')
+    expect(unitsFrame.border, 'forced-colors writable frame should take CanvasText').toBe(unitsFrame.canvasText)
+    expect(unitsFrame.width, 'forced-colors writable frame should keep its 2px border').toBe('2px')
 
   const tensDigit = digit(page, 'Decimal', 10, 1)
   await tensDigit.hover()
@@ -179,7 +194,11 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
   // Let the focus transition settle so the sampled outline colour is the end state.
   await page.waitForTimeout(400)
   const ring = await sample(units)
-  expect(contrast(ring.outline, ring.around), `focus ring: ${ring.outline} on ${ring.around}`).toBeGreaterThanOrEqual(3)
+    // A transparent outline colour computes to `rgba(0, 0, 0, 0)`, which the luminance helper
+    // reads as near-black and scores ~20:1 — the same trap the label border is guarded against
+    // above. Without this the assertion would pass with no focus indicator painted at all.
+    expect(ring.outline, 'focus outline should be painted, not transparent').not.toBe('rgba(0, 0, 0, 0)')
+    expect(contrast(ring.outline, ring.around), `focus ring: ${ring.outline} on ${ring.around}`).toBeGreaterThanOrEqual(3)
 })
 
   // The worked calculation is a second inset field surface with its own two text roles, so it

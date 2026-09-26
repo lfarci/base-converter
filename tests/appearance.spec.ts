@@ -108,7 +108,10 @@ test('highlighting a place carries an underline on its label and breakdown term,
   // `border-transparent`, which computes to `rgba(0, 0, 0, 0)`, so a loose `/rgb/` match is
   // satisfied by a border that is not painted at all.
   await expect(tensLabel).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
-  await expect(tensDigit).toHaveCSS('box-shadow', /rgb/)
+    // The ring must be asserted in its full form, not as a bare `/rgb/`: every `.digit-box`
+    // carries an inset bevel that contains `rgb(...)` in every state, so a loose match would
+    // pass with the highlight ring deleted entirely.
+    await expect(tensDigit).toHaveCSS('box-shadow', /inset[\s\S]*0px 0px 0px 2px/)
 
   await page.mouse.move(0, 0)
 
@@ -119,5 +122,5 @@ test('highlighting a place carries an underline on its label and breakdown term,
   const onesDigit = digit(page, 'Decimal', 10, 0)
   await expect(onesDigit).toHaveAttribute('data-highlighted', 'true')
   await expect(onesTerm).toHaveCSS('text-decoration-line', 'underline')
-  await expect(onesDigit).toHaveCSS('box-shadow', /rgb/)
+    await expect(onesDigit).toHaveCSS('box-shadow', /inset[\s\S]*0px 0px 0px 2px/)
 })
