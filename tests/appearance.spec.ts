@@ -27,6 +27,97 @@ test('the writable units box reads as a worksheet cell and the readouts do not',
     await expect(readout).not.toHaveCSS('box-shadow', /0px -3px 0px 0px inset|(?:^|[\s,])-3px 0 0 inset/)
 })
 
+test('changed readout digits roll down while editable boxes stay still', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+
+  await binaryReadout.evaluate((element) => {
+    const observer = new MutationObserver(() => {
+      const animation = element.parentElement?.querySelector('.digit-roll-current')
+      if (!element.hasAttribute('data-rolling') || !animation) return
+
+      const digitStyles = getComputedStyle(element)
+      const rollStyles = getComputedStyle(animation)
+      element.setAttribute('data-roll-test-snapshot', JSON.stringify({
+        transitionProperty: digitStyles.transitionProperty,
+        animationName: rollStyles.animationName,
+        animationDuration: rollStyles.animationDuration,
+        animationTimingFunction: rollStyles.animationTimingFunction,
+        rollTypography: {
+          fontFamily: rollStyles.fontFamily,
+          fontSize: rollStyles.fontSize,
+          fontWeight: rollStyles.fontWeight,
+          letterSpacing: rollStyles.letterSpacing,
+          lineHeight: rollStyles.lineHeight,
+        },
+      }))
+      observer.disconnect()
+    })
+    observer.observe(element, { attributes: true, attributeFilter: ['data-rolling'] })
+  })
+
+  await decimalUnits.focus()
+  await page.keyboard.press('2')
+
+  await expect(binaryReadout).toHaveValue('1')
+  await expect(binaryReadout).toHaveAttribute('data-roll-test-snapshot', /.+/)
+  const rollState = JSON.parse((await binaryReadout.getAttribute('data-roll-test-snapshot'))!)
+  expect(rollState.transitionProperty).toBe('background-color')
+  expect(rollState.animationName).toBe('digit-roll-in')
+  expect(rollState.animationDuration).toBe('0.28s')
+  expect(rollState.animationTimingFunction).toBe('cubic-bezier(0.4, 0, 0.2, 1)')
+  expect(rollState.rollTypography).toEqual({
+    fontFamily: '"IBM Plex Mono", "JetBrains Mono", "Roboto Mono", "DejaVu Sans Mono", ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, Menlo, monospace',
+    fontSize: '17px',
+    fontWeight: '600',
+    letterSpacing: '0.34px',
+    lineHeight: '17px',
+  })
+  await expect(binaryReadout).toHaveClass(/mono-tech/)
+  await expect(binaryReadout).toHaveClass(/font-semibold/)
+  await expect(binaryReadout).toHaveClass(/leading-none/)
+  await expect(binaryReadout).toHaveClass(/tracking-\[0\.02em\]/)
+  await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
+  await expect(binaryReadout).toHaveCSS('color', 'rgb(23, 43, 77)')
+  await expect(decimalUnits).not.toHaveAttribute('data-rolling', 'true')
+})
+
+test('rolling readouts receive a brief accent tint', async ({ page }) => {
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+  await page.addStyleTag({ content: '.digit-box { transition: none !important; }' })
+  const restingBackground = await binaryReadout.evaluate((element) => getComputedStyle(element).backgroundColor)
+
+  await binaryReadout.evaluate((element) => element.setAttribute('data-rolling', 'true'))
+  await expect(binaryReadout).not.toHaveCSS('background-color', restingBackground)
+
+  await binaryReadout.evaluate((element) => element.removeAttribute('data-rolling'))
+  await expect(binaryReadout).toHaveCSS('background-color', restingBackground)
+})
+
+test('readout digit rolls are disabled when reduced motion is requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await digit(page, 'Decimal', 10, 0).focus()
+  await page.keyboard.press('2')
+
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+  await expect(binaryReadout).toHaveValue('1')
+  await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
+})
+
+test('an active readout roll cancels when reduced motion is enabled', async ({ page }) => {
+  const decimalUnits = digit(page, 'Decimal', 10, 0)
+  const binaryReadout = digit(page, 'Binary', 2, 1)
+
+  await decimalUnits.focus()
+  await page.keyboard.press('2')
+  await expect(binaryReadout).toHaveAttribute('data-rolling', 'true')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(binaryReadout).not.toHaveAttribute('data-rolling', 'true')
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await expect(binaryReadout).toHaveValue('1')
+})
+
 test('the source row carries data-source and a margin bar, and both follow the row you type in', async ({ page }) => {
   const sources = page.locator('th[scope="row"][data-source]')
 

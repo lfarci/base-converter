@@ -117,8 +117,49 @@ input {
   border-radius: 2px;
   border: 1px solid var(--color-rule);
   background-color: var(--color-well);
+  transition-property: background-color, border-color, box-shadow;
   /* Recessed: dark top-left, light bottom-right — a field cut into the sheet. */
   box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.24), inset -1px -1px 0 rgb(255 255 255 / 0.65);
+}
+
+.digit-box[data-rolling] {
+  color: transparent;
+  background-color: color-mix(in srgb, var(--digit-accent) 6%, var(--color-well));
+  transition: background-color 140ms ease-out;
+}
+
+.digit-roll {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2.5rem;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--color-ink);
+}
+
+.digit-roll-previous,
+.digit-roll-current {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.digit-roll-previous {
+  animation: digit-roll-out 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.digit-roll-current {
+  transform: translateY(-100%);
+  animation: digit-roll-in 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes digit-roll-out {
+  to { transform: translateY(100%); }
+}
+
+@keyframes digit-roll-in {
+  to { transform: translateY(0); }
 }
 
 /* The writable box is the most raised/selected cell: a deeper recess, the accent-derived
@@ -174,6 +215,23 @@ input {
 @media (prefers-reduced-motion: reduce) {
   input[data-digit],
   th[scope='row'] button {
+    transition: none;
+  }
+  .digit-roll {
+    display: none;
+  }
+  .digit-box[data-rolling] {
+    color: var(--color-ink);
+  }
+}
+
+@media (forced-colors: active) {
+  .digit-roll {
+    display: none;
+  }
+  .digit-box[data-rolling] {
+    color: FieldText;
+    background-color: Field;
     transition: none;
   }
 }
