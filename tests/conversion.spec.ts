@@ -31,6 +31,8 @@ test('width slider snaps with keyboard and pointer, and breakdowns toggle in bul
 
   await expect(slider).toHaveAttribute('aria-valuenow', '16')
   const thumb = slider.locator('[data-slider-thumb="true"]')
+  await expect(slider).toHaveCSS('height', '44px')
+  await expect(thumb.locator('span')).toHaveCSS('width', '28px')
   expect(await thumb.evaluate((element) => getComputedStyle(element).transitionProperty)).toContain('transform')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(thumb).toHaveCSS('transition-property', 'none')

@@ -126,7 +126,7 @@ export function BitWidthSlider({ widths, value, disabledWidths, onChange }: BitW
           data-slider-thumb="true"
           style={{ transform: `translateX(${(valueIndex / (widths.length - 1)) * 100}%)` }}
         >
-          <span className="absolute left-0 top-1 flex h-6 w-8 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] group-hover:bg-paper-2">
+          <span className="absolute left-0 top-1 flex h-6 w-7 -translate-x-1/2 items-center justify-center border-2 border-frame bg-paper-3 mono-tech text-[10px] font-bold text-ink shadow-[inset_1px_1px_0_rgb(255_255_255_/_0.75),inset_-1px_-1px_0_rgb(23_43_77_/_0.24)] group-hover:bg-paper-2">
             {isUnavailable(value) ? '!' : ''}
           </span>
         </span>
