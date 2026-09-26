@@ -129,6 +129,16 @@ test('the converter panel is framed with a heavier top edge and a hard offset sh
   expect(shadow, `panel shadow: ${shadow}`).toMatch(/\d+px \d+px 0px 0px/)
 })
 
+test('a focused row title uses weight instead of a frame', async ({ page }) => {
+  const title = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+
+  await expect(title).toHaveCSS('font-weight', '400')
+  await title.focus()
+  await expect(title).toBeFocused()
+  await expect(title).toHaveCSS('font-weight', '700')
+  await expect(title).toHaveCSS('outline-style', 'none')
+})
+
 test('a focused writable cell keeps its recessed bevel and highlight ring at the same time', async ({ page }) => {
   const units = digit(page, 'Decimal', 10, 0)
   await units.focus()
@@ -145,9 +155,12 @@ test('a focused writable cell keeps its recessed bevel and highlight ring at the
   await expect(units).toHaveCSS('box-shadow', /inset/)
   await expect(units).toHaveCSS('box-shadow', /inset[\s\S]*0px 0px 0px 2px/)
   const focusBorder = await units.evaluate((element) => getComputedStyle(element).borderTopColor)
+  const focusOutline = await units.evaluate((element) => getComputedStyle(element).outlineColor)
   expect(focusBorder).not.toBe('rgb(36, 88, 211)')
+  expect(focusOutline).toBe('color(srgb 0.269804 0.35451 0.52)')
   await expect(units).toHaveCSS('outline-style', 'solid')
   await expect(units).toHaveCSS('outline-width', '2px')
+  await expect(units).toHaveCSS('outline-offset', '1px')
   await expect(units).toHaveCSS('border-top-left-radius', '2px')
 })
 

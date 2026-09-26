@@ -140,13 +140,13 @@ input {
   box-shadow: inset 1px 1px 0 rgb(23 43 77 / 0.16), inset -1px -1px 0 rgb(255 255 255 / 0.65), 0 0 0 2px color-mix(in srgb, var(--digit-accent) 55%, var(--color-ink));
 }
 
-/* Keyboard focus keeps the accent-ink frame and deeper recess. A slimmer, ink-muted
-   outline stays visible without becoming louder than the cell's physical edges. */
+/* Keyboard focus keeps the accent-ink frame and deeper recess. The outline is muted
+   toward the workbook's ink-soft tone and sits close to the box's physical edge. */
 .digit-box[data-editable]:focus-visible {
   border-color: var(--digit-frame);
   background-color: color-mix(in srgb, var(--digit-accent) 14%, var(--color-paper-2));
-  outline: 2px solid color-mix(in srgb, var(--color-focus) 55%, var(--color-ink));
-  outline-offset: 2px;
+  outline: 2px solid color-mix(in srgb, var(--color-focus) 20%, var(--color-ink-soft));
+  outline-offset: 1px;
 }
 
 .digit-box[data-editable][data-highlighted]:focus-visible {
