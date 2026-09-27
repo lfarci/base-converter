@@ -160,7 +160,7 @@ function App() {
 
   return (
     <>
-    <main className="mx-auto w-full px-4 pb-8 text-ink sm:px-6 lg:max-w-[920px]" id="top">
+    <main className="mx-auto w-full px-4 pb-4 text-ink sm:px-6 lg:max-w-[920px]" id="top">
       <PageHeader />
 
       <section aria-labelledby="page-title">
@@ -252,10 +252,6 @@ function App() {
 
           <StatusLine isError={error !== ''}>{message}</StatusLine>
         </div>
-
-        <p className="mt-10 border-t-[3px] border-ink pt-5 text-[13px] leading-relaxed text-ink-soft">
-          The number itself never changes — only the symbols that hold it.
-        </p>
       </section>
     </main>
     <PageFooter sourceLinkRef={footerLinkRef} />
