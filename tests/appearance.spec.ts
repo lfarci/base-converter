@@ -11,11 +11,26 @@ test.beforeEach(async ({ page }) => {
 test('the site footer credits the author and links to the source repository', async ({ page }) => {
   const footer = page.getByRole('contentinfo', { name: 'Site information' })
 
-  await expect(footer.getByText(`© ${new Date().getFullYear()} Logan Farci`)).toBeVisible()
-  await expect(footer.getByRole('link', { name: 'Source code on GitHub' })).toHaveAttribute(
-    'href',
-    'https://github.com/lfarci/base-converter',
+  await expect(page.getByRole('contentinfo')).toHaveCount(1)
+  await expect(footer).toHaveCSS('margin-top', '32px')
+  const divider = footer.locator('div')
+  await expect(divider).toHaveCSS('border-top-style', 'solid')
+  await expect(divider).toHaveCSS('border-top-width', '4px')
+  expect(await divider.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe(
+    await page.locator('header').evaluate((element) => getComputedStyle(element).borderBottomColor),
   )
+  expect(await divider.evaluate((element) => element.getBoundingClientRect().width)).toBeCloseTo(
+    await page.locator('header').evaluate((element) => element.getBoundingClientRect().width),
+    1,
+  )
+  const authorCredit = footer.getByText(`© ${new Date().getFullYear()} Logan Farci`)
+  const sourceLink = footer.getByRole('link', { name: 'Source code on GitHub' })
+  await expect(authorCredit).toBeVisible()
+  await expect(sourceLink).toBeVisible()
+  const authorFontSize = await authorCredit.evaluate((element) => getComputedStyle(element).fontSize)
+  expect(authorFontSize).toBe(await sourceLink.evaluate((element) => getComputedStyle(element).fontSize))
+  expect(authorFontSize).toBe('12px')
+  await expect(sourceLink).toHaveAttribute('href', 'https://github.com/lfarci/base-converter')
 })
 
 test('the writable units box reads as a worksheet cell and the readouts do not', async ({ page }) => {

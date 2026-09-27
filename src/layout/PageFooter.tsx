@@ -14,19 +14,18 @@ function GitHubMark() {
 
 export function PageFooter({ sourceLinkRef }: PageFooterProps) {
   return (
-    <footer
-      aria-label="Site information"
-      className="mx-auto flex w-full max-w-[920px] flex-col gap-2 border-t-4 border-double border-ink px-4 py-4 text-[12px] leading-relaxed text-ink-soft sm:flex-row sm:items-center sm:justify-between sm:px-6"
-    >
-      <small>© {new Date().getFullYear()} Logan Farci</small>
-      <a
-        className="inline-flex min-h-11 w-fit items-center gap-2 text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
-        href="https://github.com/lfarci/base-converter"
-        ref={sourceLinkRef}
-      >
-        <GitHubMark />
-        Source code on GitHub
-      </a>
+    <footer aria-label="Site information" className="mx-auto mt-8 w-full max-w-[920px] px-4 text-[12px] leading-relaxed text-ink-soft sm:px-6">
+      <div className="flex flex-col gap-2 border-t-4 border-rule py-4 sm:flex-row sm:items-center sm:justify-between">
+        <small className="text-[12px]">© {new Date().getFullYear()} Logan Farci</small>
+        <a
+          className="inline-flex min-h-11 w-fit items-center gap-2 text-[12px] text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
+          href="https://github.com/lfarci/base-converter"
+          ref={sourceLinkRef}
+        >
+          <GitHubMark />
+          Source code on GitHub
+        </a>
+      </div>
     </footer>
   )
 }
