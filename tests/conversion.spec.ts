@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('./')
 })
 
-test('place-value help stays concise and each row breakdown is collapsed by default', async ({ page }) => {
+test('place-value help stays concise and breakdown panels are hidden by default', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Digits and place values', exact: true })).toBeVisible()
   await expect(page.getByText('Choose an 8-, 16-, or 32-bit width below to set the maximum value.', { exact: false })).toBeVisible()
 
@@ -13,7 +13,7 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
   await expect(instructions).not.toHaveAttribute('open', '')
   await instructions.locator('summary').click()
   await expect(instructions).toContainText('Type in the rightmost box of any row to use that base. The other rows update automatically.')
-  await expect(instructions).toContainText('For non-zero values, each row’s compact equation shows its place powers and addends; open a breakdown to highlight a place and inspect its contribution. Zero or empty values show a prompt instead. Hide all breakdowns also clears every breakdown panel.')
+  await expect(instructions).toContainText('Breakdown panels start hidden; open a base to highlight a place and inspect its contribution, or use Show all breakdowns to open every panel. When all panels are open, closing one shows its compact equation. Zero or empty values show a prompt instead. Hide all breakdowns clears every panel.')
   await expect(instructions).toContainText('Keyboard: ↑ / ↓ change the value by one. Backspace/Delete remove a digit.')
 
   for (const base of ['Hexadecimal', 'Decimal', 'Octal', 'Binary']) {
@@ -22,14 +22,17 @@ test('place-value help stays concise and each row breakdown is collapsed by defa
     await expect(toggle).toHaveCSS('border-top-width', '0px')
     await expect(toggle).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(toggle.locator(':scope > span:first-child > svg path')).toHaveAttribute('d', 'M3 1.5 10.5 6 3 10.5Z')
-    const breakdown = page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })
-    await expect(breakdown).toBeVisible()
-    await expect(breakdown.getByText('Breakdown for the value will be shown here when a value is entered.', { exact: true })).toBeVisible()
-    await expect(breakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
-    await expect(breakdown.getByRole('math')).toHaveCount(0)
+    await expect(page.getByRole('region', { name: `${base} place-value breakdown`, exact: true })).toHaveCount(0)
   }
-  await expect(page.getByText('Show place-value breakdown', { exact: true })).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Breakdown' })).toHaveCount(4)
+  await expect(page.getByRole('button', { name: 'Show all breakdowns' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Breakdown' })).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+  const breakdown = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
+  await expect(breakdown).toBeVisible()
+  await expect(breakdown.getByText('Breakdown for the value will be shown here when a value is entered.', { exact: true })).toBeVisible()
+  await expect(breakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
+  await expect(breakdown.getByRole('math')).toHaveCount(0)
 })
 
 test('width slider snaps with keyboard and pointer, and breakdowns toggle in bulk', async ({ page }) => {
@@ -186,7 +189,9 @@ test('breakdown opens and closes with a restrained reveal that respects reduced 
   await digit(page, 'Decimal', 10, 0).focus()
   for (const key of '17') await page.keyboard.press(key)
 
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
   const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  await toggle.click()
   const marker = toggle.locator('svg')
   const region = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
   const reveal = region.locator('.breakdown-reveal')
@@ -251,9 +256,7 @@ test('each base shows only its available places and bit groups', async ({ page }
   const hexadecimalBreakdown = page.getByRole('region', { name: 'Hexadecimal place-value breakdown', exact: true })
   await expect(hexadecimalBreakdown).toContainText('Breakdown for the value will be shown here when a value is entered.')
   await expect(hexadecimalBreakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
-  const decimalBreakdown = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
-  await expect(decimalBreakdown.getByText('Breakdown for the value will be shown here when a value is entered.', { exact: true })).toBeVisible()
-  await expect(decimalBreakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })).toHaveCount(0)
   const hexadecimalToggle = page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })
   await expect(hexadecimalToggle).toHaveAttribute('aria-expanded', 'true')
   const marker = hexadecimalToggle.locator(':scope > span:first-child > svg')
@@ -368,6 +371,7 @@ test('place-value breakdown shows non-zero digit terms and the decimal total', a
   await decimalUnits.focus()
   await page.keyboard.press('1')
   await page.keyboard.press('7')
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
 
   const examples = [
     { name: 'Decimal', terms: ['10 to the power of 1 times 1 equals 10', '10 to the power of 0 times 7 equals 7'], compact: '10 to the power of 1 times 1 plus 10 to the power of 0 times 7 equals 17', compactText: '101 × 1 + 100 × 7= 17', sum: '10 + 7 → 17' },
@@ -377,12 +381,14 @@ test('place-value breakdown shows non-zero digit terms and the decimal total', a
   ] as const
 
   for (const { name, terms, compact, compactText, sum } of examples) {
+    const toggle = page.getByRole('button', { name: `Toggle ${name} place-value breakdown` })
+    await toggle.click()
     const collapsedBreakdown = page.getByRole('region', { name: `${name} place-value breakdown`, exact: true })
     const collapsedMath = collapsedBreakdown.getByRole('math')
     await expect(collapsedMath).toHaveAttribute('aria-label', compact)
     await expect(collapsedMath).toHaveText(compactText)
     await expect(collapsedMath.locator('sup')).toHaveCount(2)
-    await page.getByRole('button', { name: `Toggle ${name} place-value breakdown` }).click()
+    await toggle.click()
     const breakdown = page.getByRole('region', { name: `${name} place-value breakdown`, exact: true })
     await expect(breakdown.getByRole('heading', { name: 'Breakdown' })).toBeVisible()
     const equations = breakdown.getByRole('math')
@@ -402,12 +408,15 @@ test('place-value breakdown groups large contributions and totals', async ({ pag
   await decimalUnits.focus()
   for (const character of '65535') await page.keyboard.press(character)
 
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
   const breakdown = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
+  const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  await toggle.click()
   const compactMath = breakdown.getByRole('math')
   await expect(compactMath).toContainText('= 65,535')
   await expect(compactMath).toHaveAttribute('aria-label', '10 to the power of 4 times 6 plus 10 to the power of 3 times 5 plus 10 to the power of 2 times 5 plus 10 to the power of 1 times 3 plus 10 to the power of 0 times 5 equals 65,535')
 
-  await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
+  await toggle.click()
   await expect(breakdown.getByRole('math', { name: '10 to the power of 4 times 6 equals 60,000' })).toContainText('60,000')
   await expect(breakdown.getByRole('math', { name: '60,000 plus 5,000 plus 500 plus 30 plus 5 equals 65,535' })).toContainText('65,535')
 })
@@ -418,7 +427,9 @@ test('clicking the base title toggles its breakdown and preserves focus', async 
   await page.keyboard.press('1')
   await page.keyboard.press('7')
 
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
   const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
+  await toggle.click()
   const breakdown = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
   const summary = breakdown.getByRole('math', { name: '10 to the power of 1 times 1 plus 10 to the power of 0 times 7 equals 17' })
   await expect(toggle).toHaveCSS('cursor', 'pointer')
