@@ -97,8 +97,14 @@ test('hovering a collapsed place equation links its digit, label, and binary bit
   await hexadecimalUnits.focus()
   await page.keyboard.press('1')
   await page.keyboard.press('2')
+  await page.getByRole('button', { name: 'Show all breakdowns' }).click()
+  const toggle = page.getByRole('button', { name: 'Toggle Hexadecimal place-value breakdown' })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
-  const term = page.locator('#hexadecimal-place-value-breakdown [data-breakdown-term][data-position="1"]')
+  const breakdown = page.locator('#hexadecimal-place-value-breakdown')
+  await expect(breakdown.locator('.breakdown-reveal')).toHaveCSS('opacity', '0')
+  const term = breakdown.locator('[role="math"] [data-breakdown-term][data-position="1"]')
   const hexadecimalDigit = digit(page, 'Hexadecimal', 16, 1)
   const hexadecimalLabel = hexadecimalDigit.locator('xpath=..').locator('.place-value-label')
   await term.hover()
@@ -236,7 +242,7 @@ test('only the units box of each row is writable and focusable', async ({ page }
   }
 })
 
-test('collapsed rows highlight position labels without opening, and digit typing still works', async ({ page }) => {
+test('hidden breakdowns stay hidden while row positions highlight and digits are entered', async ({ page }) => {
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   const unitsLabel = decimalUnits.locator('xpath=..').locator('.place-value-label')
   const toggle = page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' })
@@ -245,16 +251,17 @@ test('collapsed rows highlight position labels without opening, and digit typing
   await expect(decimalUnits).toHaveAttribute('data-highlighted', 'true')
   await expect(unitsLabel).toHaveAttribute('data-highlighted', 'true')
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  const breakdown = page.locator('#decimal-place-value-breakdown')
-  await expect(breakdown.getByText('Breakdown for the value will be shown here when a value is entered.', { exact: true })).toBeVisible()
+  await expect(page.locator('#decimal-place-value-breakdown')).toHaveCount(0)
 
   await page.mouse.move(0, 0)
   await decimalUnits.focus()
   await expect(unitsLabel).toHaveAttribute('data-highlighted', 'true')
   await page.keyboard.press('7')
   await expect(digit(page, 'Decimal', 10, 0)).toHaveValue('7')
-  const collapsedMath = breakdown.getByRole('math')
-  await expect(collapsedMath).toHaveAttribute('aria-label', '10 to the power of 0 times 7 equals 7')
-  await expect(collapsedMath).toHaveText('100 × 7= 7')
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('#decimal-place-value-breakdown')).toHaveCount(0)
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  const breakdown = page.getByRole('region', { name: 'Decimal place-value breakdown', exact: true })
+  await expect(breakdown.getByRole('math', { name: '10 to the power of 0 times 7 equals 7' })).toHaveCount(1)
+  await expect(breakdown.locator('[data-breakdown-term]')).toHaveAttribute('aria-label', '10 to the power of 0 times 7 equals 7')
 })

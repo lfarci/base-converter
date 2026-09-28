@@ -23,7 +23,7 @@ function App() {
   const [entry, setEntry] = useState<EntryState>(initialEntryState)
   const [positions, setPositions] = useState<number>(POSITIONS)
   const [openBreakdowns, setOpenBreakdowns] = useState<Set<string>>(() => new Set())
-  const [showCollapsedBreakdowns, setShowCollapsedBreakdowns] = useState(true)
+  const [showCollapsedBreakdowns, setShowCollapsedBreakdowns] = useState(false)
   const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
   const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
   const [widthFeedback, setWidthFeedback] = useState(false)
