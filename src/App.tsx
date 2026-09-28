@@ -22,6 +22,7 @@ function App() {
   const [entry, setEntry] = useState<EntryState>(initialEntryState)
   const [positions, setPositions] = useState<number>(POSITIONS)
   const [openBreakdowns, setOpenBreakdowns] = useState<Set<string>>(() => new Set())
+  const [showCollapsedBreakdowns, setShowCollapsedBreakdowns] = useState(true)
   const [hoveredBits, setHoveredBits] = useState<BitSpan | null>(null)
   const [focusedBits, setFocusedBits] = useState<BitSpan | null>(null)
 
@@ -48,7 +49,13 @@ function App() {
   }
 
   const toggleAllBreakdowns = () => {
-    setOpenBreakdowns(allBreakdownsOpen ? new Set() : new Set(rows.map(({ key }) => key)))
+    if (allBreakdownsOpen) {
+      setOpenBreakdowns(new Set())
+      setShowCollapsedBreakdowns(false)
+    } else {
+      setOpenBreakdowns(new Set(rows.map(({ key }) => key)))
+      setShowCollapsedBreakdowns(true)
+    }
   }
 
   // Every digit box registers itself here by base and place, so the editable
@@ -201,6 +208,7 @@ function App() {
             positions={positions}
             displayed={displayed}
             openBreakdowns={openBreakdowns}
+            showCollapsedBreakdowns={showCollapsedBreakdowns}
             onToggleBreakdown={toggleBreakdown}
             value={value}
             highlightedBits={hoveredBits ?? focusedBits}

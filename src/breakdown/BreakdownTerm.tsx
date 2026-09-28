@@ -36,14 +36,14 @@ export function BreakdownTerm({ base, digit, digitValue: value, position, contri
             textUnderlineOffset: '2px',
           }
         : undefined}
-      aria-label={`${base.radix} to the power of ${position} times ${displayedDigit} equals ${contribution}`}
+      aria-label={`${base.radix} to the power of ${position} times ${displayedDigit} equals ${contribution.toLocaleString('en-US')}`}
       onMouseEnter={() => onHover(position)}
       onMouseLeave={() => onHover(null)}
       onFocus={() => onFocus(position)}
       onBlur={() => onFocus(null)}
       onKeyDown={onTab}
     >
-      {base.radix}<sup>{position}</sup> &times; {displayedDigit} = {contribution.toString()}
+      {base.radix}<sup>{position}</sup> &times; {displayedDigit} = {contribution.toLocaleString('en-US')}
     </span>
   )
 }

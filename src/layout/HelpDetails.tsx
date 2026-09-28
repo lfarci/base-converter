@@ -8,7 +8,7 @@ export function HelpDetails() {
         <span className="mono-tech text-[11px] uppercase tracking-[0.12em] text-ink">How to use</span>
       </summary>
       <p className="mb-0 max-w-[65ch] border-t border-rule-soft px-3 py-3 leading-relaxed">
-        Type in the rightmost box of any row to use that base. The other rows update automatically. Use the bit-width slider above the table to choose 8, 16, or 32 bits. Drag its thumb or focus it and use the arrow keys, Home, or End. Smaller widths are marked unavailable when they would truncate the current value. Open a row’s breakdown to see how each digit contributes to the value. Keyboard: ↑ / ↓ change the value by one. Backspace/Delete remove a digit.
+        Type in the rightmost box of any row to use that base. The other rows update automatically. Use the bit-width slider above the table to choose 8, 16, or 32 bits. Drag its thumb or focus it and use the arrow keys, Home, or End. Smaller widths are marked unavailable when they would truncate the current value. For non-zero values, each row’s compact equation shows its place powers and addends; open a breakdown to highlight a place and inspect its contribution. Zero or empty values show a prompt instead. Hide all breakdowns also clears every breakdown panel. Keyboard: ↑ / ↓ change the value by one. Backspace/Delete remove a digit.
       </p>
     </details>
   )

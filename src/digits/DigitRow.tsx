@@ -11,6 +11,7 @@ type DigitRowProps = {
   positions: number
   isSource: boolean
   isBreakdownOpen: boolean
+  showCollapsedBreakdowns: boolean
   onToggleBreakdown: () => void
   value: bigint | null
   highlightedBits: BitSpan | null
@@ -25,7 +26,7 @@ type DigitRowProps = {
   onTabFromBreakdownTerm: (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => void
 }
 
-export function DigitRow({ base, boxes, positions, isSource, isBreakdownOpen, onToggleBreakdown, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
+export function DigitRow({ base, boxes, positions, isSource, isBreakdownOpen, showCollapsedBreakdowns, onToggleBreakdown, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: DigitRowProps) {
   const [hoveredPosition, setHoveredPosition] = useState<number | null>(null)
   const [focusedPosition, setFocusedPosition] = useState<number | null>(null)
   const lastIndex = boxes.length - 1
@@ -102,14 +103,15 @@ export function DigitRow({ base, boxes, positions, isSource, isBreakdownOpen, on
           </ol>
         </td>
       </tr>
-      {isBreakdownOpen && (
+      {(isBreakdownOpen || showCollapsedBreakdowns) && (
         <tr>
-          <td className="border-b border-dotted border-rule bg-paper-2 py-0 pl-[140px] pr-3" colSpan={2}>
+          <td className="border-b border-dotted border-rule py-0" colSpan={2}>
             <div id={breakdownId}>
               <PlaceValueBreakdown
                 base={base}
                 boxes={boxes}
                 value={value}
+                isExpanded={isBreakdownOpen}
                 highlightedPosition={highlightedPosition}
                 onHoverPosition={hoverPosition}
                 onFocusPosition={focusPosition}
