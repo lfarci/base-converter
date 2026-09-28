@@ -243,15 +243,32 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
   expect(contrast(ring.outline, ring.around), `focus ring: ${ring.outline} on ${ring.around}`).toBeGreaterThanOrEqual(3)
 })
 
-  // The worked calculation is a second inset field surface with its own two text roles, so it
-  // is measured with the breakdown actually open rather than assumed from the readouts.
-  test('the breakdown inset keeps its text and rules legible on the field surface', async ({ page }) => {
+  // The transparent worked calculation keeps its text and rules legible on the underlying surface.
+  test('the breakdown stays left-aligned, clear, and tactile while keeping text and rules legible', async ({ page }) => {
     await page.goto('./')
     await digit(page, 'Decimal', 10, 0).focus()
     for (const key of '123') await page.keyboard.press(key)
     await page.getByRole('button', { name: 'Toggle Decimal place-value breakdown' }).click()
 
     const breakdown = page.locator('#decimal-place-value-breakdown section')
+    await expect(breakdown).toHaveCSS('text-align', 'left')
+    await expect(breakdown).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await expect(breakdown).toHaveCSS('box-shadow', /inset.*inset.*inset.*inset.*inset.*inset/)
+    await expect(page.locator('#decimal-place-value-breakdown').locator('..')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    const pressmark = breakdown.locator('.breakdown-pressmark')
+    await expect(pressmark).toHaveAttribute('aria-hidden', 'true')
+    const markBounds = await pressmark.boundingBox()
+    const headingBounds = await breakdown.locator('h3').boundingBox()
+    expect(markBounds).not.toBeNull()
+    expect(headingBounds).not.toBeNull()
+    expect(markBounds!.x + markBounds!.width).toBeLessThanOrEqual(headingBounds!.x)
+    await page.setViewportSize({ width: 390, height: 844 })
+    const narrowMarkBounds = await pressmark.boundingBox()
+    const narrowHeadingBounds = await breakdown.locator('h3').boundingBox()
+    expect(narrowMarkBounds).not.toBeNull()
+    expect(narrowHeadingBounds).not.toBeNull()
+    expect(narrowMarkBounds!.x + narrowMarkBounds!.width).toBeLessThanOrEqual(narrowHeadingBounds!.x)
+
     const heading = await sample(breakdown.locator('h3'))
     expect(
       contrast(heading.text, heading.fill),
@@ -270,16 +287,14 @@ test('every documented text pair clears 4.5:1 and every boundary clears 3:1', as
       `breakdown total: ${total.text} on ${total.fill}`,
     ).toBeGreaterThanOrEqual(4.5)
 
-    // The worked-calculation inset's left rule is a real boundary marking the block off from
-    // the panel, so it is held to 3:1 like the other frames rather than treated as a
-    // decorative hairline.
-    const rule = await breakdown.evaluate((element) => {
-      const style = getComputedStyle(element)
-      return { colour: style.borderLeftColor, fill: style.backgroundColor }
-    })
+    // The left rule remains a real boundary on the clear surface, so it is held to 3:1.
+    const rule = await breakdown.evaluate((element) => ({
+      colour: getComputedStyle(element).borderLeftColor,
+    }))
+    const { around } = await sample(breakdown)
     expect(
-      contrast(rule.colour, rule.fill),
-      `breakdown inset rule: ${rule.colour} on ${rule.fill}`,
+      contrast(rule.colour, around),
+      `breakdown rule: ${rule.colour} on ${around}`,
     ).toBeGreaterThanOrEqual(3)
 
     // The matching term uses a restrained accent-ink border instead of a heavy inset bar.

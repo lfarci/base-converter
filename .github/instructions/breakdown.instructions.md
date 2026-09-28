@@ -5,8 +5,8 @@ applyTo: 'src/breakdown/**'
 
 # breakdown/ — place-value breakdown
 
-The explanation shown under an expanded row: how each non-zero digit contributes, and how
-those contributions add up to the shared decimal total. Shared principles and repo-wide
+The explanation shown under each base row: a compact contribution sum when collapsed, and
+how each non-zero digit contributes when expanded. Shared principles and repo-wide
 layout, types, styling, and accessibility rules live in `src.instructions.md`;
 `.tsx`-specific component guidance lives in `react-typescript.instructions.md`.
 
@@ -26,8 +26,14 @@ layout, types, styling, and accessibility rules live in `src.instructions.md`;
     points at it through `aria-controls`, so `App.tsx` can scope its focus lookup to
     `` document.getElementById(`${base.key}-place-value-breakdown`) ``. Keep that id
     convention in `digits/DigitRow.tsx` and do not rename it here.
-  - the heading stays "Breakdown", and a term renders as `base`<sup>`position`</sup> `×`
-    `digit` `=` `contribution`, e.g. `160 × 10 (A) = 10`.
+  - the "Breakdown" heading stays visible in every visible state, expanded or collapsed.
+    A term renders as `base`<sup>`position`</sup> `×` `digit` `=` `contribution`, e.g.
+    `160 × 10 (A) = 10`.
+  - the collapsed preview for a non-zero value is a non-focusable `role="math"` equation
+    showing each non-zero digit multiplied by its radix power and the resulting addends
+    summed to the total (e.g. `10¹ × 1 + 10⁰ × 7 = 17`), left-aligned with the digit grid.
+    Keep each individual place equation together when it wraps. A zero or blank value shows
+    the prompt "Breakdown for the value will be shown here when a value is entered."
 - Terms follow the Tab order of the row toggle, so keep `tabIndex={0}` on terms and report
   Tab to the parent through the `onTabFromTerm` callback rather than moving focus yourself.
 - **Read-only.** This feature explains a value it is given: it never parses digits or steps
@@ -42,14 +48,15 @@ layout, types, styling, and accessibility rules live in `src.instructions.md`;
   the matching digit box and position label can highlight with it; do not highlight the
   binary row from inside this folder.
 - Reuse the shared visual language: `.mono-tech` for the numbers, `--color-ink` text on
-  the `--color-well` field surface as a "worked calculation" inset with a `--color-frame` left
-  rule, and the per-base accent from the `base` prop for decoration and tint only. A
-  highlighted term uses a subtle accent tint and a 55/45 accent-ink border, matching the
-  place-value label, plus `text-decoration: underline` as its shape cue, so the state never
-  rests on hue. **The panel's leading padding and `DigitRow`'s cell
-  padding add up to 156px (`144 + 12`), the width that keeps the heading lined up with the
-  digit grid; if you add a rule or padding on either side, rebalance both and re-verify
-  rather than letting the total drift.**
+  the underlying table surface, and a transparent background with a `--color-frame` left
+  rule. Use the per-base accent from the `base` prop for decoration and tint only. Any
+  texture must stay in the empty leading gutter, with `aria-hidden` and no overlap with
+  content; preserve the clear surface. A highlighted term uses a subtle accent tint and a
+  55/45 accent-ink border, matching the place-value label, plus `text-decoration: underline`
+  as its shape cue, so the state never rests on hue. **The panel's leading padding and
+  `DigitRow`'s cell padding add up to 156px (`144 + 12`), the width that keeps the heading
+  and collapsed summary lined up with the digit grid; if you add a rule or padding on either
+  side, rebalance both and re-verify rather than letting the total drift.**
 
 ## Checks
 

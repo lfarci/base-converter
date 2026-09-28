@@ -57,8 +57,9 @@ file holds what they share so it is stated once. Adapted from
   than one flat fill: `--color-paper` (page — the desk), `--color-panel` (cool grey-cream
   instrument surround), `--color-paper-2` (sheet — row surfaces and selected-cell tints),
   `--color-paper-3` (band — table header, panel title bar, status strip, help control), and
-  `--color-well` (field — inset readouts, the instructional callout, the worked calculation).
-  Frames use `--color-frame`; text uses `--color-ink` and `--color-ink-soft`; rules use
+  `--color-well` (field — inset readouts and the instructional callout). The place-value
+  breakdown stays transparent over the table surface. Frames use `--color-frame`; text uses
+  `--color-ink` and `--color-ink-soft`; rules use
   `--color-rule` and `--color-rule-soft`; `--color-focus` is the focus ring and
   `--color-danger` is errors. Serif display type is for prose and base names; `.mono-tech` is
   for digits, positions, bit ranges, radices, equations, and the status strip. Reuse those
@@ -81,8 +82,9 @@ file holds what they share so it is stated once. Adapted from
   text, never reduce a contrast pair below AA, never occupy a Tab stop, and must be removable
   without breaking layout or meaning. The allowed vocabulary is hairlines and double rules,
   coloured margin bars, hard offset shadows, inset bevels, small mono markers, and the
-  masthead monitor icon. Not allowed: textures behind text, soft or glassy shadows,
-  gradients, or anything that implies a state by itself.
+  masthead monitor icon. Small texture is allowed only in an empty structural gutter, such as
+  the breakdown's registration mark; never put it behind text or on the clear surface. Soft
+  or glassy shadows, gradients, and anything that implies a state by itself remain out.
 - Do not add a runtime CDN font. The notation face is self-hosted IBM Plex Mono under the SIL
   Open Font License 1.1, with its licence file beside the woff2 assets in
   `src/assets/fonts/`; reference its files with a relative `url()` so the build fingerprints

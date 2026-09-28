@@ -92,6 +92,29 @@ test('backspace removes the newest typed digit', async ({ page }) => {
   await expect(digit(page, 'Hexadecimal', 16, 0)).toHaveValue('2')
 })
 
+test('hovering a collapsed place equation links its digit, label, and binary bits', async ({ page }) => {
+  const hexadecimalUnits = digit(page, 'Hexadecimal', 16, 0)
+  await hexadecimalUnits.focus()
+  await page.keyboard.press('1')
+  await page.keyboard.press('2')
+
+  const term = page.locator('#hexadecimal-place-value-breakdown [data-breakdown-term][data-position="1"]')
+  const hexadecimalDigit = digit(page, 'Hexadecimal', 16, 1)
+  const hexadecimalLabel = hexadecimalDigit.locator('xpath=..').locator('.place-value-label')
+  await term.hover()
+
+  await expect(term).toHaveAttribute('data-highlighted', 'true')
+  await expect(hexadecimalDigit).toHaveAttribute('data-highlighted', 'true')
+  await expect(hexadecimalLabel).toHaveAttribute('data-highlighted', 'true')
+  for (let position = 4; position <= 7; position += 1) {
+    await expect(digit(page, 'Binary', 2, position)).toHaveAttribute('data-highlighted', 'true')
+  }
+
+  await page.mouse.move(0, 0)
+  await expect(term).not.toHaveAttribute('data-highlighted', 'true')
+  await expect(hexadecimalDigit).not.toHaveAttribute('data-highlighted', 'true')
+})
+
 test('hover links a digit, its position label, and its matching breakdown term', async ({ page }) => {
   const decimalUnits = digit(page, 'Decimal', 10, 0)
   await decimalUnits.focus()
@@ -222,12 +245,16 @@ test('collapsed rows highlight position labels without opening, and digit typing
   await expect(decimalUnits).toHaveAttribute('data-highlighted', 'true')
   await expect(unitsLabel).toHaveAttribute('data-highlighted', 'true')
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  await expect(page.locator('#decimal-place-value-breakdown')).toHaveCount(0)
+  const breakdown = page.locator('#decimal-place-value-breakdown')
+  await expect(breakdown.getByText('Breakdown for the value will be shown here when a value is entered.', { exact: true })).toBeVisible()
 
   await page.mouse.move(0, 0)
   await decimalUnits.focus()
   await expect(unitsLabel).toHaveAttribute('data-highlighted', 'true')
   await page.keyboard.press('7')
   await expect(digit(page, 'Decimal', 10, 0)).toHaveValue('7')
+  const collapsedMath = breakdown.getByRole('math')
+  await expect(collapsedMath).toHaveAttribute('aria-label', '10 to the power of 0 times 7 equals 7')
+  await expect(collapsedMath).toHaveText('100 × 7= 7')
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 })

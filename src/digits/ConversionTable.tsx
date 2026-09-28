@@ -7,6 +7,7 @@ type ConversionTableProps = {
   positions: number
   displayed: DisplayedRow[]
   openBreakdowns: Set<string>
+  showCollapsedBreakdowns: boolean
   onToggleBreakdown: (key: string) => void
   value: bigint | null
   highlightedBits: BitSpan | null
@@ -21,7 +22,7 @@ type ConversionTableProps = {
   onTabFromBreakdownTerm: (event: KeyboardEvent<HTMLSpanElement>, base: Base, isFirst: boolean, isLast: boolean) => void
 }
 
-export function ConversionTable({ positions, displayed, openBreakdowns, onToggleBreakdown, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: ConversionTableProps) {
+export function ConversionTable({ positions, displayed, openBreakdowns, showCollapsedBreakdowns, onToggleBreakdown, value, highlightedBits, onHoverPosition, onFocusPosition, onDigitKeyDown, onEditDigit, registerCell, registerBreakdownToggle, onTabFromUnits, onTabFromToggle, onTabFromBreakdownTerm }: ConversionTableProps) {
   return (
     /* A framed ledger block. The frame is on the scroll region rather than the table, so it
            draws the outer edge without adding horizontal padding to the digits `ol` inside — the
@@ -43,6 +44,7 @@ export function ConversionTable({ positions, displayed, openBreakdowns, onToggle
               positions={positions}
               isSource={isSource}
               isBreakdownOpen={openBreakdowns.has(base.key)}
+              showCollapsedBreakdowns={showCollapsedBreakdowns}
               onToggleBreakdown={() => onToggleBreakdown(base.key)}
               value={value}
               highlightedBits={highlightedBits}

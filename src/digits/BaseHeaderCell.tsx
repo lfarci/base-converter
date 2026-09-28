@@ -15,7 +15,7 @@ type BaseHeaderCellProps = {
 // toggle is the row's one Tab stop between the units digit above it and the next row below.
 export function BaseHeaderCell({ base, isSource, isBreakdownOpen, breakdownId, toggleRef, onToggle, onToggleKeyDown }: BaseHeaderCellProps) {
   return (
-    <th className="sticky left-0 z-10 w-[144px] border-b border-dotted border-rule bg-inherit py-3 pl-2 pr-2 align-top font-normal" scope="row" aria-label={`${base.name}${isSource ? ', source' : ''}`} data-source={isSource || undefined}>
+    <th className="sticky left-0 z-10 w-[144px] border-b border-dotted border-rule bg-inherit py-3 pl-3 pr-2 align-top font-normal" scope="row" aria-label={`${base.name}${isSource ? ', source' : ''}`} data-source={isSource || undefined}>
       {/* A shape cue, not a hue cue: the source row is marked by a solid ink bar at the
           cell's left edge. It is absolutely positioned and aria-hidden, so it never moves
           the cell's own metrics and never adds an announcement. */}

@@ -101,6 +101,50 @@ body {
   font-feature-settings: "zero" 1, "tnum" 1;
 }
 
+/* The inset frame gives the full transparent breakdown a tactile workbook edge. Its
+   registration mark stays in the reserved gutter, never behind the explanation. */
+.place-value-breakdown {
+  position: relative;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-frame) 76%, var(--color-ink)),
+    inset 2px 2px 0 1px color-mix(in srgb, var(--color-frame) 72%, var(--color-ink)),
+    inset 5px 5px 0 1px color-mix(in srgb, var(--color-frame) 26%, transparent),
+    inset -2px -2px 0 1px color-mix(in srgb, var(--color-paper-2) 92%, transparent),
+    inset -5px -5px 0 1px color-mix(in srgb, var(--color-rule-soft) 78%, transparent),
+    inset 0 7px 9px rgb(23 43 77 / 0.12);
+}
+
+.breakdown-pressmark {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-inline-start: 5px;
+  inline-size: 4px;
+  block-size: 4px;
+  box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.72), inset -1px -1px 0 color-mix(in srgb, var(--color-frame) 65%, var(--color-ink)), 0 1px 0 var(--color-frame), 0 5px 0 var(--color-rule), 0 10px 0 var(--color-rule-soft), 0 15px 0 var(--color-rule), 2px 17px 0 var(--color-frame), 3px 18px 0 var(--color-rule-soft);
+}
+
+/* Keep the compact equation in place while the expanded calculation opens into view. */
+.breakdown-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 140ms cubic-bezier(0.4, 0, 1, 1),
+    opacity 100ms ease-out;
+}
+
+.breakdown-reveal[data-expanded] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition-duration: 220ms, 160ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1), ease-out;
+}
+
+.breakdown-reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* The disclosure rotates toward the breakdown to make its state change legible. */
 .base-disclosure {
   transform: rotate(0deg);
@@ -228,7 +272,9 @@ body {
    and these rules stay unlayered so they beat Tailwind's utility layer and any inline
    colour a component computes from a per-base accent. */
 @media (prefers-reduced-motion: reduce) {
-  .base-disclosure {
+  .base-disclosure,
+  .breakdown-reveal,
+  .breakdown-reveal[data-expanded] {
     transition: none;
   }
   input[data-digit],
@@ -244,6 +290,9 @@ body {
 }
 
 @media (forced-colors: active) {
+  .place-value-breakdown {
+    box-shadow: none;
+  }
   .digit-roll {
     display: none;
   }
@@ -258,6 +307,9 @@ body {
    rule/ink boundaries — the layered-sheet cue is decorative and must not compete with
    the user's own contrast preference. */
 @media (prefers-contrast: more) {
+  .place-value-breakdown {
+    box-shadow: none !important;
+  }
   input[data-digit] {
     background-color: var(--color-paper-2) !important;
     border-color: var(--color-rule) !important;
