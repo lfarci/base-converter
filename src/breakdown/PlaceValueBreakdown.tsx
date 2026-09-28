@@ -28,7 +28,7 @@ export function PlaceValueBreakdown({ base, boxes, value, isExpanded, highlighte
   const hasNoValue = value === null || value === 0n
 
   return (
-    <section className="place-value-breakdown border-l-2 border-frame bg-transparent py-4 pl-[154px] pr-4 text-left text-[13px] text-ink-soft" aria-label={`${base.name} place-value breakdown`}>
+    <section className="place-value-breakdown border-l-2 border-frame bg-transparent py-4 pl-[18px] pr-4 text-left text-[13px] text-ink-soft" aria-label={`${base.name} place-value breakdown`}>
       <span className="breakdown-pressmark" aria-hidden="true" style={{ backgroundColor: base.accent }} />
       <h3 className="m-0 mono-tech text-[10px] uppercase tracking-[0.12em] text-ink-soft">Breakdown</h3>
       {hasNoValue ? (
