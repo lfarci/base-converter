@@ -53,10 +53,11 @@ layout, types, styling, and accessibility rules live in `src.instructions.md`;
   texture must stay in the empty leading gutter, with `aria-hidden` and no overlap with
   content; preserve the clear surface. A highlighted term uses a subtle accent tint and a
   55/45 accent-ink border, matching the place-value label, plus `text-decoration: underline`
-  as its shape cue, so the state never rests on hue. **The panel's leading padding and
-  `DigitRow`'s cell padding add up to 156px (`144 + 12`), the width that keeps the heading
-  and collapsed summary lined up with the digit grid; if you add a rule or padding on either
-  side, rebalance both and re-verify rather than letting the total drift.**
+  as its shape cue, so the state never rests on hue. **Align the panel's content edge with
+  the digit grid:** the table's Base column is 144px wide and `DigitRow`'s digit cell adds
+  12px of left padding, so content starts 156px from the table edge. The panel has a 2px
+  left border, so its leading padding is 154px. If either measurement changes, rebalance the
+  offset and re-verify alignment.
 
 ## Checks
 
